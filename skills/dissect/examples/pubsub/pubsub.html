@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>One event, three subscribers</title>
 <style>html,body{margin:0;background:#f4f3ee}@media (prefers-color-scheme:dark){html,body{background:#121211}}body{padding:28px 16px}
-.dx{--dx-paper:#f4f3ee;--dx-sheet:#fbfaf6;--dx-dot:#dcd9cf;--dx-ink:#1d1c1a;--dx-ink2:#55534d;--dx-ink3:#6c6a64;--dx-edge:#2a2926;--dx-plate:#ffffff;--dx-plate2:#f3f2ec;--dx-bevel:#ffffff;--dx-seam:#e4e1d8;--dx-shade:rgba(29, 28, 26, 0.13);--dx-rail:#3b3a35;--dx-bed:#e9e6dd;--dx-laneA:rgba(255, 255, 255, 0);--dx-laneB:rgba(29, 28, 26, 0.024);--dx-rule:#dedbd1;--dx-bay:#eeece5;--dx-accent:#c2410c;--dx-ok:#2b8a3e;--dx-warn:#b35c00;--dx-bad:#c92a2a;--dx-tag:#ffffff;--dx-c0:#1d1c1a;--dx-c1:#1864ab;--dx-c2:#2b8a3e;--dx-c3:#862e9c;--dx-c4:#0b7285;color:var(--dx-ink);font:13px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Liberation Sans",system-ui,sans-serif;font-variant-numeric:tabular-nums;max-width:1240px;margin:0 auto}
-.dx[data-theme="dark"]{--dx-paper:#121211;--dx-sheet:#171715;--dx-dot:#2c2b28;--dx-ink:#eceae4;--dx-ink2:#b3b1aa;--dx-ink3:#8f8d85;--dx-edge:#d8d6cf;--dx-plate:#1f1f1c;--dx-plate2:#262622;--dx-bevel:#3a3934;--dx-seam:#34332f;--dx-shade:rgba(0, 0, 0, 0.5);--dx-rail:#cfcdc6;--dx-bed:#262623;--dx-laneA:rgba(255, 255, 255, 0);--dx-laneB:rgba(255, 255, 255, 0.026);--dx-rule:#2e2d2a;--dx-bay:#2b2b27;--dx-accent:#ff8a4c;--dx-ok:#69db7c;--dx-warn:#ffa94d;--dx-bad:#ff6b6b;--dx-tag:#1f1f1c;--dx-c0:#eceae4;--dx-c1:#74c0fc;--dx-c2:#8ce99a;--dx-c3:#e599f7;--dx-c4:#66d9e8;}
-@media (prefers-color-scheme:dark){.dx[data-theme="auto"]{--dx-paper:#121211;--dx-sheet:#171715;--dx-dot:#2c2b28;--dx-ink:#eceae4;--dx-ink2:#b3b1aa;--dx-ink3:#8f8d85;--dx-edge:#d8d6cf;--dx-plate:#1f1f1c;--dx-plate2:#262622;--dx-bevel:#3a3934;--dx-seam:#34332f;--dx-shade:rgba(0, 0, 0, 0.5);--dx-rail:#cfcdc6;--dx-bed:#262623;--dx-laneA:rgba(255, 255, 255, 0);--dx-laneB:rgba(255, 255, 255, 0.026);--dx-rule:#2e2d2a;--dx-bay:#2b2b27;--dx-accent:#ff8a4c;--dx-ok:#69db7c;--dx-warn:#ffa94d;--dx-bad:#ff6b6b;--dx-tag:#1f1f1c;--dx-c0:#eceae4;--dx-c1:#74c0fc;--dx-c2:#8ce99a;--dx-c3:#e599f7;--dx-c4:#66d9e8;}}
+.dx{--dx-paper:#f4f3ee;--dx-sheet:#fbfaf6;--dx-dot:#dcd9cf;--dx-ink:#1d1c1a;--dx-ink2:#55534d;--dx-ink3:#6c6a64;--dx-edge:#2a2926;--dx-plate:#ffffff;--dx-plate2:#f3f2ec;--dx-bevel:#ffffff;--dx-seam:#e4e1d8;--dx-shade:rgba(29, 28, 26, 0.13);--dx-rail:#3b3a35;--dx-bed:#e9e6dd;--dx-laneA:rgba(255, 255, 255, 0);--dx-laneB:rgba(29, 28, 26, 0.024);--dx-rule:#dedbd1;--dx-bay:#eeece5;--dx-accent:#c2410c;--dx-ok:#2b8a3e;--dx-warn:#b35c00;--dx-bad:#c92a2a;--dx-tag:#ffffff;--dx-c0:#1d1c1a;--dx-c1:#1864ab;--dx-c2:#862e9c;--dx-c3:#0b7285;--dx-c4:#2b8a3e;color:var(--dx-ink);font:13px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Liberation Sans",system-ui,sans-serif;font-variant-numeric:tabular-nums;max-width:1240px;margin:0 auto}
+.dx[data-theme="dark"]{--dx-paper:#121211;--dx-sheet:#171715;--dx-dot:#2c2b28;--dx-ink:#eceae4;--dx-ink2:#b3b1aa;--dx-ink3:#8f8d85;--dx-edge:#d8d6cf;--dx-plate:#1f1f1c;--dx-plate2:#262622;--dx-bevel:#3a3934;--dx-seam:#34332f;--dx-shade:rgba(0, 0, 0, 0.5);--dx-rail:#cfcdc6;--dx-bed:#262623;--dx-laneA:rgba(255, 255, 255, 0);--dx-laneB:rgba(255, 255, 255, 0.026);--dx-rule:#2e2d2a;--dx-bay:#2b2b27;--dx-accent:#ff8a4c;--dx-ok:#69db7c;--dx-warn:#ffa94d;--dx-bad:#ff6b6b;--dx-tag:#1f1f1c;--dx-c0:#eceae4;--dx-c1:#74c0fc;--dx-c2:#e599f7;--dx-c3:#66d9e8;--dx-c4:#8ce99a;}
+@media (prefers-color-scheme:dark){.dx[data-theme="auto"]{--dx-paper:#121211;--dx-sheet:#171715;--dx-dot:#2c2b28;--dx-ink:#eceae4;--dx-ink2:#b3b1aa;--dx-ink3:#8f8d85;--dx-edge:#d8d6cf;--dx-plate:#1f1f1c;--dx-plate2:#262622;--dx-bevel:#3a3934;--dx-seam:#34332f;--dx-shade:rgba(0, 0, 0, 0.5);--dx-rail:#cfcdc6;--dx-bed:#262623;--dx-laneA:rgba(255, 255, 255, 0);--dx-laneB:rgba(255, 255, 255, 0.026);--dx-rule:#2e2d2a;--dx-bay:#2b2b27;--dx-accent:#ff8a4c;--dx-ok:#69db7c;--dx-warn:#ffa94d;--dx-bad:#ff6b6b;--dx-tag:#1f1f1c;--dx-c0:#eceae4;--dx-c1:#74c0fc;--dx-c2:#e599f7;--dx-c3:#66d9e8;--dx-c4:#8ce99a;}}
 .dx *{box-sizing:border-box}
 .dx-card{position:relative;container-type:inline-size;background:var(--dx-paper);border:1px solid var(--dx-rule);border-radius:14px;box-shadow:0 1px 0 var(--dx-bevel) inset,0 22px 50px -32px var(--dx-shade);overflow:hidden}
 .dx-head,.dx-foot{display:flex;align-items:center;gap:12px;padding:10px 16px;font-size:12px;color:var(--dx-ink2);min-width:0}
@@ -41,7 +41,27 @@
 .dx-seg button{all:unset;cursor:pointer;padding:0 9px;display:inline-flex;align-items:center;font-size:11.5px;font-weight:600;color:var(--dx-ink2)}
 .dx-seg button+button{border-left:1px solid var(--dx-rule)}
 .dx-seg button:hover{color:var(--dx-ink);background:var(--dx-plate2)}
-.dx-seg button[aria-pressed="true"]{background:var(--dx-ink);color:var(--dx-plate)}
+.dx-seg button[aria-pressed="true"],.dx-seg button[aria-checked="true"]{background:var(--dx-ink);color:var(--dx-plate)}
+.dx-dials{display:flex;flex-direction:column;gap:9px;margin:12px 0}
+.dx-dial{display:flex;flex-direction:column;align-items:flex-start;gap:4px}
+.dx-dial-label{color:var(--dx-ink3);font-size:11.5px}
+.dx-panel{position:absolute;z-index:4;width:276px;max-width:calc(100% - 16px);padding:10px 12px 12px;border:1px solid var(--dx-edge);border-radius:12px;background:var(--dx-paper);box-shadow:inset 0 1px 0 var(--dx-bevel),0 16px 36px -16px var(--dx-shade);font-size:12.5px;color:var(--dx-ink2)}
+.dx-panel[hidden]{display:none}
+.dx-panel-head{display:flex;align-items:center;gap:8px;margin:-2px -4px 6px 0}
+.dx-panel-head>span{flex:1;min-width:0}
+.dx-panel-kind{display:block;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--dx-ink3)}
+.dx-panel-title{display:block;font-size:13.5px;font-weight:650;color:var(--dx-ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dx-panel-live{margin:2px 0 4px;color:var(--dx-ink)}
+.dx-panel-note{margin:8px 0 0;color:var(--dx-ink3);font-size:11.5px}
+.dx-panel .dx-dials{margin:10px 0 0}
+.dx-cells{display:flex;flex-wrap:wrap;gap:3px;margin:6px 0}
+.dx-cells i{display:block;width:11px;height:15px;border-radius:3px;border:1px solid var(--dx-seam);opacity:.55}
+.dx-cells i.dx-run{background:var(--dx-ink2);border-color:var(--dx-ink2);opacity:1}
+.dx-cells i.dx-boot{border:1px dashed var(--dx-warn);opacity:1;animation:dx-boot 1.2s ease-in-out infinite}
+.dx-cells i.dx-out{opacity:.22;border-style:dotted}
+.dx-dial.dx-dial-row{flex-direction:row;align-items:center;justify-content:space-between;gap:12px;max-width:240px}
+.dx-dial .dx-seg{height:auto;min-height:26px;max-width:100%;flex-wrap:wrap}
+.dx-dial .dx-seg button{min-height:24px}
 .dx-seg button:focus-visible{outline:2px solid var(--dx-accent);outline-offset:-2px}
 .dx-readout{margin-left:auto;padding-left:8px;color:var(--dx-ink);white-space:nowrap;font-variant-numeric:tabular-nums}
 .dx-close svg{width:12px;height:12px}
@@ -61,7 +81,7 @@
 .dx-journey{list-style:none;margin:8px 0 0;padding:0;max-height:210px;overflow:auto;font-size:12px}
 .dx-journey li{display:grid;grid-template-columns:5.2em 1fr;gap:8px;padding:3px 0;border-bottom:1px dashed var(--dx-rule)}
 .dx-journey time{color:var(--dx-ink3);text-align:right}
-.dx-caption{margin:12px 4px 0;font-size:13px;color:var(--dx-ink2);max-width:80ch}
+.dx-caption{margin:12px 4px 0;font-size:13px;color:var(--dx-ink2)}
 .dx-legend{display:flex;flex-wrap:wrap;gap:16px;margin:8px 4px 0;font-size:12px;color:var(--dx-ink3)}
 .dx-legend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:-1px}
 .dx-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
@@ -89,6 +109,27 @@
 .dx-spec{fill:var(--dx-ink3);font-size:10px}
 .dx-alt-text{fill:var(--dx-ink2);font-size:10px;font-weight:600;opacity:0}
 .dx-bay{fill:var(--dx-bay);stroke:var(--dx-seam);stroke-width:.8}
+.dx-bay.dx-bay-off{fill:none;stroke-dasharray:1.5 1.5;opacity:.6}
+.dx-bay.dx-bay-boot{fill:none;stroke:var(--dx-warn);stroke-dasharray:2 1.4;animation:dx-boot 1.2s ease-in-out infinite}
+@keyframes dx-boot{50%{opacity:.35}}
+.dx-gear{cursor:pointer;outline:none}
+.dx-gear-hit{fill:transparent;pointer-events:all}
+.dx-gear-box{fill:var(--dx-plate2);stroke:var(--dx-edge);stroke-width:.9;transition:fill .15s}
+.dx-gear-glyph{fill:none;stroke:var(--dx-ink2);stroke-width:1.3;stroke-linecap:round}
+.dx-gear-knob{fill:var(--dx-plate);stroke:var(--dx-ink2);stroke-width:1.2}
+.dx-gear:hover .dx-gear-box{fill:var(--dx-plate)}
+.dx-gear:focus-visible .dx-gear-hit{stroke:var(--dx-accent);stroke-width:1.6}
+.dx-part[data-panel] .dx-gear-box{stroke:var(--dx-accent);stroke-width:1.4}
+.dx-switch{cursor:pointer;outline:none}
+.dx-switch-hit{fill:transparent;pointer-events:all}
+.dx-switch-track{fill:var(--dx-ok);transition:fill .15s}
+.dx-switch-knob{fill:var(--dx-paper);stroke:var(--dx-ink3);stroke-width:.8;transition:transform .15s}
+.dx-switch:hover .dx-switch-track{filter:brightness(1.08)}
+.dx-switch:focus-visible .dx-switch-hit{stroke:var(--dx-accent);stroke-width:1.6}
+.dx-part[data-off] .dx-switch-track{fill:var(--dx-seam)}
+.dx-part[data-off] .dx-switch-knob{transform:translateX(-10px)}
+.dx-part[data-off] .dx-plate{stroke-dasharray:5 3}
+.dx-part[data-off] :is(.dx-glyph,.dx-flowrow,.dx-window,.dx-mini,.dx-gate-mark,.dx-needle,.dx-gauge-track,.dx-gauge,.dx-lamp,.dx-count){opacity:.3}
 .dx-bay-fill{fill:var(--dx-ink);opacity:.8}
 .dx-bay-fill.dx-c-bad{fill:var(--dx-bad);opacity:1}
 .dx-bay-fill.dx-lit{fill:var(--dx-accent);opacity:1}
@@ -148,7 +189,7 @@
 .dx[data-layer="fail"] .dx-route[data-fail="1"] .dx-rail{stroke:var(--dx-bad);stroke-width:2}
 .dx-flowrow{transition:opacity .3s}
 .dx-spec,.dx-alt-text{transition:opacity .3s}
-@media (prefers-reduced-motion:reduce){.dx *{transition:none!important}}
+@media (prefers-reduced-motion:reduce){.dx *{transition:none!important;animation:none!important}}
 </style>
 <style>.dx-page{max-width:760px;margin:0 auto 28px;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Liberation Sans",system-ui,sans-serif;color:#1d1c1a}.dx-page h1{font-size:28px;line-height:1.2;margin:8px 0 12px}@media (prefers-color-scheme:dark){.dx-page{color:#eceae4}}</style></head>
 <body>
@@ -158,7 +199,7 @@
 <div class="dx-body">
 <div class="dx-view">
 <nav class="dx-levelbar" aria-label="Where you are" hidden><span class="dx-path"></span></nav>
-<div class="dx-stage"><svg viewBox="0 0 852 832" width="852" height="832" role="group" aria-label="One event, three subscribers" data-level="" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="dx-dots-dx-pubsub-0" width="12" height="12" patternUnits="userSpaceOnUse"><circle class="dx-dots" cx="1" cy="1" r=".8"/></pattern></defs><rect width="852" height="832" fill="url(#dx-dots-dx-pubsub-0)"/><rect class="dx-lane" x="0" y="26" width="852" height="136"/><rect class="dx-lane-plate" x="14" y="36" width="26" height="116" rx="6"/><text class="dx-lane-label" transform="translate(30.5 94) rotate(-90)" text-anchor="middle" data-fit="102" data-full="Orders" data-size="10.5" data-min="8.5">Orders</text><rect class="dx-lane dx-alt" x="0" y="162" width="852" height="136"/><line class="dx-lane-rule" x1="0" y1="162" x2="852" y2="162"/><rect class="dx-lane-plate" x="14" y="172" width="26" height="116" rx="6"/><text class="dx-lane-label" transform="translate(30.5 230) rotate(-90)" text-anchor="middle" data-fit="102" data-full="Broker" data-size="10.5" data-min="8.5">Broker</text><rect class="dx-lane" x="0" y="298" width="852" height="236"/><line class="dx-lane-rule" x1="0" y1="298" x2="852" y2="298"/><rect class="dx-lane-plate" x="14" y="308" width="26" height="216" rx="6"/><text class="dx-lane-label" transform="translate(30.5 416) rotate(-90)" text-anchor="middle" data-fit="202" data-full="Email" data-size="10.5" data-min="8.5">Email</text><rect class="dx-lane dx-alt" x="0" y="534" width="852" height="136"/><line class="dx-lane-rule" x1="0" y1="534" x2="852" y2="534"/><rect class="dx-lane-plate" x="14" y="544" width="26" height="116" rx="6"/><text class="dx-lane-label" transform="translate(30.5 602) rotate(-90)" text-anchor="middle" data-fit="102" data-full="Inventory" data-size="10.5" data-min="8.5">Inventory</text><rect class="dx-lane" x="0" y="670" width="852" height="136"/><line class="dx-lane-rule" x1="0" y1="670" x2="852" y2="670"/><rect class="dx-lane-plate" x="14" y="680" width="26" height="116" rx="6"/><text class="dx-lane-label" transform="translate(30.5 738) rotate(-90)" text-anchor="middle" data-fit="102" data-full="Analytics" data-size="10.5" data-min="8.5">Analytics</text><g class="dx-route" data-key="::order&gt;publish"><path class="dx-bed" d="M138 94 L194 94"/><path class="dx-rail" d="M138 94 L194 94"/><path class="dx-nib" d="M191 94L184.5 90.5L184.5 97.5Z"/></g><g class="dx-route" data-key="::publish&gt;topic"><path class="dx-bed" d="M330 94 L362 94 Q372 94 372 104 L372 223 Q372 230 379 230 L386 230"/><path class="dx-rail" d="M330 94 L362 94 Q372 94 372 104 L372 223 Q372 230 379 230 L386 230"/><path class="dx-chev" d="M374.5 139.5L372 143.5L369.5 139.5"/><path class="dx-chev" d="M374.5 199.5L372 203.5L369.5 199.5"/><path class="dx-nib" d="M383 230L376.5 226.5L376.5 233.5Z"/></g><g class="dx-route" data-key="::topic&gt;send"><path class="dx-bed" d="M406 250 L406 356 Q406 366 416 366 L516 366"/><path class="dx-rail" d="M406 250 L406 356 Q406 366 416 366 L516 366"/><path class="dx-chev" d="M408.5 277.5L406 281.5L403.5 277.5"/><path class="dx-chev" d="M408.5 337.5L406 341.5L403.5 337.5"/><path class="dx-nib" d="M513 366L506.5 362.5L506.5 369.5Z"/></g><g class="dx-route" data-key="::topic&gt;reserve"><path class="dx-bed" d="M406 250 L406 592 Q406 602 416 602 L516 602"/><path class="dx-rail" d="M406 250 L406 592 Q406 602 416 602 L516 602"/><path class="dx-chev" d="M408.5 277.5L406 281.5L403.5 277.5"/><path class="dx-chev" d="M408.5 337.5L406 341.5L403.5 337.5"/><path class="dx-chev" d="M408.5 397.5L406 401.5L403.5 397.5"/><path class="dx-chev" d="M408.5 457.5L406 461.5L403.5 457.5"/><path class="dx-chev" d="M408.5 517.5L406 521.5L403.5 517.5"/><path class="dx-chev" d="M408.5 577.5L406 581.5L403.5 577.5"/><path class="dx-nib" d="M513 602L506.5 598.5L506.5 605.5Z"/></g><g class="dx-route" data-key="::topic&gt;count"><path class="dx-bed" d="M406 250 L406 728 Q406 738 416 738 L516 738"/><path class="dx-rail" d="M406 250 L406 728 Q406 738 416 738 L516 738"/><path class="dx-chev" d="M408.5 277.5L406 281.5L403.5 277.5"/><path class="dx-chev" d="M408.5 337.5L406 341.5L403.5 337.5"/><path class="dx-chev" d="M408.5 397.5L406 401.5L403.5 397.5"/><path class="dx-chev" d="M408.5 457.5L406 461.5L403.5 457.5"/><path class="dx-chev" d="M408.5 517.5L406 521.5L403.5 517.5"/><path class="dx-chev" d="M408.5 577.5L406 581.5L403.5 577.5"/><path class="dx-chev" d="M408.5 637.5L406 641.5L403.5 637.5"/><path class="dx-chev" d="M408.5 697.5L406 701.5L403.5 697.5"/><path class="dx-chev" d="M425.5 735.5L429.5 738L425.5 740.5"/><path class="dx-nib" d="M513 738L506.5 734.5L506.5 741.5Z"/></g><g class="dx-route" data-key="::send&gt;sent"><path class="dx-bed" d="M652 366 L773 366"/><path class="dx-rail" d="M652 366 L773 366"/><path class="dx-chev" d="M679.5 363.5L683.5 366L679.5 368.5"/><path class="dx-chev" d="M739.5 363.5L743.5 366L739.5 368.5"/><path class="dx-nib" d="M770 366L763.5 362.5L763.5 369.5Z"/></g><g class="dx-route" data-key="::retry" data-fail="1"><path class="dx-bed" d="M584 401 L584 448"/><path class="dx-rail" d="M584 401 L584 448"/><path class="dx-nib" d="M584 445L587.5 438.5L580.5 438.5Z"/></g><g class="dx-route" data-key="::give-up" data-fail="1"><path class="dx-bed" d="M652 366 L659 366 Q666 366 666 373 L666 456 Q666 466 676 466 L773 466"/><path class="dx-rail" d="M652 366 L659 366 Q666 366 666 373 L666 456 Q666 466 676 466 L773 466"/><path class="dx-chev" d="M668.5 379.5L666 383.5L663.5 379.5"/><path class="dx-chev" d="M668.5 439.5L666 443.5L663.5 439.5"/><path class="dx-chev" d="M699.5 463.5L703.5 466L699.5 468.5"/><path class="dx-nib" d="M770 466L763.5 462.5L763.5 469.5Z"/></g><g class="dx-route" data-key="::backoff&gt;send"><path class="dx-bed" d="M584 484 L584 487 Q584 490 581 490 L512 490 Q502 490 502 480 L502 373 Q502 366 509 366 L516 366"/><path class="dx-rail" d="M584 484 L584 487 Q584 490 581 490 L512 490 Q502 490 502 480 L502 373 Q502 366 509 366 L516 366"/><path class="dx-chev" d="M562.5 492.5L558.5 490L562.5 487.5"/><path class="dx-nib" d="M513 366L506.5 362.5L506.5 369.5Z"/></g><g class="dx-route" data-key="::reserve&gt;reserved"><path class="dx-bed" d="M652 602 L773 602"/><path class="dx-rail" d="M652 602 L773 602"/><path class="dx-chev" d="M679.5 599.5L683.5 602L679.5 604.5"/><path class="dx-chev" d="M739.5 599.5L743.5 602L739.5 604.5"/><path class="dx-nib" d="M770 602L763.5 598.5L763.5 605.5Z"/></g><g class="dx-route" data-key="::count&gt;counted"><path class="dx-bed" d="M652 738 L773 738"/><path class="dx-rail" d="M652 738 L773 738"/><path class="dx-chev" d="M679.5 735.5L683.5 738L679.5 740.5"/><path class="dx-chev" d="M739.5 735.5L743.5 738L739.5 740.5"/><path class="dx-nib" d="M770 738L763.5 734.5L763.5 741.5Z"/></g><g class="dx-queue" data-queue="send"><line class="dx-slot" x1="500" y1="371" x2="500" y2="373.5"/><line class="dx-slot" x1="490.5" y1="371" x2="490.5" y2="373.5"/><line class="dx-slot" x1="481" y1="371" x2="481" y2="373.5"/><line class="dx-slot" x1="471.5" y1="371" x2="471.5" y2="373.5"/><line class="dx-slot" x1="462" y1="371" x2="462" y2="373.5"/><line class="dx-slot" x1="452.5" y1="371" x2="452.5" y2="373.5"/><text class="dx-more" data-qmore x="481" y="357" text-anchor="middle"></text></g><g class="dx-queue" data-queue="reserve"><line class="dx-slot" x1="500" y1="607" x2="500" y2="609.5"/><line class="dx-slot" x1="490.5" y1="607" x2="490.5" y2="609.5"/><line class="dx-slot" x1="481" y1="607" x2="481" y2="609.5"/><line class="dx-slot" x1="471.5" y1="607" x2="471.5" y2="609.5"/><line class="dx-slot" x1="462" y1="607" x2="462" y2="609.5"/><line class="dx-slot" x1="452.5" y1="607" x2="452.5" y2="609.5"/><text class="dx-more" data-qmore x="481" y="593" text-anchor="middle"></text></g><g class="dx-queue" data-queue="count"><line class="dx-slot" x1="500" y1="743" x2="500" y2="745.5"/><line class="dx-slot" x1="490.5" y1="743" x2="490.5" y2="745.5"/><line class="dx-slot" x1="481" y1="743" x2="481" y2="745.5"/><line class="dx-slot" x1="471.5" y1="743" x2="471.5" y2="745.5"/><line class="dx-slot" x1="462" y1="743" x2="462" y2="745.5"/><line class="dx-slot" x1="452.5" y1="743" x2="452.5" y2="745.5"/><text class="dx-more" data-qmore x="481" y="729" text-anchor="middle"></text></g><g class="dx-part dx-start" data-path="order" tabindex="0" role="button" aria-label="order placed: new work arrives every ~20 ms. About 50 orders a second."><rect class="dx-halo" x="107" y="83" width="28" height="32" rx="17"/><circle class="dx-event" cx="121" cy="94" r="17"/><line class="dx-tick" x1="134.5" y1="94" x2="131.5" y2="94"/><line class="dx-tick" x1="133" y1="101" x2="131" y2="100"/><line class="dx-tick" x1="128" y1="106" x2="127" y2="104"/><line class="dx-tick" x1="121" y1="107.5" x2="121" y2="104.5"/><line class="dx-tick" x1="114" y1="106" x2="115" y2="104"/><line class="dx-tick" x1="109" y1="101" x2="111" y2="100"/><line class="dx-tick" x1="107.5" y1="94" x2="110.5" y2="94"/><line class="dx-tick" x1="109" y1="87" x2="111" y2="88"/><line class="dx-tick" x1="114" y1="82" x2="115" y2="84"/><line class="dx-tick" x1="121" y1="80.5" x2="121" y2="83.5"/><line class="dx-tick" x1="128" y1="82" x2="127" y2="84"/><line class="dx-tick" x1="133" y1="87" x2="131" y2="88"/><path class="dx-gate-mark" d="M118.5 90L124 94L118.5 98" style="stroke-width:1.5"/><text class="dx-under dx-strong" x="121" y="69" text-anchor="middle">order placed</text><text class="dx-under" x="121" y="125" text-anchor="middle">every ~20 ms</text></g><g class="dx-part dx-station" data-path="publish" tabindex="0" role="button" aria-label="Publish: no limit on how many at once, 2 ms, p95 6 each. The orders service writes the event to the broker and waits only for the broker to say it has it."><rect class="dx-halo" x="197" y="65" width="130" height="68" rx="9"/><rect class="dx-plate" x="194" y="59" width="136" height="70" rx="9"/><rect class="dx-bevel" x="195.5" y="60.5" width="133" height="67" rx="7.6"/><path class="dx-glyph" transform="translate(205 69)" d="M2.2 4h11.6v8H2.2zM2.2 4.4L8 9l5.8-4.6"/><text class="dx-name" x="227" y="81.5" data-fit="90" data-full="Publish" data-size="12.5" data-min="10.5">Publish</text><text class="dx-spec" x="206" y="97" data-fit="112" data-full="2 ms, p95 6" data-size="10" data-min="9">2 ms, p95 6</text><text class="dx-alt-text dx-alt-time" data-alt="time" x="206" y="97"></text><text class="dx-alt-text dx-alt-fail" data-alt="fail" x="206" y="97"></text><line class="dx-seam" x1="202" y1="105" x2="322" y2="105"/><g class="dx-flowrow"><text class="dx-rack" data-rack x="252" y="120.5"></text><text class="dx-count" data-count data-room="30" x="304" y="120.5" text-anchor="end"><tspan data-done>✓0</tspan><tspan class="dx-bad" data-fails></tspan></text></g><circle class="dx-lamp" data-lamp cx="315" cy="117" r="2.6"/><rect class="dx-heat-bar" data-heat="wait" x="206" y="114" width="0" height="6" rx="1.5"/><rect class="dx-heat-work" data-heat="work" x="206" y="114" width="0" height="6" rx="1.5"/><circle class="dx-port" cx="194" cy="94" r="3.4"/><circle class="dx-port-core" cx="194" cy="94" r="1.2"/><circle class="dx-port" cx="330" cy="94" r="3.4"/><circle class="dx-port-core" cx="330" cy="94" r="1.2"/></g><g class="dx-part dx-split" data-path="topic" tabindex="0" role="button" aria-label="topic: splits each item into parallel branches. One copy for every subscription. Each copy goes on alone."><rect class="dx-halo" x="389" y="216" width="34" height="38" rx="6"/><path class="dx-plate" d="M406 210L426 230L406 250L386 230Z"/><path class="dx-bevel" d="M406 212.5L423.5 230L406 247.5L388.5 230Z"/><path class="dx-gate-mark" d="M406 223V237M399 230H413"/></g><g class="dx-part dx-station" data-path="send" tabindex="0" role="button" aria-label="Send receipt: 12 at a time, 120 ms, p95 400 each, 6% provider errors. Twelve consumers call the email provider: 120 ms at the median, 400 ms on a bad call, and 6% of calls fail."><rect class="dx-halo" x="519" y="337" width="130" height="68" rx="9"/><rect class="dx-plate" x="516" y="331" width="136" height="70" rx="9"/><rect class="dx-bevel" x="517.5" y="332.5" width="133" height="67" rx="7.6"/><path class="dx-glyph" transform="translate(527 341)" d="M2.2 4h11.6v8H2.2zM2.2 4.4L8 9l5.8-4.6"/><text class="dx-name" x="549" y="353.5" data-fit="90" data-full="Send receipt" data-size="12.5" data-min="10.5">Send receipt</text><text class="dx-spec" x="528" y="369" data-fit="112" data-full="120 ms, p95 400" data-size="10" data-min="9">120 ms, p95 400</text><text class="dx-alt-text dx-alt-time" data-alt="time" x="528" y="369"></text><text class="dx-alt-text dx-alt-fail" data-alt="fail" x="528" y="369"></text><line class="dx-seam" x1="524" y1="377" x2="644" y2="377"/><g class="dx-flowrow"><text class="dx-rack" data-rack x="574" y="392.5"></text><text class="dx-count" data-count data-room="30" x="626" y="392.5" text-anchor="end"><tspan data-done>✓0</tspan><tspan class="dx-bad" data-fails></tspan></text></g><circle class="dx-gauge-track" cx="637" cy="389" r="6.2"/><circle class="dx-gauge" data-gauge cx="637" cy="389" r="6.2" stroke-dasharray="0 39" transform="rotate(-90 637 389)"/><circle class="dx-lamp" data-lamp cx="637" cy="389" r="2.6"/><rect class="dx-heat-bar" data-heat="wait" x="528" y="386" width="0" height="6" rx="1.5"/><rect class="dx-heat-work" data-heat="work" x="528" y="386" width="0" height="6" rx="1.5"/><circle class="dx-port" cx="516" cy="366" r="3.4"/><circle class="dx-port-core" cx="516" cy="366" r="1.2"/><circle class="dx-port" cx="652" cy="366" r="3.4"/><circle class="dx-port-core" cx="652" cy="366" r="1.2"/><circle class="dx-port" cx="584" cy="401" r="3.4"/><circle class="dx-port-core" cx="584" cy="401" r="1.2"/></g><g class="dx-part dx-timer" data-path="backoff" tabindex="0" role="button" aria-label="back off: holds each item 200-400 ms. A failed message is put back on the queue after a pause, so a struggling provider gets room to recover."><rect class="dx-halo" x="569" y="454" width="30" height="34" rx="18"/><circle class="dx-event" cx="584" cy="466" r="18"/><circle class="dx-event" cx="584" cy="466" r="14.5" style="stroke-width:.8"/><line class="dx-tick" x1="597" y1="466" x2="593.5" y2="466"/><line class="dx-tick" x1="595.5" y1="472.5" x2="593.5" y2="471.5"/><line class="dx-tick" x1="590.5" y1="477.5" x2="589.5" y2="475.5"/><line class="dx-tick" x1="584" y1="479" x2="584" y2="475.5"/><line class="dx-tick" x1="577.5" y1="477.5" x2="578.5" y2="475.5"/><line class="dx-tick" x1="572.5" y1="472.5" x2="574.5" y2="471.5"/><line class="dx-tick" x1="571" y1="466" x2="574.5" y2="466"/><line class="dx-tick" x1="572.5" y1="459.5" x2="574.5" y2="460.5"/><line class="dx-tick" x1="577.5" y1="454.5" x2="578.5" y2="456.5"/><line class="dx-tick" x1="584" y1="453" x2="584" y2="456.5"/><line class="dx-tick" x1="590.5" y1="454.5" x2="589.5" y2="456.5"/><line class="dx-tick" x1="595.5" y1="459.5" x2="593.5" y2="460.5"/><line class="dx-hand" data-hand x1="584" y1="466" x2="584" y2="456" style="transform-origin:584px 466px"/><circle class="dx-port-core" cx="584" cy="466" r="1.6"/><text class="dx-under dx-strong" x="584" y="507" text-anchor="middle">back off</text><text class="dx-under" x="584" y="519" text-anchor="middle">200-400 ms</text></g><g class="dx-part dx-end" data-path="sent" tabindex="0" role="button" aria-label="receipt sent: where work leaves."><rect class="dx-halo" x="776" y="355" width="28" height="32" rx="17"/><circle class="dx-event dx-end" cx="790" cy="366" r="15.5"/><text class="dx-done" data-count x="790" y="369.5" text-anchor="middle">0</text><text class="dx-under dx-strong" x="790" y="397" text-anchor="middle">receipt sent</text></g><g class="dx-part dx-end" data-path="dlq" tabindex="0" role="button" aria-label="dead letters: where work leaves as fail. After three failed tries the message is parked here for a person to look at."><rect class="dx-halo" x="776" y="455" width="28" height="32" rx="17"/><circle class="dx-event dx-end" cx="790" cy="466" r="15.5"/><text class="dx-done" data-count x="790" y="469.5" text-anchor="middle">0</text><text class="dx-under dx-strong" x="790" y="497" text-anchor="middle">dead letters</text></g><g class="dx-part dx-station" data-path="reserve" tabindex="0" role="button" aria-label="Reserve stock: 2 at a time, 6 ms, p95 20 each. Two consumers update the stock table: a few milliseconds each."><rect class="dx-halo" x="519" y="573" width="130" height="68" rx="9"/><rect class="dx-plate" x="516" y="567" width="136" height="70" rx="9"/><rect class="dx-bevel" x="517.5" y="568.5" width="133" height="67" rx="7.6"/><path class="dx-glyph" transform="translate(527 577)" d="M3 4.2C3 3 5.2 2.2 8 2.2s5 .8 5 2s-2.2 2-5 2s-5-.8-5-2zM3 4.2v7.6c0 1.2 2.2 2 5 2s5-.8 5-2V4.2M3 8c0 1.2 2.2 2 5 2s5-.8 5-2"/><text class="dx-name" x="549" y="589.5" style="font-size:12px" data-fit="90" data-full="Reserve stock" data-size="12.5" data-min="10.5">Reserve stock</text><text class="dx-spec" x="528" y="605" data-fit="112" data-full="6 ms, p95 20" data-size="10" data-min="9">6 ms, p95 20</text><text class="dx-alt-text dx-alt-time" data-alt="time" x="528" y="605"></text><text class="dx-alt-text dx-alt-fail" data-alt="fail" x="528" y="605"></text><line class="dx-seam" x1="524" y1="613" x2="644" y2="613"/><g class="dx-flowrow"><rect class="dx-bay" x="528" y="620.5" width="22" height="9" rx="2"/><rect class="dx-bay-fill" data-bay="0" x="529.5" y="622" width="0" height="6" rx="1.2"/><rect class="dx-bay" x="554" y="620.5" width="22" height="9" rx="2"/><rect class="dx-bay-fill" data-bay="1" x="555.5" y="622" width="0" height="6" rx="1.2"/><text class="dx-count" data-count data-room="44" x="626" y="628.5" text-anchor="end"><tspan data-done>✓0</tspan><tspan class="dx-bad" data-fails></tspan></text></g><circle class="dx-gauge-track" cx="637" cy="625" r="6.2"/><circle class="dx-gauge" data-gauge cx="637" cy="625" r="6.2" stroke-dasharray="0 39" transform="rotate(-90 637 625)"/><circle class="dx-lamp" data-lamp cx="637" cy="625" r="2.6"/><rect class="dx-heat-bar" data-heat="wait" x="528" y="622" width="0" height="6" rx="1.5"/><rect class="dx-heat-work" data-heat="work" x="528" y="622" width="0" height="6" rx="1.5"/><circle class="dx-port" cx="516" cy="602" r="3.4"/><circle class="dx-port-core" cx="516" cy="602" r="1.2"/><circle class="dx-port" cx="652" cy="602" r="3.4"/><circle class="dx-port-core" cx="652" cy="602" r="1.2"/></g><g class="dx-part dx-end" data-path="reserved" tabindex="0" role="button" aria-label="stock held: where work leaves."><rect class="dx-halo" x="776" y="591" width="28" height="32" rx="17"/><circle class="dx-event dx-end" cx="790" cy="602" r="15.5"/><text class="dx-done" data-count x="790" y="605.5" text-anchor="middle">0</text><text class="dx-under dx-strong" x="790" y="633" text-anchor="middle">stock held</text></g><g class="dx-part dx-station" data-path="count" tabindex="0" role="button" aria-label="Count order: one at a time, 10 ms, p95 25 each. One consumer adds the order to the day's numbers."><rect class="dx-halo" x="519" y="709" width="130" height="68" rx="9"/><rect class="dx-plate" x="516" y="703" width="136" height="70" rx="9"/><rect class="dx-bevel" x="517.5" y="704.5" width="133" height="67" rx="7.6"/><path class="dx-glyph" transform="translate(527 713)" d="M7 2.6a4.4 4.4 0 1 1 0 8.8a4.4 4.4 0 1 1 0-8.8M10.2 10.2l3.6 3.6"/><text class="dx-name" x="549" y="725.5" data-fit="90" data-full="Count order" data-size="12.5" data-min="10.5">Count order</text><text class="dx-spec" x="528" y="741" data-fit="112" data-full="10 ms, p95 25" data-size="10" data-min="9">10 ms, p95 25</text><text class="dx-alt-text dx-alt-time" data-alt="time" x="528" y="741"></text><text class="dx-alt-text dx-alt-fail" data-alt="fail" x="528" y="741"></text><line class="dx-seam" x1="524" y1="749" x2="644" y2="749"/><g class="dx-flowrow"><rect class="dx-bay" x="528" y="756.5" width="30" height="9" rx="2"/><rect class="dx-bay-fill" data-bay="0" x="529.5" y="758" width="0" height="6" rx="1.2"/><text class="dx-count" data-count data-room="62" x="626" y="764.5" text-anchor="end"><tspan data-done>✓0</tspan><tspan class="dx-bad" data-fails></tspan></text></g><circle class="dx-gauge-track" cx="637" cy="761" r="6.2"/><circle class="dx-gauge" data-gauge cx="637" cy="761" r="6.2" stroke-dasharray="0 39" transform="rotate(-90 637 761)"/><circle class="dx-lamp" data-lamp cx="637" cy="761" r="2.6"/><rect class="dx-heat-bar" data-heat="wait" x="528" y="758" width="0" height="6" rx="1.5"/><rect class="dx-heat-work" data-heat="work" x="528" y="758" width="0" height="6" rx="1.5"/><circle class="dx-port" cx="516" cy="738" r="3.4"/><circle class="dx-port-core" cx="516" cy="738" r="1.2"/><circle class="dx-port" cx="652" cy="738" r="3.4"/><circle class="dx-port-core" cx="652" cy="738" r="1.2"/></g><g class="dx-part dx-end" data-path="counted" tabindex="0" role="button" aria-label="counted: where work leaves."><rect class="dx-halo" x="776" y="727" width="28" height="32" rx="17"/><circle class="dx-event dx-end" cx="790" cy="738" r="15.5"/><text class="dx-done" data-count x="790" y="741.5" text-anchor="middle">0</text><text class="dx-under dx-strong" x="790" y="769" text-anchor="middle">counted</text></g><g class="dx-trails"></g><g class="dx-tokens"></g><g class="dx-tags"><g class="dx-tag" data-key="::retry" data-fail="1"><rect x="553.5" y="409" width="60.5" height="15" rx="7.5"/><text x="584" y="420" text-anchor="middle">retry ≤2</text></g><g class="dx-tag" data-key="::give-up" data-fail="1"><rect x="674" y="458.5" width="73" height="15" rx="7.5"/><text x="710.5" y="469.5" text-anchor="middle">3rd failure</text></g></g></svg></div>
+<div class="dx-stage"><svg viewBox="0 0 852 832" width="852" height="832" role="group" aria-label="One event, three subscribers" data-level="" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="dx-dots-dx-pubsub-0" width="12" height="12" patternUnits="userSpaceOnUse"><circle class="dx-dots" cx="1" cy="1" r=".8"/></pattern></defs><rect width="852" height="832" fill="url(#dx-dots-dx-pubsub-0)"/><rect class="dx-lane" x="0" y="26" width="852" height="136"/><rect class="dx-lane-plate" x="14" y="36" width="26" height="116" rx="6"/><text class="dx-lane-label" transform="translate(30.5 94) rotate(-90)" text-anchor="middle" data-fit="102" data-full="Orders" data-size="10.5" data-min="8.5">Orders</text><rect class="dx-lane dx-alt" x="0" y="162" width="852" height="136"/><line class="dx-lane-rule" x1="0" y1="162" x2="852" y2="162"/><rect class="dx-lane-plate" x="14" y="172" width="26" height="116" rx="6"/><text class="dx-lane-label" transform="translate(30.5 230) rotate(-90)" text-anchor="middle" data-fit="102" data-full="Broker" data-size="10.5" data-min="8.5">Broker</text><rect class="dx-lane" x="0" y="298" width="852" height="236"/><line class="dx-lane-rule" x1="0" y1="298" x2="852" y2="298"/><rect class="dx-lane-plate" x="14" y="308" width="26" height="216" rx="6"/><text class="dx-lane-label" transform="translate(30.5 416) rotate(-90)" text-anchor="middle" data-fit="202" data-full="Email" data-size="10.5" data-min="8.5">Email</text><rect class="dx-lane dx-alt" x="0" y="534" width="852" height="136"/><line class="dx-lane-rule" x1="0" y1="534" x2="852" y2="534"/><rect class="dx-lane-plate" x="14" y="544" width="26" height="116" rx="6"/><text class="dx-lane-label" transform="translate(30.5 602) rotate(-90)" text-anchor="middle" data-fit="102" data-full="Inventory" data-size="10.5" data-min="8.5">Inventory</text><rect class="dx-lane" x="0" y="670" width="852" height="136"/><line class="dx-lane-rule" x1="0" y1="670" x2="852" y2="670"/><rect class="dx-lane-plate" x="14" y="680" width="26" height="116" rx="6"/><text class="dx-lane-label" transform="translate(30.5 738) rotate(-90)" text-anchor="middle" data-fit="102" data-full="Analytics" data-size="10.5" data-min="8.5">Analytics</text><g class="dx-route" data-key="::order&gt;publish"><path class="dx-bed" d="M138 94 L194 94"/><path class="dx-rail" d="M138 94 L194 94"/><path class="dx-nib" d="M191 94L184.5 90.5L184.5 97.5Z"/></g><g class="dx-route" data-key="::publish&gt;topic"><path class="dx-bed" d="M330 94 L362 94 Q372 94 372 104 L372 223 Q372 230 379 230 L386 230"/><path class="dx-rail" d="M330 94 L362 94 Q372 94 372 104 L372 223 Q372 230 379 230 L386 230"/><path class="dx-chev" d="M374.5 139.5L372 143.5L369.5 139.5"/><path class="dx-chev" d="M374.5 199.5L372 203.5L369.5 199.5"/><path class="dx-nib" d="M383 230L376.5 226.5L376.5 233.5Z"/></g><g class="dx-route" data-key="::topic&gt;send"><path class="dx-bed" d="M406 250 L406 356 Q406 366 416 366 L516 366"/><path class="dx-rail" d="M406 250 L406 356 Q406 366 416 366 L516 366"/><path class="dx-chev" d="M408.5 277.5L406 281.5L403.5 277.5"/><path class="dx-chev" d="M408.5 337.5L406 341.5L403.5 337.5"/><path class="dx-nib" d="M513 366L506.5 362.5L506.5 369.5Z"/></g><g class="dx-route" data-key="::topic&gt;reserve"><path class="dx-bed" d="M406 250 L406 592 Q406 602 416 602 L516 602"/><path class="dx-rail" d="M406 250 L406 592 Q406 602 416 602 L516 602"/><path class="dx-chev" d="M408.5 277.5L406 281.5L403.5 277.5"/><path class="dx-chev" d="M408.5 337.5L406 341.5L403.5 337.5"/><path class="dx-chev" d="M408.5 397.5L406 401.5L403.5 397.5"/><path class="dx-chev" d="M408.5 457.5L406 461.5L403.5 457.5"/><path class="dx-chev" d="M408.5 517.5L406 521.5L403.5 517.5"/><path class="dx-chev" d="M408.5 577.5L406 581.5L403.5 577.5"/><path class="dx-nib" d="M513 602L506.5 598.5L506.5 605.5Z"/></g><g class="dx-route" data-key="::topic&gt;count"><path class="dx-bed" d="M406 250 L406 728 Q406 738 416 738 L516 738"/><path class="dx-rail" d="M406 250 L406 728 Q406 738 416 738 L516 738"/><path class="dx-chev" d="M408.5 277.5L406 281.5L403.5 277.5"/><path class="dx-chev" d="M408.5 337.5L406 341.5L403.5 337.5"/><path class="dx-chev" d="M408.5 397.5L406 401.5L403.5 397.5"/><path class="dx-chev" d="M408.5 457.5L406 461.5L403.5 457.5"/><path class="dx-chev" d="M408.5 517.5L406 521.5L403.5 517.5"/><path class="dx-chev" d="M408.5 577.5L406 581.5L403.5 577.5"/><path class="dx-chev" d="M408.5 637.5L406 641.5L403.5 637.5"/><path class="dx-chev" d="M408.5 697.5L406 701.5L403.5 697.5"/><path class="dx-chev" d="M425.5 735.5L429.5 738L425.5 740.5"/><path class="dx-nib" d="M513 738L506.5 734.5L506.5 741.5Z"/></g><g class="dx-route" data-key="::send&gt;sent"><path class="dx-bed" d="M652 366 L773 366"/><path class="dx-rail" d="M652 366 L773 366"/><path class="dx-chev" d="M679.5 363.5L683.5 366L679.5 368.5"/><path class="dx-chev" d="M739.5 363.5L743.5 366L739.5 368.5"/><path class="dx-nib" d="M770 366L763.5 362.5L763.5 369.5Z"/></g><g class="dx-route" data-key="::retry" data-fail="1"><path class="dx-bed" d="M584 401 L584 448"/><path class="dx-rail" d="M584 401 L584 448"/><path class="dx-nib" d="M584 445L587.5 438.5L580.5 438.5Z"/></g><g class="dx-route" data-key="::give-up" data-fail="1"><path class="dx-bed" d="M652 366 L659 366 Q666 366 666 373 L666 456 Q666 466 676 466 L773 466"/><path class="dx-rail" d="M652 366 L659 366 Q666 366 666 373 L666 456 Q666 466 676 466 L773 466"/><path class="dx-chev" d="M668.5 379.5L666 383.5L663.5 379.5"/><path class="dx-chev" d="M668.5 439.5L666 443.5L663.5 439.5"/><path class="dx-chev" d="M699.5 463.5L703.5 466L699.5 468.5"/><path class="dx-nib" d="M770 466L763.5 462.5L763.5 469.5Z"/></g><g class="dx-route" data-key="::backoff&gt;send"><path class="dx-bed" d="M584 484 L584 487 Q584 490 581 490 L512 490 Q502 490 502 480 L502 373 Q502 366 509 366 L516 366"/><path class="dx-rail" d="M584 484 L584 487 Q584 490 581 490 L512 490 Q502 490 502 480 L502 373 Q502 366 509 366 L516 366"/><path class="dx-chev" d="M562.5 492.5L558.5 490L562.5 487.5"/><path class="dx-nib" d="M513 366L506.5 362.5L506.5 369.5Z"/></g><g class="dx-route" data-key="::reserve&gt;reserved"><path class="dx-bed" d="M652 602 L773 602"/><path class="dx-rail" d="M652 602 L773 602"/><path class="dx-chev" d="M679.5 599.5L683.5 602L679.5 604.5"/><path class="dx-chev" d="M739.5 599.5L743.5 602L739.5 604.5"/><path class="dx-nib" d="M770 602L763.5 598.5L763.5 605.5Z"/></g><g class="dx-route" data-key="::count&gt;counted"><path class="dx-bed" d="M652 738 L773 738"/><path class="dx-rail" d="M652 738 L773 738"/><path class="dx-chev" d="M679.5 735.5L683.5 738L679.5 740.5"/><path class="dx-chev" d="M739.5 735.5L743.5 738L739.5 740.5"/><path class="dx-nib" d="M770 738L763.5 734.5L763.5 741.5Z"/></g><g class="dx-queue" data-queue="send"><line class="dx-slot" x1="500" y1="371" x2="500" y2="373.5"/><line class="dx-slot" x1="490.5" y1="371" x2="490.5" y2="373.5"/><line class="dx-slot" x1="481" y1="371" x2="481" y2="373.5"/><line class="dx-slot" x1="471.5" y1="371" x2="471.5" y2="373.5"/><line class="dx-slot" x1="462" y1="371" x2="462" y2="373.5"/><line class="dx-slot" x1="452.5" y1="371" x2="452.5" y2="373.5"/><text class="dx-more" data-qmore x="481" y="357" text-anchor="middle"></text></g><g class="dx-queue" data-queue="reserve"><line class="dx-slot" x1="500" y1="607" x2="500" y2="609.5"/><line class="dx-slot" x1="490.5" y1="607" x2="490.5" y2="609.5"/><line class="dx-slot" x1="481" y1="607" x2="481" y2="609.5"/><line class="dx-slot" x1="471.5" y1="607" x2="471.5" y2="609.5"/><line class="dx-slot" x1="462" y1="607" x2="462" y2="609.5"/><line class="dx-slot" x1="452.5" y1="607" x2="452.5" y2="609.5"/><text class="dx-more" data-qmore x="481" y="593" text-anchor="middle"></text></g><g class="dx-queue" data-queue="count"><line class="dx-slot" x1="500" y1="743" x2="500" y2="745.5"/><line class="dx-slot" x1="490.5" y1="743" x2="490.5" y2="745.5"/><line class="dx-slot" x1="481" y1="743" x2="481" y2="745.5"/><line class="dx-slot" x1="471.5" y1="743" x2="471.5" y2="745.5"/><line class="dx-slot" x1="462" y1="743" x2="462" y2="745.5"/><line class="dx-slot" x1="452.5" y1="743" x2="452.5" y2="745.5"/><text class="dx-more" data-qmore x="481" y="729" text-anchor="middle"></text></g><g class="dx-part dx-start" data-path="order" tabindex="0" role="button" aria-label="order placed: new work arrives every ~20 ms. About 50 orders a second."><rect class="dx-halo" x="107" y="83" width="28" height="32" rx="17"/><circle class="dx-event" cx="121" cy="94" r="17"/><line class="dx-tick" x1="134.5" y1="94" x2="131.5" y2="94"/><line class="dx-tick" x1="133" y1="101" x2="131" y2="100"/><line class="dx-tick" x1="128" y1="106" x2="127" y2="104"/><line class="dx-tick" x1="121" y1="107.5" x2="121" y2="104.5"/><line class="dx-tick" x1="114" y1="106" x2="115" y2="104"/><line class="dx-tick" x1="109" y1="101" x2="111" y2="100"/><line class="dx-tick" x1="107.5" y1="94" x2="110.5" y2="94"/><line class="dx-tick" x1="109" y1="87" x2="111" y2="88"/><line class="dx-tick" x1="114" y1="82" x2="115" y2="84"/><line class="dx-tick" x1="121" y1="80.5" x2="121" y2="83.5"/><line class="dx-tick" x1="128" y1="82" x2="127" y2="84"/><line class="dx-tick" x1="133" y1="87" x2="131" y2="88"/><path class="dx-gate-mark" d="M118.5 90L124 94L118.5 98" style="stroke-width:1.5"/><text class="dx-under dx-strong" x="121" y="69" text-anchor="middle">order placed</text><text class="dx-under" data-rate x="121" y="125" text-anchor="middle">every ~20 ms</text></g><g class="dx-part dx-station" data-path="publish" tabindex="0" role="button" aria-label="Publish: no limit on how many at once, 2 ms, p95 6 each. The orders service writes the event to the broker and waits only for the broker to say it has it."><rect class="dx-halo" x="197" y="65" width="130" height="68" rx="9"/><rect class="dx-plate" x="194" y="59" width="136" height="70" rx="9"/><rect class="dx-bevel" x="195.5" y="60.5" width="133" height="67" rx="7.6"/><path class="dx-glyph" transform="translate(205 69)" d="M2.2 4h11.6v8H2.2zM2.2 4.4L8 9l5.8-4.6"/><text class="dx-name" x="227" y="81.5" data-fit="90" data-full="Publish" data-size="12.5" data-min="10.5">Publish</text><text class="dx-spec" x="206" y="97" data-fit="112" data-full="2 ms, p95 6" data-size="10" data-min="9">2 ms, p95 6</text><text class="dx-alt-text dx-alt-time" data-alt="time" x="206" y="97"></text><text class="dx-alt-text dx-alt-fail" data-alt="fail" x="206" y="97"></text><line class="dx-seam" x1="202" y1="105" x2="322" y2="105"/><g class="dx-flowrow"><text class="dx-rack" data-rack x="243" y="120.5"></text><text class="dx-count" data-count data-two data-room="39" x="304" y="120.5" text-anchor="end"><tspan data-done>✓0</tspan><tspan class="dx-bad" data-fails dx="4"></tspan></text></g><circle class="dx-lamp" data-lamp cx="315" cy="117" r="2.6"/><rect class="dx-heat-bar" data-heat="wait" x="206" y="114" width="0" height="6" rx="1.5"/><rect class="dx-heat-work" data-heat="work" x="206" y="114" width="0" height="6" rx="1.5"/><circle class="dx-port" cx="194" cy="94" r="3.4"/><circle class="dx-port-core" cx="194" cy="94" r="1.2"/><circle class="dx-port" cx="330" cy="94" r="3.4"/><circle class="dx-port-core" cx="330" cy="94" r="1.2"/></g><g class="dx-part dx-split" data-path="topic" tabindex="0" role="button" aria-label="topic: splits each item into parallel branches. One copy for every subscription. Each copy goes on alone."><rect class="dx-halo" x="389" y="216" width="34" height="38" rx="6"/><path class="dx-plate" d="M406 210L426 230L406 250L386 230Z"/><path class="dx-bevel" d="M406 212.5L423.5 230L406 247.5L388.5 230Z"/><path class="dx-gate-mark" d="M406 223V237M399 230H413"/></g><g class="dx-part dx-station" data-path="send" tabindex="0" role="button" aria-label="Send receipt: 12 at a time, 120 ms, p95 400 each, 6% provider errors. Twelve consumers call the email provider: 120 ms at the median, 400 ms on a bad call, and 6% of calls fail."><rect class="dx-halo" x="519" y="337" width="130" height="68" rx="9"/><rect class="dx-plate" x="516" y="331" width="136" height="70" rx="9"/><rect class="dx-bevel" x="517.5" y="332.5" width="133" height="67" rx="7.6"/><path class="dx-glyph" transform="translate(527 341)" d="M2.2 4h11.6v8H2.2zM2.2 4.4L8 9l5.8-4.6"/><text class="dx-name" x="549" y="353.5" data-fit="90" data-full="Send receipt" data-size="12.5" data-min="10.5">Send receipt</text><text class="dx-spec" x="528" y="369" data-fit="112" data-full="120 ms, p95 400" data-size="10" data-min="9">120 ms, p95 400</text><text class="dx-alt-text dx-alt-time" data-alt="time" x="528" y="369"></text><text class="dx-alt-text dx-alt-fail" data-alt="fail" x="528" y="369"></text><line class="dx-seam" x1="524" y1="377" x2="644" y2="377"/><g class="dx-flowrow"><text class="dx-rack" data-rack x="565" y="392.5"></text><text class="dx-count" data-count data-two data-room="39" x="626" y="392.5" text-anchor="end"><tspan data-done>✓0</tspan><tspan class="dx-bad" data-fails dx="4"></tspan></text></g><circle class="dx-gauge-track" cx="637" cy="389" r="6.2"/><circle class="dx-gauge" data-gauge cx="637" cy="389" r="6.2" stroke-dasharray="0 39" transform="rotate(-90 637 389)"/><circle class="dx-lamp" data-lamp cx="637" cy="389" r="2.6"/><rect class="dx-heat-bar" data-heat="wait" x="528" y="386" width="0" height="6" rx="1.5"/><rect class="dx-heat-work" data-heat="work" x="528" y="386" width="0" height="6" rx="1.5"/><circle class="dx-port" cx="516" cy="366" r="3.4"/><circle class="dx-port-core" cx="516" cy="366" r="1.2"/><circle class="dx-port" cx="652" cy="366" r="3.4"/><circle class="dx-port-core" cx="652" cy="366" r="1.2"/><circle class="dx-port" cx="584" cy="401" r="3.4"/><circle class="dx-port-core" cx="584" cy="401" r="1.2"/></g><g class="dx-part dx-timer" data-path="backoff" tabindex="0" role="button" aria-label="back off: holds each item 200-400 ms. A failed message is put back on the queue after a pause, so a struggling provider gets room to recover."><rect class="dx-halo" x="569" y="454" width="30" height="34" rx="18"/><circle class="dx-event" cx="584" cy="466" r="18"/><circle class="dx-event" cx="584" cy="466" r="14.5" style="stroke-width:.8"/><line class="dx-tick" x1="597" y1="466" x2="593.5" y2="466"/><line class="dx-tick" x1="595.5" y1="472.5" x2="593.5" y2="471.5"/><line class="dx-tick" x1="590.5" y1="477.5" x2="589.5" y2="475.5"/><line class="dx-tick" x1="584" y1="479" x2="584" y2="475.5"/><line class="dx-tick" x1="577.5" y1="477.5" x2="578.5" y2="475.5"/><line class="dx-tick" x1="572.5" y1="472.5" x2="574.5" y2="471.5"/><line class="dx-tick" x1="571" y1="466" x2="574.5" y2="466"/><line class="dx-tick" x1="572.5" y1="459.5" x2="574.5" y2="460.5"/><line class="dx-tick" x1="577.5" y1="454.5" x2="578.5" y2="456.5"/><line class="dx-tick" x1="584" y1="453" x2="584" y2="456.5"/><line class="dx-tick" x1="590.5" y1="454.5" x2="589.5" y2="456.5"/><line class="dx-tick" x1="595.5" y1="459.5" x2="593.5" y2="460.5"/><line class="dx-hand" data-hand x1="584" y1="466" x2="584" y2="456" style="transform-origin:584px 466px"/><circle class="dx-port-core" cx="584" cy="466" r="1.6"/><text class="dx-under dx-strong" x="584" y="507" text-anchor="middle">back off</text><text class="dx-under" x="584" y="519" text-anchor="middle">200-400 ms</text></g><g class="dx-part dx-end" data-path="sent" tabindex="0" role="button" aria-label="receipt sent: where work leaves."><rect class="dx-halo" x="776" y="355" width="28" height="32" rx="17"/><circle class="dx-event dx-end" cx="790" cy="366" r="15.5"/><text class="dx-done" data-count x="790" y="369.5" text-anchor="middle">0</text><text class="dx-under dx-strong" x="790" y="397" text-anchor="middle">receipt sent</text></g><g class="dx-part dx-end" data-path="dlq" tabindex="0" role="button" aria-label="dead letters: where work leaves as fail. After three failed tries the message is parked here for a person to look at."><rect class="dx-halo" x="776" y="455" width="28" height="32" rx="17"/><circle class="dx-event dx-end" cx="790" cy="466" r="15.5"/><text class="dx-done" data-count x="790" y="469.5" text-anchor="middle">0</text><text class="dx-under dx-strong" x="790" y="497" text-anchor="middle">dead letters</text></g><g class="dx-part dx-station" data-path="reserve" tabindex="0" role="button" aria-label="Reserve stock: 2 at a time, 6 ms, p95 20 each. Two consumers update the stock table: a few milliseconds each."><rect class="dx-halo" x="519" y="573" width="130" height="68" rx="9"/><rect class="dx-plate" x="516" y="567" width="136" height="70" rx="9"/><rect class="dx-bevel" x="517.5" y="568.5" width="133" height="67" rx="7.6"/><path class="dx-glyph" transform="translate(527 577)" d="M3 4.2C3 3 5.2 2.2 8 2.2s5 .8 5 2s-2.2 2-5 2s-5-.8-5-2zM3 4.2v7.6c0 1.2 2.2 2 5 2s5-.8 5-2V4.2M3 8c0 1.2 2.2 2 5 2s5-.8 5-2"/><text class="dx-name" x="549" y="589.5" style="font-size:12px" data-fit="90" data-full="Reserve stock" data-size="12.5" data-min="10.5">Reserve stock</text><text class="dx-spec" x="528" y="605" data-fit="112" data-full="6 ms, p95 20" data-size="10" data-min="9">6 ms, p95 20</text><text class="dx-alt-text dx-alt-time" data-alt="time" x="528" y="605"></text><text class="dx-alt-text dx-alt-fail" data-alt="fail" x="528" y="605"></text><line class="dx-seam" x1="524" y1="613" x2="644" y2="613"/><g class="dx-flowrow"><rect class="dx-bay" x="528" y="620.5" width="22" height="9" rx="2"/><rect class="dx-bay-fill" data-bay="0" x="529.5" y="622" width="0" height="6" rx="1.2"/><rect class="dx-bay" x="554" y="620.5" width="22" height="9" rx="2"/><rect class="dx-bay-fill" data-bay="1" x="555.5" y="622" width="0" height="6" rx="1.2"/><text class="dx-count" data-count data-two data-room="44" x="626" y="628.5" text-anchor="end"><tspan data-done>✓0</tspan><tspan class="dx-bad" data-fails dx="4"></tspan></text></g><circle class="dx-gauge-track" cx="637" cy="625" r="6.2"/><circle class="dx-gauge" data-gauge cx="637" cy="625" r="6.2" stroke-dasharray="0 39" transform="rotate(-90 637 625)"/><circle class="dx-lamp" data-lamp cx="637" cy="625" r="2.6"/><rect class="dx-heat-bar" data-heat="wait" x="528" y="622" width="0" height="6" rx="1.5"/><rect class="dx-heat-work" data-heat="work" x="528" y="622" width="0" height="6" rx="1.5"/><circle class="dx-port" cx="516" cy="602" r="3.4"/><circle class="dx-port-core" cx="516" cy="602" r="1.2"/><circle class="dx-port" cx="652" cy="602" r="3.4"/><circle class="dx-port-core" cx="652" cy="602" r="1.2"/></g><g class="dx-part dx-end" data-path="reserved" tabindex="0" role="button" aria-label="stock held: where work leaves."><rect class="dx-halo" x="776" y="591" width="28" height="32" rx="17"/><circle class="dx-event dx-end" cx="790" cy="602" r="15.5"/><text class="dx-done" data-count x="790" y="605.5" text-anchor="middle">0</text><text class="dx-under dx-strong" x="790" y="633" text-anchor="middle">stock held</text></g><g class="dx-part dx-station" data-path="count" tabindex="0" role="button" aria-label="Count order: one at a time, 10 ms, p95 25 each. One consumer adds the order to the day's numbers."><rect class="dx-halo" x="519" y="709" width="130" height="68" rx="9"/><rect class="dx-plate" x="516" y="703" width="136" height="70" rx="9"/><rect class="dx-bevel" x="517.5" y="704.5" width="133" height="67" rx="7.6"/><path class="dx-glyph" transform="translate(527 713)" d="M7 2.6a4.4 4.4 0 1 1 0 8.8a4.4 4.4 0 1 1 0-8.8M10.2 10.2l3.6 3.6"/><text class="dx-name" x="549" y="725.5" data-fit="90" data-full="Count order" data-size="12.5" data-min="10.5">Count order</text><text class="dx-spec" x="528" y="741" data-fit="112" data-full="10 ms, p95 25" data-size="10" data-min="9">10 ms, p95 25</text><text class="dx-alt-text dx-alt-time" data-alt="time" x="528" y="741"></text><text class="dx-alt-text dx-alt-fail" data-alt="fail" x="528" y="741"></text><line class="dx-seam" x1="524" y1="749" x2="644" y2="749"/><g class="dx-flowrow"><rect class="dx-bay" x="528" y="756.5" width="30" height="9" rx="2"/><rect class="dx-bay-fill" data-bay="0" x="529.5" y="758" width="0" height="6" rx="1.2"/><text class="dx-count" data-count data-two data-room="62" x="626" y="764.5" text-anchor="end"><tspan data-done>✓0</tspan><tspan class="dx-bad" data-fails dx="4"></tspan></text></g><circle class="dx-gauge-track" cx="637" cy="761" r="6.2"/><circle class="dx-gauge" data-gauge cx="637" cy="761" r="6.2" stroke-dasharray="0 39" transform="rotate(-90 637 761)"/><circle class="dx-lamp" data-lamp cx="637" cy="761" r="2.6"/><rect class="dx-heat-bar" data-heat="wait" x="528" y="758" width="0" height="6" rx="1.5"/><rect class="dx-heat-work" data-heat="work" x="528" y="758" width="0" height="6" rx="1.5"/><circle class="dx-port" cx="516" cy="738" r="3.4"/><circle class="dx-port-core" cx="516" cy="738" r="1.2"/><circle class="dx-port" cx="652" cy="738" r="3.4"/><circle class="dx-port-core" cx="652" cy="738" r="1.2"/></g><g class="dx-part dx-end" data-path="counted" tabindex="0" role="button" aria-label="counted: where work leaves."><rect class="dx-halo" x="776" y="727" width="28" height="32" rx="17"/><circle class="dx-event dx-end" cx="790" cy="738" r="15.5"/><text class="dx-done" data-count x="790" y="741.5" text-anchor="middle">0</text><text class="dx-under dx-strong" x="790" y="769" text-anchor="middle">counted</text></g><g class="dx-trails"></g><g class="dx-tokens"></g><g class="dx-tags"><g class="dx-tag" data-key="::retry" data-fail="1"><rect x="553.5" y="409" width="60.5" height="15" rx="7.5"/><text x="584" y="420" text-anchor="middle">retry ≤2</text></g><g class="dx-tag" data-key="::give-up" data-fail="1"><rect x="674" y="458.5" width="73" height="15" rx="7.5"/><text x="710.5" y="469.5" text-anchor="middle">3rd failure</text></g></g></svg></div>
 <div class="dx-dock"><span class="dx-keys" role="toolbar" aria-label="Playback and layers"></span><span class="dx-readout" data-readout></span></div>
 </div>
 <aside class="dx-inspector"></aside>
@@ -168,7 +209,7 @@
 </div>
 <figcaption class="dx-caption">The orders service spends 2.7 ms per event and never waits for a subscriber. From the order, stock is held in 9.5 ms and the order counted in 20 ms at the median, while a receipt takes 120 ms: email waits on its provider, and 8 of its deliveries needed a retry. Give Email an outage: its queue grows and its retries pile up, and the other two lanes do not notice.</figcaption><div class="dx-legend"><span><i style="background:var(--dx-c0)"></i>a message</span><span><i style="background:var(--dx-bad)"></i>came out failed</span><span><i style="background:var(--dx-accent)"></i>the one you follow</span></div>
 </figure>
-<script type="application/json" data-dissect="dx-pubsub">{"model":{"id":"pubsub","title":"One event, three subscribers","item":"message","about":"The orders service publishes an event once. The broker delivers a copy to each subscription: email, inventory and analytics each read their own queue, at their own pace.","unit":"ms","seed":5,"horizon":2400,"lanes":[{"id":"pub","label":"Orders"},{"id":"broker","label":"Broker"},{"id":"email","label":"Email"},{"id":"stock","label":"Inventory"},{"id":"stats","label":"Analytics"}],"parts":[{"id":"order","kind":"start","lane":"pub","at":[0,0],"label":"order placed","every":"exp 20","about":"About 50 orders a second."},{"id":"publish","kind":"station","lane":"pub","at":[1,0],"label":"Publish","glyph":"mail","servers":"inf","work":"logn 2 6","about":"The orders service writes the event to the broker and waits only for the broker to say it has it."},{"id":"topic","kind":"split","lane":"broker","at":[2,0],"label":"topic","fanout":true,"about":"One copy for every subscription. Each copy goes on alone."},{"id":"send","kind":"station","lane":"email","at":[3,0],"label":"Send receipt","glyph":"mail","servers":12,"work":"logn 120 400","fail":0.06,"failLabel":"provider errors","about":"Twelve consumers call the email provider: 120 ms at the median, 400 ms on a bad call, and 6% of calls fail."},{"id":"backoff","kind":"timer","lane":"email","at":[3,1],"label":"back off","wait":"uni 200 400","about":"A failed message is put back on the queue after a pause, so a struggling provider gets room to recover."},{"id":"sent","kind":"end","lane":"email","at":[4,0],"label":"receipt sent"},{"id":"dlq","kind":"end","lane":"email","at":[4,1],"label":"dead letters","outcome":"fail","about":"After three failed tries the message is parked here for a person to look at."},{"id":"reserve","kind":"station","lane":"stock","at":[3,0],"label":"Reserve stock","glyph":"db","servers":2,"work":"logn 6 20","about":"Two consumers update the stock table: a few milliseconds each."},{"id":"reserved","kind":"end","lane":"stock","at":[4,0],"label":"stock held"},{"id":"count","kind":"station","lane":"stats","at":[3,0],"label":"Count order","glyph":"search","servers":1,"work":"logn 10 25","about":"One consumer adds the order to the day's numbers."},{"id":"counted","kind":"end","lane":"stats","at":[4,0],"label":"counted"}],"routes":[{"from":"order","to":"publish"},{"from":"publish","to":"topic","latency":0.5},{"from":"topic","to":"send","latency":1},{"from":"topic","to":"reserve","latency":1},{"from":"topic","to":"count","latency":1},{"from":"send","to":"sent","when":"ok","label":""},{"id":"retry","from":"send","to":"backoff","when":"fail","max":2,"label":"retry ≤2"},{"id":"give-up","from":"send","to":"dlq","when":"fail","label":"3rd failure","seldom":true},{"from":"backoff","to":"send"},{"from":"reserve","to":"reserved"},{"from":"count","to":"counted"}],"claims":[{"metric":"send.utilization","min":0.3,"max":0.9,"say":"email keeps up, with a backlog that comes and goes"},{"metric":"count.utilization","min":0.5,"max":0.92,"say":"the lone analytics consumer is busy but keeps up"}]},"options":{"metas":{"":{"path":"","width":852,"height":832,"parts":{"order":{"x":121,"y":94,"w":34,"h":34,"kind":"start","flip":false},"publish":{"x":262,"y":94,"w":136,"h":70,"kind":"station","flip":false},"topic":{"x":406,"y":230,"w":40,"h":40,"kind":"split","flip":false},"send":{"x":584,"y":366,"w":136,"h":70,"kind":"station","flip":false},"backoff":{"x":584,"y":466,"w":36,"h":36,"kind":"timer","flip":false},"sent":{"x":790.185,"y":366,"w":34,"h":34,"kind":"end","flip":false},"dlq":{"x":790.185,"y":466,"w":34,"h":34,"kind":"end","flip":false},"reserve":{"x":584,"y":602,"w":136,"h":70,"kind":"station","flip":false},"reserved":{"x":790.185,"y":602,"w":34,"h":34,"kind":"end","flip":false},"count":{"x":584,"y":738,"w":136,"h":70,"kind":"station","flip":false},"counted":{"x":790.185,"y":738,"w":34,"h":34,"kind":"end","flip":false}},"routes":{"::order>publish":{"points":[[138,94],[194,94]],"length":56,"from":"order","to":"publish"},"::publish>topic":{"points":[[330,94],[372,94],[372,230],[386,230]],"length":192,"from":"publish","to":"topic"},"::topic>send":{"points":[[406,250],[406,366],[516,366]],"length":226,"from":"topic","to":"send"},"::topic>reserve":{"points":[[406,250],[406,602],[516,602]],"length":462,"from":"topic","to":"reserve"},"::topic>count":{"points":[[406,250],[406,738],[516,738]],"length":598,"from":"topic","to":"count"},"::send>sent":{"points":[[652,366],[773.2,366]],"length":121.2,"from":"send","to":"sent"},"::retry":{"points":[[584,401],[584,448]],"length":47,"from":"send","to":"backoff"},"::give-up":{"points":[[652,366],[666,366],[666,466],[773.2,466]],"length":221.2,"from":"send","to":"dlq"},"::backoff>send":{"points":[[584,484],[584,490],[502,490],[502,366],[516,366]],"length":226,"from":"backoff","to":"send"},"::reserve>reserved":{"points":[[652,602],[773.2,602]],"length":121.2,"from":"reserve","to":"reserved"},"::count>counted":{"points":[[652,738],[773.2,738]],"length":121.2,"from":"count","to":"counted"}},"stations":{"publish":{"open":false,"bays":[],"rack":{"x":210,"y":117,"step":9,"max":5},"x":262,"y":94,"w":136,"h":70,"altW":112,"heat":{"x0":206,"w":86}},"send":{"open":false,"bays":[],"rack":{"x":532,"y":389,"step":9,"max":5},"x":584,"y":366,"w":136,"h":70,"altW":112,"heat":{"x0":528,"w":86}},"reserve":{"open":false,"bays":[{"x0":529.4,"y":625,"w":19.2},{"x0":555.4,"y":625,"w":19.2}],"rack":null,"x":584,"y":602,"w":136,"h":70,"altW":112,"heat":{"x0":528,"w":86}},"count":{"open":false,"bays":[{"x0":529.4,"y":761,"w":27.2}],"rack":null,"x":584,"y":738,"w":136,"h":70,"altW":112,"heat":{"x0":528,"w":86}}},"queues":{"send":{"slots":[[500,366],[490.5,366],[481,366],[471.5,366],[462,366],[452.5,366]],"route":"::topic>send"},"reserve":{"slots":[[500,602],[490.5,602],[481,602],[471.5,602],[462,602],[452.5,602]],"route":"::topic>reserve"},"count":{"slots":[[500,738],[490.5,738],[481,738],[471.5,738],[462,738],[452.5,738]],"route":"::topic>count"}},"gates":{"topic":{"x":406,"y":230,"r":20,"needle":{},"ins":[]}},"timers":{"backoff":{"x":584,"y":466,"r":18}},"minis":{},"starts":{"order":{"x":121,"y":94}},"ends":{"sent":{"x":790.185,"y":366},"dlq":{"x":790.185,"y":466},"reserved":{"x":790.185,"y":602},"counted":{"x":790.185,"y":738}},"uses":[]}},"pace":25}}</script>
+<script type="application/json" data-dissect="dx-pubsub">{"model":{"id":"pubsub","title":"One event, three subscribers","item":"message","about":"The orders service publishes an event once. The broker delivers a copy to each subscription: email, inventory and analytics each read their own queue, at their own pace.","unit":"ms","seed":5,"horizon":2400,"lanes":[{"id":"pub","label":"Orders"},{"id":"broker","label":"Broker"},{"id":"email","label":"Email"},{"id":"stock","label":"Inventory"},{"id":"stats","label":"Analytics"}],"parts":[{"id":"order","kind":"start","lane":"pub","at":[0,0],"label":"order placed","every":"exp 20","about":"About 50 orders a second."},{"id":"publish","kind":"station","lane":"pub","at":[1,0],"label":"Publish","glyph":"mail","servers":"inf","work":"logn 2 6","about":"The orders service writes the event to the broker and waits only for the broker to say it has it."},{"id":"topic","kind":"split","lane":"broker","at":[2,0],"label":"topic","fanout":true,"about":"One copy for every subscription. Each copy goes on alone."},{"id":"send","kind":"station","lane":"email","at":[3,0],"label":"Send receipt","glyph":"mail","servers":12,"work":"logn 120 400","fail":0.06,"failLabel":"provider errors","about":"Twelve consumers call the email provider: 120 ms at the median, 400 ms on a bad call, and 6% of calls fail."},{"id":"backoff","kind":"timer","lane":"email","at":[3,1],"label":"back off","wait":"uni 200 400","about":"A failed message is put back on the queue after a pause, so a struggling provider gets room to recover."},{"id":"sent","kind":"end","lane":"email","at":[4,0],"label":"receipt sent"},{"id":"dlq","kind":"end","lane":"email","at":[4,1],"label":"dead letters","outcome":"fail","about":"After three failed tries the message is parked here for a person to look at."},{"id":"reserve","kind":"station","lane":"stock","at":[3,0],"label":"Reserve stock","glyph":"db","servers":2,"work":"logn 6 20","about":"Two consumers update the stock table: a few milliseconds each."},{"id":"reserved","kind":"end","lane":"stock","at":[4,0],"label":"stock held"},{"id":"count","kind":"station","lane":"stats","at":[3,0],"label":"Count order","glyph":"search","servers":1,"work":"logn 10 25","about":"One consumer adds the order to the day's numbers."},{"id":"counted","kind":"end","lane":"stats","at":[4,0],"label":"counted"}],"routes":[{"from":"order","to":"publish"},{"from":"publish","to":"topic","latency":0.5},{"from":"topic","to":"send","latency":1},{"from":"topic","to":"reserve","latency":1},{"from":"topic","to":"count","latency":1},{"from":"send","to":"sent","when":"ok","label":""},{"id":"retry","from":"send","to":"backoff","when":"fail","max":2,"label":"retry ≤2"},{"id":"give-up","from":"send","to":"dlq","when":"fail","label":"3rd failure","seldom":true},{"from":"backoff","to":"send"},{"from":"reserve","to":"reserved"},{"from":"count","to":"counted"}],"claims":[{"metric":"send.utilization","min":0.3,"max":0.9,"say":"email keeps up, with a backlog that comes and goes"},{"metric":"count.utilization","min":0.5,"max":0.92,"say":"the lone analytics consumer is busy but keeps up"}]},"options":{"metas":{"":{"path":"","width":852,"height":832,"parts":{"order":{"x":121,"y":94,"w":34,"h":34,"kind":"start","flip":false},"publish":{"x":262,"y":94,"w":136,"h":70,"kind":"station","flip":false},"topic":{"x":406,"y":230,"w":40,"h":40,"kind":"split","flip":false},"send":{"x":584,"y":366,"w":136,"h":70,"kind":"station","flip":false},"backoff":{"x":584,"y":466,"w":36,"h":36,"kind":"timer","flip":false},"sent":{"x":790.185,"y":366,"w":34,"h":34,"kind":"end","flip":false},"dlq":{"x":790.185,"y":466,"w":34,"h":34,"kind":"end","flip":false},"reserve":{"x":584,"y":602,"w":136,"h":70,"kind":"station","flip":false},"reserved":{"x":790.185,"y":602,"w":34,"h":34,"kind":"end","flip":false},"count":{"x":584,"y":738,"w":136,"h":70,"kind":"station","flip":false},"counted":{"x":790.185,"y":738,"w":34,"h":34,"kind":"end","flip":false}},"routes":{"::order>publish":{"points":[[138,94],[194,94]],"length":56,"from":"order","to":"publish"},"::publish>topic":{"points":[[330,94],[372,94],[372,230],[386,230]],"length":192,"from":"publish","to":"topic"},"::topic>send":{"points":[[406,250],[406,366],[516,366]],"length":226,"from":"topic","to":"send"},"::topic>reserve":{"points":[[406,250],[406,602],[516,602]],"length":462,"from":"topic","to":"reserve"},"::topic>count":{"points":[[406,250],[406,738],[516,738]],"length":598,"from":"topic","to":"count"},"::send>sent":{"points":[[652,366],[773.2,366]],"length":121.2,"from":"send","to":"sent"},"::retry":{"points":[[584,401],[584,448]],"length":47,"from":"send","to":"backoff"},"::give-up":{"points":[[652,366],[666,366],[666,466],[773.2,466]],"length":221.2,"from":"send","to":"dlq"},"::backoff>send":{"points":[[584,484],[584,490],[502,490],[502,366],[516,366]],"length":226,"from":"backoff","to":"send"},"::reserve>reserved":{"points":[[652,602],[773.2,602]],"length":121.2,"from":"reserve","to":"reserved"},"::count>counted":{"points":[[652,738],[773.2,738]],"length":121.2,"from":"count","to":"counted"}},"stations":{"publish":{"open":false,"bays":[],"rack":{"x":210,"y":117,"step":9,"max":4},"x":262,"y":94,"w":136,"h":70,"altW":112,"heat":{"x0":206,"w":86}},"send":{"open":false,"bays":[],"rack":{"x":532,"y":389,"step":9,"max":4},"x":584,"y":366,"w":136,"h":70,"altW":112,"heat":{"x0":528,"w":86}},"reserve":{"open":false,"bays":[{"x0":529.4,"y":625,"w":19.2},{"x0":555.4,"y":625,"w":19.2}],"rack":null,"x":584,"y":602,"w":136,"h":70,"altW":112,"heat":{"x0":528,"w":86}},"count":{"open":false,"bays":[{"x0":529.4,"y":761,"w":27.2}],"rack":null,"x":584,"y":738,"w":136,"h":70,"altW":112,"heat":{"x0":528,"w":86}}},"queues":{"send":{"slots":[[500,366],[490.5,366],[481,366],[471.5,366],[462,366],[452.5,366]],"route":"::topic>send"},"reserve":{"slots":[[500,602],[490.5,602],[481,602],[471.5,602],[462,602],[452.5,602]],"route":"::topic>reserve"},"count":{"slots":[[500,738],[490.5,738],[481,738],[471.5,738],[462,738],[452.5,738]],"route":"::topic>count"}},"gates":{"topic":{"x":406,"y":230,"r":20,"needle":{},"ins":[]}},"timers":{"backoff":{"x":584,"y":466,"r":18}},"minis":{},"starts":{"order":{"x":121,"y":94}},"ends":{"sent":{"x":790.185,"y":366},"dlq":{"x":790.185,"y":466},"reserved":{"x":790.185,"y":602},"counted":{"x":790.185,"y":738}},"uses":[]}},"pace":25}}</script>
 <script>(()=>{"use strict";const __dx={};
 __dx["rng"]=(()=>{// Seeded randomness. Every figure is reproducible: the same seed gives the
 // same arrivals, the same service times and the same branches, so a tour, a
@@ -325,10 +366,29 @@ function meanOf(spec) {
   return KINDS[p.kind].mean(p.args);
 }
 
+// A time too small for its unit reads in the next one down: 0.002 s is 2 ms,
+// 0.5 min is 30 s, 0.3 ns is 300 ps. Seconds and their fractions keep one
+// decimal place (0.3 s); minutes, hours, days and nanoseconds step down below 1.
+const BELOW = { s: [1e3, "ms"], ms: [1e3, "µs"], us: [1e3, "ns"], "µs": [1e3, "ns"], ns: [1e3, "ps"], min: [60, "s"], h: [60, "min"], d: [24, "h"] };
+const floorOf = (unit) => (unit === "s" || unit === "ms" || unit === "us" || unit === "µs" ? 0.1 : 1);
+/** The unit some times read best in, and what to multiply them by. */
+function downUnit(values, unit) {
+  let k = 1;
+  let u = unit;
+  while (BELOW[u] && values.some((v) => v !== 0) && values.every((v) => Math.abs(v * k) < floorOf(u))) {
+    k *= BELOW[u][0];
+    u = BELOW[u][1];
+  }
+  return { k, unit: u };
+}
+
 /** A short human description, e.g. "median 4, p95 9" or "about 6 on average". */
 function describe(spec, unit = "") {
-  const p = parse(spec);
-  const u = unit ? ` ${unit}` : "";
+  const p0 = parse(spec);
+  const d = downUnit(p0.args, unit);
+  const p = { ...p0, args: p0.args.map((v) => v * d.k) };
+  unit = d.unit;
+  const u = unit ? ` ${p.kind === "const" ? one(p.args[0], unit) : unit}` : "";
   const f = (v) => (Math.abs(v - Math.round(v)) < 1e-9 ? String(Math.round(v)) : v.toFixed(2).replace(/0+$/, "").replace(/\.$/, ""));
   switch (p.kind) {
     case "const":
@@ -362,12 +422,10 @@ const one = (v, unit) => (v === 1 && unit && !LADDERS[unit] && /[^s]s$/.test(uni
 /** A label short enough for a plate: "4 min, p95 9", "2-6 min", "~4 min". */
 function short(spec, unit = "") {
   const p = parse(spec);
-  let u = unit ? ` ${p.kind === "const" ? one(p.args[0], unit) : unit}` : "";
-  let a = p.args;
-  if (unit === "ns" && a.every((v) => v < 1)) {
-    a = a.map((v) => Math.round(v * 1000));
-    u = " ps";
-  }
+  const d = downUnit(p.args, unit);
+  unit = d.unit;
+  const u = unit ? ` ${p.kind === "const" ? one(p.args[0], unit) : unit}` : "";
+  const a = p.args.map((v) => v * d.k);
   switch (p.kind) {
     case "const":
       return `${num(a[0])}${u}`;
@@ -406,8 +464,11 @@ const LADDERS = {
  */
 function formatDuration(v, unit = "") {
   if (!Number.isFinite(v)) return "-";
-  // below a nanosecond, picoseconds read better than decimals
-  if (unit === "ns" && Math.abs(v) < 1 && v !== 0) return `${Math.round(v * 1000)} ps`;
+  const d = downUnit([v], unit);
+  v *= d.k;
+  unit = d.unit;
+  // picoseconds are the smallest step: whole ones
+  if (unit === "ps") return `${Math.round(v)} ps`;
   const ladder = LADDERS[unit];
   if (!ladder) {
     const r = v < 10 ? Math.round(v * 10) / 10 : Math.round(v);
@@ -435,7 +496,27 @@ function scaleSpec(spec, k) {
   return `${p.kind} ${a.join(" ")}`;
 }
 
-return {checkDuration,sampler,meanOf,describe,short,formatDuration,scaleSpec};})();
+/** A count for a plate or a readout: 940, 9.4k, 94k, 9.4M. */
+function compact(n) {
+  if (n < 1000) return String(Math.round(n));
+  if (n < 1e4) return `${(n / 1e3).toFixed(1).replace(/\.0$/, "")}k`;
+  if (n < 1e6) return `${Math.round(n / 1e3)}k`;
+  return `${(n / 1e6).toFixed(1).replace(/\.0$/, "")}M`;
+}
+
+/**
+ * How often a start sends work, in the words under it: "every ~20 min", or,
+ * when one dot stands for many real items, how many arrive per unit ("~10k/s").
+ */
+function rateWords(every, unit, per = 1) {
+  if (per > 1) {
+    const m = meanOf(every);
+    return m > 0 ? `~${compact(per / m)}/${unit || "unit"}` : "";
+  }
+  return `every ${short(every, unit)}`;
+}
+
+return {checkDuration,sampler,meanOf,describe,short,formatDuration,scaleSpec,compact,rateWords};})();
 __dx["geom"]=(()=>{// Plane geometry shared by the layout, the drawing and the live page: polylines,
 // rounded orthogonal paths, and the segment tests the router and the audit use.
 
@@ -603,12 +684,18 @@ __dx["model"]=(()=>{// The process model: what a figure says its process IS. Eve
 //   station  where work is done: `servers` (how many at once), `work` (how long
 //            one item takes), optional `fail` (chance it fails), `patience`
 //            (longest wait in the queue before giving up: outcome "timeout"),
-//            `capacity` (queue size: arrivals beyond it are "rejected"), and
-//            `inside`: a whole subprocess that IS its work (open it to see it)
+//            `capacity` (queue size: arrivals beyond it are "rejected"), `scale`
+//            (servers that follow the load: autoscaling), and `inside`: a whole
+//            subprocess that IS its work (open it to see it)
 //   choice   exclusive gateway (BPMN XOR): exactly one route out, picked by
 //            probability `p` or by `when` ("ok", "fail", "timeout", "rejected",
 //            "class:<name>", "else"), with `max` to cap how many times one item
 //            takes a route (a retry loop)
+//
+// A chance (`p` on a route, `fail` on a station) can differ by kind of item:
+// { bots: 0.6, people: 0.002 }, with `else` for the kinds it does not name.
+// The reader can turn a station or a choice off (`switch`) and set a part's
+// `dials` (options that change its numbers from the moment they are chosen).
 //   split    parallel gateway (BPMN AND fork): one child item down every route;
 //            with `fanout: true` the copies go on alone to their own ends (a
 //            message to every subscriber) and no join follows
@@ -623,6 +710,105 @@ const { checkDuration } = __dx["dist"];
 const KINDS = ["start", "end", "station", "choice", "split", "join", "timer", "store"];
 const OUTCOMES = ["ok", "fail", "timeout", "rejected"];
 
+/** A chance for an item of kind `cls`: a number, or { <kind>: number, else: number }. */
+function chanceOf(v, cls) {
+  if (v == null) return 0;
+  if (typeof v === "number") return v;
+  return v[cls] ?? v.else ?? 0;
+}
+/** The largest chance any kind gets. */
+const chanceMax = (v) => (v == null ? 0 : typeof v === "number" ? v : Math.max(0, ...Object.values(v)));
+const chanceOk = (v) => (typeof v === "number" ? v >= 0 && v <= 1 : v != null && typeof v === "object" && Object.keys(v).length > 0 && Object.values(v).every((x) => typeof x === "number" && x >= 0 && x <= 1));
+
+// autoscaling, unless the model says otherwise: aim at 60% busy, look again
+// every fortieth of the horizon, take six looks to start a server, and wait as
+// long after adding servers before removing any
+const SCALE = { target: 0.6, every: (horizon) => horizon / 40, boot: (every) => every * 6, cooldown: (every) => every * 6 };
+
+// what a change, a switch or a dial may set, by kind of part
+const SETTABLE = {
+  station: ["servers", "work", "fail", "patience", "capacity", "bypass", "scale"],
+  choice: ["p", "take"],
+  start: ["every", "classes", "paused"],
+  timer: ["wait"],
+};
+
+/** Every kind of item the model's starts make, or its dials can make. */
+function kindsOf(model) {
+  const out = [];
+  const add = (c) => !out.includes(c) && out.push(c);
+  for (const p of model.parts) {
+    if (p.kind === "start") for (const c of Object.keys(p.classes || {})) add(c);
+    for (const d of p.dials || []) for (const o of d.options || []) for (const c of Object.keys(o.set?.classes || {})) add(c);
+  }
+  return out;
+}
+
+/**
+ * The changes a run starts with: every switch that starts off, and every dial
+ * whose first option is not the model as written.
+ */
+function initialChanges(model) {
+  const out = [];
+  (function walk(m) {
+    for (const p of m.parts) {
+      if (p.switch && p.switch.on === false) out.push(...switchChanges(m, p, false).map((c) => ({ ...c, t: 0 })));
+      for (const d of p.dials || []) {
+        const o = d.options?.[d.value ?? 0];
+        if (o) out.push(...optionChanges(m, p, o).map((c) => ({ ...c, t: 0 })));
+      }
+      if (p.inside) walk(p.inside);
+    }
+  })(model);
+  return out;
+}
+
+const pathIn = (m, id) => (m.path ? `${m.path}/${id}` : id);
+
+/** What turning a part's switch off (or back on) changes. On is the model as written. */
+function switchChanges(m, p, on) {
+  const off = p.switch?.off ?? (p.kind === "station" ? [{ set: { bypass: true } }] : [{ set: { take: (m.outs.get(p.id) || []).find((r) => r.bypass)?.id ?? null } }]);
+  const list = off.map((c) => ({ part: pathIn(m, c.part ?? p.id), set: c.set }));
+  return on ? list.map((c) => ({ part: c.part, set: restoreOf(m, c.part, Object.keys(c.set)) })) : list;
+}
+
+/** What an option sets, as changes (the part's own set, then its changes to other parts). */
+function optionChanges(m, p, o) {
+  const list = [];
+  if (o.set) list.push({ part: pathIn(m, p.id), set: o.set });
+  for (const c of o.changes || []) list.push({ part: pathIn(m, c.part), set: c.set });
+  return list;
+}
+
+/**
+ * What choosing a dial's option changes: every field any of its options sets
+ * goes back to the model as written, then the chosen option's own values.
+ */
+function dialChanges(m, p, d, index) {
+  const fields = new Map();
+  for (const o of d.options) for (const c of optionChanges(m, p, o)) fields.set(c.part, new Set([...(fields.get(c.part) || []), ...Object.keys(c.set || {})]));
+  const restore = [...fields].map(([part, f]) => ({ part, set: restoreOf(m, part, [...f]) }));
+  return restore.concat(optionChanges(m, p, d.options[index]));
+}
+
+/** The model-as-written values of some fields of a part, as a change's set. */
+function restoreOf(m, path, fields) {
+  const id = path.slice(path.lastIndexOf("/") + 1);
+  const p = m.byId.get(id);
+  const set = {};
+  for (const f of fields) {
+    if (f === "bypass") set.bypass = false;
+    else if (f === "take") set.take = null;
+    else if (f === "paused") set.paused = false;
+    else if (f === "p") set.p = null;
+    else if (f === "scale") set.scale = p.scale ?? false;
+    else if (f === "capacity") set.capacity = p.capacity ?? Infinity;
+    else if (f === "patience") set.patience = p.patience ?? null;
+    else set[f] = p[f];
+  }
+  return set;
+}
+
 const ID = /^[a-z0-9][a-z0-9_.-]*$/i;
 
 /** Fill defaults and build the indexes the simulator and layout use. Pure. */
@@ -630,7 +816,8 @@ function normalize(def, path = "") {
   const lanes = (def.lanes && def.lanes.length ? def.lanes : [{ id: "main", label: "" }]).map((l) => ({ label: "", ...l }));
   const laneIds = new Set(lanes.map((l) => l.id));
   const parts = (def.parts || []).map((p) => {
-    const part = { label: p.id, ...p, path: path ? `${path}/${p.id}` : p.id };
+    // `named`: the model gave it words of its own (the label defaults to the id)
+    const part = { label: p.id, ...p, named: p.label != null, path: path ? `${path}/${p.id}` : p.id };
     if (!part.lane) part.lane = lanes[0].id;
     if (part.kind === "station") {
       // Infinity travels through JSON as "inf"
@@ -662,6 +849,8 @@ function normalize(def, path = "") {
     unit: def.unit || "",
     seed: def.seed ?? 1,
     horizon: def.horizon ?? 600,
+    // how many real items one dot stands for (a dot can be a hundred requests)
+    per: def.per ?? 1,
     path,
     lanes,
     laneIds,
@@ -693,6 +882,7 @@ function reach(model, starts, next) {
 function validate(def, opts = {}) {
   const errors = [];
   const warnings = [];
+  let kinds = [];
   const level = (m, where, inner) => {
     const at = (s) => (where ? `${where}: ${s}` : s);
     const seen = new Set();
@@ -715,7 +905,8 @@ function validate(def, opts = {}) {
         const e = checkDuration(r.latency);
         if (e) errors.push(at(`route ${r.id} latency: ${e}`));
       }
-      if (r.p != null && !(r.p >= 0 && r.p <= 1)) errors.push(at(`route ${r.id} has p = ${r.p}; a probability is between 0 and 1`));
+      if (r.p != null && !chanceOk(r.p)) errors.push(at(`route ${r.id} has p = ${JSON.stringify(r.p)}; a probability is between 0 and 1 (or one for each kind of item: { bots: 0.6, people: 0.002 })`));
+      if (r.bypass && m.byId.get(r.from)?.kind !== "choice") errors.push(at(`route ${r.id} is a bypass, but only a route out of a choice can be (the way it sends everything when it is off)`));
       if (r.max != null && !(Number.isInteger(r.max) && r.max >= 1)) errors.push(at(`route ${r.id} has max = ${r.max}; use a whole number from 1`));
     }
     if (errors.length) return;
@@ -763,7 +954,20 @@ function validate(def, opts = {}) {
           } else if (p.work != null) warnings.push(at(`${name} has both work and inside; its time comes from inside, work is ignored`));
           if (!(p.servers >= 1)) errors.push(at(`${name} needs servers >= 1`));
           if (Number.isFinite(p.servers) && !Number.isInteger(p.servers)) errors.push(at(`${name} servers must be a whole number`));
-          if (!(p.fail >= 0 && p.fail <= 1)) errors.push(at(`${name} fail is a probability between 0 and 1`));
+          if (!chanceOk(p.fail)) errors.push(at(`${name} fail is a probability between 0 and 1 (or one for each kind of item: { bots: 0.6, people: 0.002 })`));
+          if (p.scale != null && p.scale !== false) {
+            const sc = p.scale;
+            if (!Number.isFinite(p.servers)) errors.push(at(`${name} scales, so it needs a number of servers to start with`));
+            if (!(Number.isInteger(sc.min) && sc.min >= 1)) errors.push(at(`${name} scale needs min: the fewest servers, a whole number from 1`));
+            if (!(Number.isInteger(sc.max) && sc.max >= (sc.min ?? 1))) errors.push(at(`${name} scale needs max: the most servers, a whole number no smaller than min`));
+            if (Number.isFinite(p.servers) && (p.servers < sc.min || p.servers > sc.max)) errors.push(at(`${name} starts with ${p.servers} servers, outside its scale (${sc.min} to ${sc.max})`));
+            if (sc.target != null && !(sc.target > 0 && sc.target <= 1)) errors.push(at(`${name} scale target is the busy share it aims at, above 0 and at most 1`));
+            for (const k of ["every", "boot", "cooldown"])
+              if (sc[k] != null) {
+                const e = checkDuration(sc[k]);
+                if (e) errors.push(at(`${name} scale ${k}: ${e}`));
+              }
+          }
           if (p.patience != null) {
             const e = checkDuration(p.patience);
             if (e) errors.push(at(`${name} patience: ${e}`));
@@ -783,8 +987,14 @@ function validate(def, opts = {}) {
           if (byP.length && byWhen.length) errors.push(at(`${name} mixes p and when; decide by chance or by outcome, not both`));
           if (byP.length) {
             if (byP.length !== rs.length) errors.push(at(`${name}: give every route a p`));
-            const sum = byP.reduce((s, r) => s + r.p, 0);
-            if (Math.abs(sum - 1) > 1e-9) errors.push(at(`${name}: the p of its routes add up to ${+sum.toFixed(6)}, not 1`));
+            else if (rs.every((r) => typeof r.p === "number")) {
+              const sum = byP.reduce((s, r) => s + r.p, 0);
+              if (Math.abs(sum - 1) > 1e-9) errors.push(at(`${name}: the p of its routes add up to ${+sum.toFixed(6)}, not 1`));
+            } else
+              for (const k of kinds) {
+                const sum = rs.reduce((s, r) => s + chanceOf(r.p, k), 0);
+                if (Math.abs(sum - 1) > 1e-9) errors.push(at(`${name}: for ${k}, the p of its routes add up to ${+sum.toFixed(6)}, not 1`));
+              }
           } else if (byWhen.length) {
             const elses = rs.filter((r) => r.when === "else" || r.when == null);
             if (elses.length > 1) errors.push(at(`${name} has more than one else route`));
@@ -819,6 +1029,43 @@ function validate(def, opts = {}) {
         case "store":
           if (nIn || nOut) errors.push(at(`${name} has routes; items never travel into a store, stations use it`));
           break;
+      }
+      if (p.switch != null && p.switch !== false) {
+        if (p.kind !== "station" && p.kind !== "choice") errors.push(at(`${name} has a switch; only a station or a choice can be turned off`));
+        else if (p.switch !== true && typeof p.switch !== "object") errors.push(at(`${name}: switch is true, or { on, off }`));
+        else if (p.kind === "choice" && !p.switch.off && m.outs.get(p.id).filter((r) => r.bypass).length !== 1) errors.push(at(`${name} has a switch: mark the one route it sends everything down when it is off with bypass: true`));
+      }
+      for (const d of p.dials || []) {
+        if (!d || !Array.isArray(d.options) || d.options.length < 2) {
+          errors.push(at(`${name}: a dial needs a label and at least two options`));
+          continue;
+        }
+        const dial = `the dial "${d.label}" of ${name}`;
+        if (!d.label) errors.push(at(`${name}: a dial needs a label`));
+        const v = d.value ?? 0;
+        if (!(Number.isInteger(v) && v >= 0 && v < d.options.length)) errors.push(at(`${dial} starts on option ${v}, which it does not have`));
+        for (const o of d.options) {
+          if (!o.label) errors.push(at(`${dial}: every option needs a label`));
+          for (const c of [{ part: p.id, set: o.set }, ...(o.changes || [])]) {
+            if (!c.set) continue;
+            const q = m.byId.get(c.part);
+            if (!q) {
+              errors.push(at(`${dial} changes "${c.part}", which is not a part on its level`));
+              continue;
+            }
+            const can = SETTABLE[q.kind] || [];
+            for (const [k, val] of Object.entries(c.set)) {
+              if (!can.includes(k)) errors.push(at(`${dial} sets ${k} on ${q.kind} "${q.id}", which can only have ${can.join(", ") || "nothing"} changed`));
+              else if (["work", "every", "patience", "wait"].includes(k) && val != null) {
+                const e = checkDuration(val);
+                if (e) errors.push(at(`${dial}, option "${o.label}", ${k}: ${e}`));
+              } else if (k === "fail" && !chanceOk(val)) errors.push(at(`${dial}, option "${o.label}": fail is a probability, or one for each kind of item`));
+              else if (k === "take" && val != null && !m.outs.get(q.id).some((r) => r.id === val)) errors.push(at(`${dial}, option "${o.label}": "${q.id}" has no route "${val}" to take`));
+              else if (k === "servers" && !(val === Infinity || (Number.isInteger(val) && val >= 0))) errors.push(at(`${dial}, option "${o.label}": servers is a whole number`));
+              else if (k === "scale" && val !== false && (typeof val !== "object" || !q.scale)) errors.push(at(`${dial}, option "${o.label}": scale is false (no autoscaling) or changes to the scale "${q.id}" has`));
+            }
+          }
+        }
       }
     }
     if (errors.length) return;
@@ -864,7 +1111,7 @@ function validate(def, opts = {}) {
 
     for (const p of m.parts.filter((x) => x.kind === "station" && x.inside)) level(p.inside, where ? `${where} > ${p.id}` : p.id, true);
     // A station that can fail should have a choice downstream that looks at the outcome.
-    for (const p of m.parts.filter((x) => x.kind === "station" && (x.fail > 0 || x.patience != null || x.capacity != null))) {
+    for (const p of m.parts.filter((x) => x.kind === "station" && (chanceMax(x.fail) > 0 || x.patience != null || x.capacity != null))) {
       const choices = [];
       const seenF = new Set();
       const stack = m.outs.get(p.id).map((r) => r.to);
@@ -883,18 +1130,20 @@ function validate(def, opts = {}) {
       // the station's own routes can sort by outcome (an implicit choice), or a choice further on
       const own = m.outs.get(p.id);
       const routed = (w) => own.some((r) => r.when === w || r.when === "else") || choices.some((c) => m.outs.get(c.id).some((r) => r.when === w || r.when === "else"));
-      if (p.fail > 0 && !routed("fail")) warnings.push(at(`station "${p.id}" fails ${Math.round(p.fail * 100)}% of the time, but no choice after it routes "fail"; failed items carry on as if nothing happened`));
+      if (chanceMax(p.fail) > 0 && !routed("fail")) warnings.push(at(`station "${p.id}" fails ${typeof p.fail === "number" ? "" : "up to "}${Math.round(chanceMax(p.fail) * 100)}% of the time, but no choice after it routes "fail"; failed items carry on as if nothing happened`));
       if (p.patience != null && !routed("timeout")) warnings.push(at(`station "${p.id}" has patience, but no choice after it routes "timeout"`));
       if (p.capacity != null && !routed("rejected")) warnings.push(at(`station "${p.id}" has a capacity, but no choice after it routes "rejected"`));
     }
   };
   const model = def.byId ? def : normalize(def);
+  kinds = kindsOf(model);
+  if (!(Number.isInteger(model.per) && model.per >= 1)) errors.push(`per is how many real items one dot stands for: a whole number from 1`);
   level(model, "", false);
   if (opts.throws && errors.length) throw new Error(`dissect: the model has problems:\n- ${errors.join("\n- ")}`);
   return { errors, warnings, model };
 }
 
-return {KINDS,OUTCOMES,normalize,validate};})();
+return {KINDS,OUTCOMES,chanceOf,chanceMax,SCALE,SETTABLE,kindsOf,initialChanges,switchChanges,optionChanges,dialChanges,restoreOf,normalize,validate};})();
 __dx["sim"]=(()=>{// The simulator: a discrete-event model of the process. It is the single
 // source of every number a figure shows and of every move a token makes.
 //
@@ -907,11 +1156,14 @@ __dx["sim"]=(()=>{// The simulator: a discrete-event model of the process. It is
 // The log is the contract with the renderer. Each record is
 //   { t, k, tok, at, ... }  with k one of
 //   born  move  queue  start  finish  renege  reject  decide  split  joinwait
-//   join  wait  enter  exit  done  change
+//   join  wait  enter  exit  done  change  pass  scale
 // `at` is a part path ("deploy", "test/unit"); `route` is "<level path>::<route id>".
+// A station with no limit records no `queue`: its items start the moment they arrive.
+// `pass` is an item going straight through a station that is switched off;
+// `scale` is a station that scales: { servers, booting } from that moment.
 
-const { normalize, validate, OUTCOMES } = __dx["model"];
-const { sampler } = __dx["dist"];
+const { normalize, validate, OUTCOMES, SCALE, chanceOf, initialChanges } = __dx["model"];
+const { sampler, meanOf } = __dx["dist"];
 const { streams } = __dx["rng"];
 
 class Heap {
@@ -989,8 +1241,11 @@ function quantile(sorted, q) {
  * Build a simulator. Options:
  *   seed      overrides the model's seed
  *   horizon   last time a start may create an item (default model.horizon)
- *   changes   [{ t, part: "path", set: { servers, work, fail, patience, wait, capacity, every, p, classes } },
+ *   changes   [{ t, part: "path", set: { servers, work, fail, patience, wait, capacity, every, p, classes,
+ *                                         bypass, take, paused, scale } },
  *              { t, route: "<level>::<id>", set: { latency } }]
+ *             A change at t <= 0 is where the run starts from. The model's own
+ *             switches and dials set theirs first.
  *   warmup    time excluded from the steady-state statistics (default 0)
  */
 function createSim(def, opts = {}) {
@@ -1015,6 +1270,11 @@ function createSim(def, opts = {}) {
       capacity: part.capacity ?? Infinity,
       odds: null, // a choice's p per route id, once a change sets them
       classes: null, // a start's class mix, once a change sets it
+      workSpec: part.work ?? null,
+      bypass: false, // a station switched off: items go straight through
+      take: null, // a choice switched off: everything takes this route
+      paused: false, // a start that sends nothing
+      scale: null, // a station's autoscaling policy, while it has one
     });
   }
   const routeParams = new Map();
@@ -1042,6 +1302,8 @@ function createSim(def, opts = {}) {
     stations: new Map(),
     routes: new Map(),
     choices: new Map(),
+    kinds: new Map(), // per kind of item: { done, outcomes, ends, lead }
+    ends: {},
   };
   for (const [path, { part }] of parts) {
     if (part.kind === "station")
@@ -1128,18 +1390,21 @@ function createSim(def, opts = {}) {
     const { part, level } = parts.get(path);
     const outs = level.outs.get(part.id);
     let route = null;
-    if (outs.some((r) => r.p != null)) {
+    // a choice switched off sends everything one way
+    const take = params.get(path)?.take;
+    if (take != null) route = outs.find((r) => r.id === take) || null;
+    if (!route && outs.some((r) => r.p != null)) {
       const odds = params.get(path).odds;
       let u = stream(`choose:${path}`)();
       for (const r of outs) {
-        u -= odds ? (odds.get(r.id) ?? 0) : r.p;
+        u -= odds ? (odds.get(r.id) ?? 0) : chanceOf(r.p, tok.cls);
         if (u < 0) {
           route = r;
           break;
         }
       }
       route = route || outs[outs.length - 1];
-    } else {
+    } else if (!route) {
       for (const r of outs) {
         const w = r.when;
         const matches = w == null || w === "else" || w === tok.outcome || (w.startsWith("class:") && w.slice(6) === tok.cls);
@@ -1224,6 +1489,12 @@ function createSim(def, opts = {}) {
         const S = stationState.get(path);
         const s = st.stations.get(path);
         const prm = params.get(path);
+        if (prm.bypass) {
+          // switched off: no work, no queue, no failing
+          record({ t, k: "pass", tok: tok.id, at: path });
+          leaveVia(tok, path, t);
+          return;
+        }
         s.arrivals += 1;
         if (S.queue.length >= prm.capacity && s.busy >= prm.servers) {
           s.rejects += 1;
@@ -1236,7 +1507,8 @@ function createSim(def, opts = {}) {
         tok.queuedAt = t;
         S.queue.push(tok.id);
         s.maxQueue = Math.max(s.maxQueue, S.queue.length);
-        record({ t, k: "queue", tok: tok.id, at: path });
+        // where there is no limit an item starts at once: its start says it arrived
+        if (Number.isFinite(prm.servers)) record({ t, k: "queue", tok: tok.id, at: path });
         if (prm.patience) {
           const limit = prm.patience(stream(`patience:${path}`));
           tok.renege = { at: path, cancelled: false };
@@ -1317,6 +1589,13 @@ function createSim(def, opts = {}) {
         st.outcomes[outcome] = (st.outcomes[outcome] || 0) + 1;
         const lead = t - tok.born;
         st.lead.push(lead);
+        st.ends[path] = (st.ends[path] || 0) + 1;
+        if (!st.kinds.has(tok.cls)) st.kinds.set(tok.cls, { done: 0, outcomes: {}, ends: {}, lead: [] });
+        const K = st.kinds.get(tok.cls);
+        K.done += 1;
+        K.outcomes[outcome] = (K.outcomes[outcome] || 0) + 1;
+        K.ends[path] = (K.ends[path] || 0) + 1;
+        K.lead.push(lead);
         if (tok.born >= warmup) {
           st.leadAfterWarmup.push(lead);
           st.doneAfterWarmup += 1;
@@ -1338,7 +1617,17 @@ function createSim(def, opts = {}) {
     return tok;
   }
 
-  function applyChange(c, t) {
+  // a start's arrivals begin again from t (a new rate, or let go after a pause);
+  // the ones already on their way are called off
+  function restartArrivals(path, t) {
+    const v = (arrivalVersion.get(path) || 0) + 1;
+    arrivalVersion.set(path, v);
+    const prm = params.get(path);
+    if (!prm.paused && prm.every) schedule(t + prm.every(stream(`arrive:${path}`)), "arrival", { at: path, v });
+  }
+
+  /** Apply a change at t. A change at the very start (initial) sets where the run starts from. */
+  function applyChange(c, t, initial = false) {
     if (c.part) {
       const prm = params.get(c.part);
       if (!prm) throw new Error(`dissect: a change names part "${c.part}", which does not exist`);
@@ -1347,25 +1636,32 @@ function createSim(def, opts = {}) {
         if (st.stations.has(c.part)) touchStation(c.part, t);
         prm.servers = set.servers;
       }
-      if (set.work != null) prm.work = sampler(set.work);
+      if (set.work != null) {
+        prm.work = sampler(set.work);
+        prm.workSpec = set.work;
+      }
       if (set.fail != null) prm.fail = set.fail;
-      if (set.patience != null) prm.patience = sampler(set.patience);
+      if ("patience" in set) prm.patience = set.patience != null ? sampler(set.patience) : null;
       if (set.wait != null) prm.wait = sampler(set.wait);
       if (set.capacity != null) prm.capacity = set.capacity;
       if (set.classes != null) prm.classes = { ...set.classes };
-      if (set.p != null) {
-        // new odds for a choice, by route id; they are scaled to add up to 1
-        const total = Object.values(set.p).reduce((a, b) => a + b, 0);
-        if (!(total > 0)) throw new Error(`dissect: a change gives choice "${c.part}" odds that add up to ${total}`);
-        prm.odds = new Map(Object.entries(set.p).map(([k, v]) => [k, v / total]));
+      if ("p" in set) {
+        if (set.p == null) prm.odds = null;
+        else {
+          // new odds for a choice, by route id; they are scaled to add up to 1
+          const total = Object.values(set.p).reduce((a, b) => a + b, 0);
+          if (!(total > 0)) throw new Error(`dissect: a change gives choice "${c.part}" odds that add up to ${total}`);
+          prm.odds = new Map(Object.entries(set.p).map(([k, v]) => [k, v / total]));
+        }
       }
-      if (set.every != null) {
-        prm.every = sampler(set.every);
-        const v = (arrivalVersion.get(c.part) || 0) + 1;
-        arrivalVersion.set(c.part, v);
-        schedule(t + prm.every(stream(`arrive:${c.part}`)), "arrival", { at: c.part, v });
-      }
+      if ("take" in set) prm.take = set.take ?? null;
+      if ("bypass" in set) prm.bypass = Boolean(set.bypass);
+      if ("scale" in set) setScale(c.part, set.scale, t);
+      if (set.every != null) prm.every = sampler(set.every);
+      if ("paused" in set) prm.paused = Boolean(set.paused);
+      if (!initial && (set.every != null || "paused" in set)) restartArrivals(c.part, t);
       record({ t, k: "change", at: c.part, set: c.set });
+      if (scaling.has(c.part) && set.servers != null) noteScale(c.part, t);
       if (st.stations.has(c.part)) tryStart(c.part, t);
     } else if (c.route) {
       const rp = routeParams.get(c.route);
@@ -1374,8 +1670,88 @@ function createSim(def, opts = {}) {
       record({ t, k: "change", route: c.route, set: c.set });
     }
   }
+  // ---- autoscaling ---------------------------------------------------------------
+  // A station with `scale` looks at its load every `every`: the work that
+  // arrived over the last look, in servers' worth, over the busy share it aims
+  // at. It starts servers when it wants more (each ready after `boot`), and
+  // stops some when it wants fewer, once `cooldown` has passed since it last
+  // added any. The model's servers are what it starts with.
+  const scaling = new Map();
+  const policyOf = (base, set) => {
+    const pol = { ...base, ...set };
+    if (set.every != null) pol.every = meanOf(set.every);
+    if (set.cooldown != null) pol.cooldown = meanOf(set.cooldown);
+    if (set.boot != null) pol.boot = sampler(set.boot);
+    return pol;
+  };
+  for (const [path, { part }] of parts) {
+    if (part.kind !== "station" || !part.scale) continue;
+    const every = meanOf(part.scale.every ?? SCALE.every(horizon));
+    const base = { target: SCALE.target, min: part.scale.min, max: part.scale.max, every, boot: sampler(part.scale.boot ?? SCALE.boot(every)), cooldown: meanOf(part.scale.cooldown ?? SCALE.cooldown(every)) };
+    params.get(path).scale = base;
+    scaling.set(path, { base, booting: 0, v: 0, lastOut: -Infinity, arrivals0: 0, t0: 0 });
+    schedule(every, "scale", { at: path });
+  }
+  function noteScale(path, t) {
+    record({ t, k: "scale", at: path, servers: params.get(path).servers, booting: scaling.get(path).booting });
+  }
+  function setScale(path, val, t) {
+    const S = scaling.get(path);
+    if (!S) return;
+    const prm = params.get(path);
+    const callOff = () => {
+      S.v += 1;
+      S.booting = 0;
+    };
+    if (val === false || val == null) {
+      // no autoscaling: the servers running stay, no more start
+      prm.scale = null;
+      callOff();
+    } else {
+      prm.scale = policyOf(S.base, val);
+      const n = Math.min(prm.scale.max, Math.max(prm.scale.min, prm.servers));
+      if (n !== prm.servers) {
+        touchStation(path, t);
+        prm.servers = n;
+      }
+      // servers still starting come, if the new policy has room for them
+      if (prm.servers + S.booting > prm.scale.max) callOff();
+    }
+    noteScale(path, t);
+  }
+  function look(path, t) {
+    const S = scaling.get(path);
+    const prm = params.get(path);
+    const s = st.stations.get(path);
+    const arrived = s.arrivals - S.arrivals0;
+    const span = t - S.t0;
+    S.arrivals0 = s.arrivals;
+    S.t0 = t;
+    const pol = prm.scale;
+    if (pol && span > 0 && prm.workSpec != null) {
+      const need = (arrived * meanOf(prm.workSpec)) / span;
+      const want = Math.min(pol.max, Math.max(pol.min, Math.ceil(need / pol.target - 1e-9)));
+      const have = prm.servers + S.booting;
+      if (want > have) {
+        for (let i = 0; i < want - have; i++) schedule(t + pol.boot(stream(`boot:${path}`)), "ready", { at: path, v: S.v });
+        S.booting = want - prm.servers;
+        S.lastOut = t;
+        noteScale(path, t);
+      } else if (want < prm.servers && S.booting === 0 && t - S.lastOut >= pol.cooldown) {
+        touchStation(path, t);
+        prm.servers = want;
+        noteScale(path, t);
+      }
+    }
+    const every = pol?.every ?? S.base.every;
+    if (t + every <= horizon) schedule(t + every, "scale", { at: path });
+  }
+
+  // where the run starts from: the model's own switches and dials, then the changes at t <= 0
+  for (const c of initialChanges(model)) applyChange(c, 0, true);
+  for (const c of opts.changes || []) if (c.t <= 0) applyChange(c, 0, true);
   const madeByStart = new Map();
-  for (const c of opts.changes || []) schedule(c.t, "change", { change: c });
+  for (const c of opts.changes || []) if (c.t > 0) schedule(c.t, "change", { change: c });
 
   function step(e) {
     now = e.t;
@@ -1383,6 +1759,8 @@ function createSim(def, opts = {}) {
       case "arrival": {
         if (e.v !== arrivalVersion.get(e.at)) return;
         if (e.t > horizon) return;
+        // a paused start sends nothing; its next item comes after it is let go again
+        if (params.get(e.at).paused) return;
         const { part } = parts.get(e.at);
         const made = (madeByStart.get(e.at) || 0) + 1;
         madeByStart.set(e.at, made);
@@ -1402,7 +1780,8 @@ function createSim(def, opts = {}) {
       case "finish": {
         const tok = tokens.get(e.tok);
         const prm = params.get(e.at);
-        const failed = prm.fail > 0 && stream(`fail:${e.at}`)() < prm.fail;
+        const pf = chanceOf(prm.fail, tok.cls);
+        const failed = pf > 0 && stream(`fail:${e.at}`)() < pf;
         return finishAt(e.at, tok.id, e.slot, e.t, failed ? "fail" : "ok");
       }
       case "renege": {
@@ -1423,6 +1802,18 @@ function createSim(def, opts = {}) {
         return leaveVia(tokens.get(e.tok), e.at, e.t);
       case "change":
         return applyChange(e.change, e.t);
+      case "scale":
+        return look(e.at, e.t);
+      case "ready": {
+        const S = scaling.get(e.at);
+        // a policy changed since this server was asked for: it never comes
+        if (e.v !== S.v) return;
+        S.booting -= 1;
+        touchStation(e.at, e.t);
+        params.get(e.at).servers += 1;
+        noteScale(e.at, e.t);
+        return tryStart(e.at, e.t);
+      }
     }
   }
 
@@ -1512,6 +1903,15 @@ function statsOf(sim, st, t, warmup, params) {
     stations,
     routes: Object.fromEntries(st.routes),
     choices: Object.fromEntries([...st.choices].map(([k, v]) => [k, { ...v }])),
+    // where items ended (top-level ends), and the same per kind of item
+    ends: { ...st.ends },
+    kinds: Object.fromEntries(
+      [...st.kinds].map(([k, K]) => {
+        const l = K.lead.slice().sort((a, b) => a - b);
+        return [k, { done: K.done, outcomes: { ...K.outcomes }, ends: { ...K.ends }, p50Lead: quantile(l, 0.5), p95Lead: quantile(l, 0.95) }];
+      }),
+    ),
+    servers: Object.fromEntries([...params].filter(([p]) => st.stations.has(p)).map(([p, v]) => [p, v.servers])),
   };
 }
 
@@ -1546,19 +1946,33 @@ class Replay {
     this.tokens = new Map();
     this.alive = new Set();
     this.st = new Map();
-    for (const [path, servers] of stations) this.st.set(path, { servers, queue: [], bays: [], busy: 0, busyArea: 0, capArea: 0, at: 0, arrivals: 0, started: 0, finished: 0, failed: 0, timedOut: 0, rejected: 0, waitSum: 0, waitN: 0, workSum: 0, workN: 0, inside: 0 });
+    for (const [path, servers] of stations) this.st.set(path, { servers, booting: 0, passed: 0, queue: [], bays: [], busy: 0, busyArea: 0, capArea: 0, at: 0, arrivals: 0, started: 0, finished: 0, failed: 0, timedOut: 0, rejected: 0, waitSum: 0, waitN: 0, workSum: 0, workN: 0, inside: 0 });
     this.joins = new Map();
     this.timers = new Map();
     this.choices = new Map();
     this.ends = new Map(ends.map((p) => [p, 0]));
     this.passes = new Map();
     this.born = 0;
+    this.bornAt = new Map();
     this.done = 0;
     this.leads = [];
     this.leadSum = 0;
     this.outcomes = {};
     this.changes = [];
     this.events = [];
+    // every item that has left, in time order, for the numbers of a recent window
+    this.finished = [];
+    this.recentFrom = 0;
+  }
+
+  /** The items that left in the last `window` before t: [{ t, cls, outcome, at }]. */
+  recent(window, t = this.t) {
+    const f = this.finished;
+    while (this.recentFrom < f.length && f[this.recentFrom].t <= t - window) this.recentFrom += 1;
+    while (this.recentFrom > 0 && f[this.recentFrom - 1].t > t - window) this.recentFrom -= 1;
+    const out = [];
+    for (let i = this.recentFrom; i < f.length && f[i].t <= t; i++) out.push(f[i]);
+    return out;
   }
 
   get next() {
@@ -1612,6 +2026,7 @@ class Replay {
         t.mode = "at";
         t.at = r.at;
         this.born += 1;
+        this.bornAt.set(r.at, (this.bornAt.get(r.at) || 0) + 1);
         break;
       }
       case "move": {
@@ -1650,11 +2065,13 @@ class Replay {
       case "start": {
         const s = this.st.get(r.at);
         const qi = s.queue.indexOf(tok.id);
+        // a start with no queue record before it is an item that arrived and started at once
         if (qi >= 0) s.queue.splice(qi, 1);
+        else s.arrivals += 1;
         this.touch(s, r.t);
         s.busy += 1;
         s.started += 1;
-        s.waitSum += r.t - (tok.queuedAt ?? r.t);
+        s.waitSum += qi >= 0 ? r.t - (tok.queuedAt ?? r.t) : 0;
         s.waitN += 1;
         s.bays[r.server] = { tok: tok.id, t0: r.t, t1: r.t1 };
         tok.mode = r.t1 == null ? "inside" : "serve";
@@ -1780,6 +2197,7 @@ class Replay {
         tok.doneAt = r.t;
         this.alive.delete(tok.id);
         this.ends.set(r.at, (this.ends.get(r.at) || 0) + 1);
+        this.finished.push({ t: r.t, cls: tok.cls, outcome: r.outcome, at: r.at, lead: r.t - tok.born });
         this.done += 1;
         this.outcomes[r.outcome] = (this.outcomes[r.outcome] || 0) + 1;
         const lead = r.t - tok.born;
@@ -1794,6 +2212,25 @@ class Replay {
         }
         this.leads.splice(lo, 0, lead);
         this.events.push({ k: "done", tok: tok.id, at: r.at, outcome: r.outcome, lead });
+        break;
+      }
+      case "pass": {
+        // through a station that is switched off: nothing happens there
+        const s = this.st.get(r.at);
+        if (s) s.passed += 1;
+        tok.mode = "at";
+        tok.at = r.at;
+        this.events.push({ k: "pass", tok: tok.id, at: r.at });
+        break;
+      }
+      case "scale": {
+        const s = this.st.get(r.at);
+        if (s) {
+          this.touch(s, r.t);
+          s.servers = r.servers;
+          s.booting = r.booting;
+        }
+        this.events.push({ k: "scale", at: r.at, servers: r.servers, booting: r.booting });
         break;
       }
       case "change": {
@@ -1961,9 +2398,9 @@ __dx["live"]=(()=>{// The live figure. The simulator runs a few seconds ahead of
 // Browser only. Build pages with page.mjs, which inlines this module.
 
 const { createSim } = __dx["sim"];
-const { normalize } = __dx["model"];
+const { normalize, chanceOf, switchChanges, dialChanges } = __dx["model"];
 const { Replay, placeOf, levelOf } = __dx["replay"];
-const { formatDuration, short, describe, scaleSpec } = __dx["dist"];
+const { formatDuration, short, describe, scaleSpec, compact, rateWords, meanOf } = __dx["dist"];
 const { along } = __dx["geom"];
 
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
@@ -1972,6 +2409,9 @@ const SPEEDS = [0.25, 0.5, 1, 2, 4, 8, 16];
 const GLIDE_PX_S = 520;
 const IDLE_MS = 7000;
 const pct = (v) => (v == null || !Number.isFinite(v) ? "-" : `${Math.round(v * 100)}%`);
+// a share that may be small: 0.2% says more than 0%
+const pctFine = (v) => (v == null || !Number.isFinite(v) ? "-" : v > 0 && v < 0.0995 ? `${(v * 100).toFixed(1).replace(/\.0$/, "")}%` : `${Math.round(v * 100)}%`);
+
 
 /**
  * Bring a figure to life.
@@ -2004,6 +2444,13 @@ function mount(root, def, options = {}) {
   for (const p of model.parts) if (p.kind === "start") for (const c of Object.keys(p.classes || { item: 1 })) if (!classNames.includes(c)) classNames.push(c);
   const classIndex = (c) => Math.max(0, classNames.indexOf(c)) % 5;
   const noun = model.raw.item || "item";
+  // one dot can stand for many real items (a hundred requests): counts the reader sees are real ones
+  const perDot = model.per || 1;
+  const count = (n) => (perDot === 1 ? String(n) : compact(n * perDot));
+  const plural = model.raw.items || `${noun}s`;
+  // the window the recent numbers are over (who got served lately, not since the start)
+  const watch = options.watch || null;
+  const recentSpan = watch?.window ?? model.horizon / 20;
 
   // ---- the DOM -----------------------------------------------------------------
   const $ = (sel, el = root) => el.querySelector(sel);
@@ -2040,6 +2487,8 @@ function mount(root, def, options = {}) {
         heatWork: g.querySelector('[data-heat="work"]'),
         altTime: g.querySelector('[data-alt="time"]'),
         altFail: g.querySelector('[data-alt="fail"]'),
+        frames: [...g.querySelectorAll(".dx-bay")],
+        rate: g.querySelector("[data-rate]"),
       });
     }
     els.set(lv, { svg, partEl, routeEl, useEl, qmore, per, tokens: svg.querySelector(".dx-tokens"), trails: svg.querySelector(".dx-trails"), dots: new Map() });
@@ -2069,6 +2518,29 @@ function mount(root, def, options = {}) {
   const pulses = [];
   const lastPulse = new Map();
   const trail = [];
+
+  // ---- settings: the reader's switches and dials ---------------------------------------------
+  // They hold from the moment they are set, and a new run starts with them as they are.
+  const controls = [];
+  for (const [path, p] of parts) {
+    const lv = levels.get(levelOf(path));
+    if (p.switch) controls.push({ key: `switch:${path}`, kind: "switch", path, part: p, level: lv, name: p.switch.label ?? p.label, initial: p.switch.on !== false });
+    (p.dials || []).forEach((d, di) => controls.push({ key: `dial:${path}#${di}`, kind: "dial", path, part: p, level: lv, dial: d, initial: d.value ?? 0 }));
+  }
+  const controlOf = new Map(controls.map((c) => [c.key, c]));
+  const settings = new Map(controls.map((c) => [c.key, c.initial]));
+  /** The changes that start a run where the reader left the settings. */
+  function settingChanges() {
+    const out = [];
+    for (const c of controls) {
+      const v = settings.get(c.key);
+      if (v === c.initial) continue;
+      const list = c.kind === "switch" ? switchChanges(c.level, c.part, v) : dialChanges(c.level, c.part, c.dial, v);
+      out.push(...list.map((x) => ({ ...x, t: 0 })));
+    }
+    return out;
+  }
+  const isOff = (path) => settings.get(`switch:${path}`) === false;
 
   function build() {
     sim = createSim(model, { seed: model.seed + seedShift, changes });
@@ -2119,6 +2591,8 @@ function mount(root, def, options = {}) {
       R.advance(clock);
       R.drain();
     }
+    // the change itself shows at once (a dial's new value, a policy), even while paused
+    R.advance(t);
     glides.clear();
     if (words) announce(words);
     renderInspector();
@@ -2128,6 +2602,8 @@ function mount(root, def, options = {}) {
   function undo() {
     if (!changes.length) return;
     changes = [];
+    for (const c of controls) settings.set(c.key, c.initial);
+    syncSwitches();
     build();
     sim.runUntil(clock + lookahead());
     R.advance(clock);
@@ -2141,7 +2617,8 @@ function mount(root, def, options = {}) {
   function restart(nextSeed = false) {
     if (nextSeed) seedShift += 1;
     else seedShift = 0;
-    changes = [];
+    // what-ifs end with the run; the settings carry over to the next
+    changes = settingChanges();
     clock = 0;
     endedAt = null;
     build();
@@ -2158,10 +2635,53 @@ function mount(root, def, options = {}) {
     renderControls();
   }
 
+  /** Show every switch as it is set (the part dims, the knob moves, the words say so). */
+  function syncSwitches() {
+    for (const c of controls) {
+      if (c.kind !== "switch") continue;
+      const on = settings.get(c.key);
+      for (const e of els.values()) {
+        const g = e.partEl.get(c.path);
+        if (!g) continue;
+        g.toggleAttribute("data-off", !on);
+        const sw = g.querySelector("[data-switch]");
+        if (sw) {
+          sw.setAttribute("aria-checked", String(on));
+          sw.setAttribute("aria-label", `${c.name}: ${on ? "on" : "off"}`);
+          const tip = sw.querySelector("title");
+          if (tip) tip.textContent = `Turn ${c.name} ${on ? "off" : "on"}`;
+        }
+        const spec = g.querySelector(".dx-spec[data-fit]");
+        if (spec) fitInto(spec, on ? spec.dataset.full : "switched off", Number(spec.dataset.fit), Number(spec.dataset.size), Number(spec.dataset.min), true);
+      }
+    }
+  }
+
+  /** Turn a part off or back on, from now on. */
+  function toggle(path) {
+    const c = controlOf.get(`switch:${path}`);
+    if (!c) return;
+    const on = !settings.get(c.key);
+    settings.set(c.key, on);
+    const way = c.part.kind === "choice" ? c.level.outs.get(c.part.id).find((r) => r.bypass) : null;
+    const offWords = way ? `everything goes to ${c.level.byId.get(way.to).label}` : "everything passes straight through it";
+    syncSwitches();
+    inject(switchChanges(c.level, c.part, on), on ? `${c.name} is on again.` : `${c.name} is off: ${offWords}.`);
+  }
+
+  /** Set a dial to one of its options, from now on. */
+  function chooseOption(key, index) {
+    const c = controlOf.get(key);
+    if (!c || settings.get(key) === index) return;
+    settings.set(key, index);
+    inject(dialChanges(c.level, c.part, c.dial, index), `${c.part.label}: ${c.dial.label}, ${c.dial.options[index].label}.`);
+  }
+
   // ---- levels -----------------------------------------------------------------------------
   let heightTimer = 0;
   function setView(path, { focus = false, from = null } = {}) {
     if (!sheets.has(path) || path === view) return;
+    closePanel();
     const prev = view;
     const a = sheets.get(prev);
     const b = sheets.get(path);
@@ -2381,8 +2901,14 @@ function mount(root, def, options = {}) {
       } else if (e.k === "join" && followed && e.children?.includes(followed)) {
         setFollow(e.tok, { idle: idleFollow });
       } else if (e.k === "change") renderControls();
+      else if (e.k === "scale") {
+        const before = lastBooting.get(e.at) ?? 0;
+        if (e.booting > before) announce(`${parts.get(e.at)?.label}: ${e.booting} more server${e.booting === 1 ? "" : "s"} starting.`);
+        lastBooting.set(e.at, e.booting);
+      }
     }
   }
+  const lastBooting = new Map();
 
   function flash(el, cls, ms) {
     el.classList.add(cls);
@@ -2429,7 +2955,7 @@ function mount(root, def, options = {}) {
         // in work: the item sits in its bay (or in the row of a step with no limit)
         const st = meta.stations[p.dock];
         const s = R.st.get(p.dock);
-        if (st?.bays[p.bay]) p = { x: st.bays[p.bay].x0 + Math.min(4.2, st.bays[p.bay].w / 2), y: st.bays[p.bay].y };
+        if (st?.bays[p.bay]) p = { x: st.bays[p.bay].x0 + Math.min(4.2, st.bays[p.bay].w / 2), y: st.bays[p.bay].y, narrow: st.bays[p.bay].w + 2.8 };
         else if (st?.rack && s) {
           const k = s.bays.slice(0, tok.server).filter(Boolean).length;
           if (k >= st.rack.max) return;
@@ -2448,7 +2974,7 @@ function mount(root, def, options = {}) {
         E.dots.set(id, dot);
       }
       const [hit, halo, core] = dot.children;
-      const r = p.mini ? 2.3 : docked ? 3.4 : 4.6;
+      const r = p.mini ? 2.3 : docked ? Math.min(3.4, (p.narrow ?? 9) / 2 - 0.4) : 4.6;
       core.setAttribute("r", r);
       hit.setAttribute("r", p.mini ? 0 : 9);
       dot.setAttribute("transform", `translate(${p.x.toFixed(1)} ${p.y.toFixed(1)})`);
@@ -2552,9 +3078,16 @@ function mount(root, def, options = {}) {
         const bad = s.failed + s.timedOut + s.rejected;
         if (per.count && per.count.__n !== `${okN}/${bad}`) {
           per.count.__n = `${okN}/${bad}`;
-          if (per.done) per.done.textContent = `✓${okN}`;
-          if (per.fails) per.fails.textContent = bad ? `  ✗${bad}` : "";
+          if (per.done) per.done.textContent = `✓${count(okN)}`;
+          if (per.fails) per.fails.textContent = bad ? `✗${count(bad)}` : "";
           fitCount(per.count);
+        }
+        // a station that scales: which of its bays run, which are starting, which are not there
+        if (p.scale && per.frames.length) {
+          per.frames.forEach((f, i) => {
+            f.classList.toggle("dx-bay-off", i >= s.servers + s.booting);
+            f.classList.toggle("dx-bay-boot", i >= s.servers && i < s.servers + s.booting);
+          });
         }
         const rackMax = metas[view].stations[path]?.rack?.max ?? 5;
         if (per.rack) per.rack.textContent = s.busy > rackMax ? `+${s.busy - rackMax}` : "";
@@ -2580,7 +3113,11 @@ function mount(root, def, options = {}) {
           fitInto(per.altFail, n ? (bad ? `${pct(bad / n)} ${p.failLabel || "failed"}` : "none failed") : "nothing yet", altW);
         }
       } else if (p.kind === "end") {
-        if (per.count) per.count.textContent = String(R.ends.get(path) || 0);
+        if (per.count) per.count.textContent = count(R.ends.get(path) || 0);
+      } else if (p.kind === "start" && per.rate) {
+        const now = startNow(path);
+        const words = now.paused ? "sends nothing" : rateWords(now.every, unit, perDot);
+        if (per.rate.textContent !== words) per.rate.textContent = words;
       } else if (p.kind === "choice" && per.needle) {
         const c = R.choices.get(path);
         const a = c ? metas[view].gates[path]?.needle[c.last] : null;
@@ -2589,8 +3126,15 @@ function mount(root, def, options = {}) {
     }
     const p50 = R.quantile(0.5);
     const zoom = basePace / pace;
-    readout.textContent = `${fmt(clock)} in · ${R.done} done · ${R.alive.size} in flight${R.done ? ` · median ${fmt(p50)}` : ""}${zoom > 1.5 ? ` · time ×1/${Math.round(zoom)}` : ""}`;
+    const slow = zoom > 1.5 ? ` · time ×1/${Math.round(zoom)}` : "";
+    if (watch) {
+      // the one number the figure is about, over the last few moments, then the usual
+      const r = R.recent(recentSpan, clock).filter((f) => f.cls === watch.class);
+      const lead = r.map((f) => f.lead).sort((a, b) => a - b);
+      readout.textContent = `${fmt(clock)} in · ${watch.label} ${r.length ? pct(r.filter((f) => f.outcome === "ok").length / r.length) : "-"}${lead.length ? ` · median ${fmt(lead[Math.floor(lead.length / 2)])}` : ""} · ${count(R.alive.size)} in flight${slow}`;
+    } else readout.textContent = `${fmt(clock)} in · ${count(R.done)} done · ${count(R.alive.size)} in flight${R.done ? ` · median ${fmt(p50)}` : ""}${slow}`;
     refreshInspector();
+    refreshPanel();
   }
 
   /**
@@ -2623,21 +3167,52 @@ function mount(root, def, options = {}) {
     }
   }
 
-  /** Set a station's counters smaller when they outgrow the room its work leaves them. */
+  /**
+   * Fit a station's counters to the room its plate leaves them: a little
+   * smaller first, then (on a flow row) on two lines, done over failed.
+   */
   function fitCount(el) {
-    const room = Number(el.dataset.room);
-    if (!room || !el.getComputedTextLength) return;
+    if (!el.getComputedTextLength) return;
+    const done = el.querySelector("[data-done]");
+    const fails = el.querySelector("[data-fails]");
+    let room = Number(el.dataset.room);
+    if (el.dataset.afterSpec != null) {
+      // on the spec's line: what the spec leaves of it
+      const spec = el.closest(".dx-part")?.querySelector(".dx-spec");
+      if (spec?.getComputedTextLength) room = Math.max(room, Number(el.getAttribute("x")) - (Number(spec.getAttribute("x")) + spec.getComputedTextLength() + 8));
+    }
+    if (!room) return;
+    for (const t of [done, fails]) {
+      t?.removeAttribute("x");
+      t?.removeAttribute("y");
+    }
+    fails?.setAttribute("dx", "4");
     el.style.fontSize = "";
     let sz = 9.5;
-    while (el.getComputedTextLength() > room && sz > 7) {
-      sz -= 0.5;
-      el.style.fontSize = `${sz}px`;
-    }
+    const shrink = (wide, min) => {
+      while (wide() > room && sz > min) {
+        sz -= 0.5;
+        el.style.fontSize = `${sz}px`;
+      }
+    };
+    shrink(() => el.getComputedTextLength(), el.dataset.two != null && fails?.textContent ? 8 : 7);
+    if (el.getComputedTextLength() <= room || el.dataset.two == null || !fails?.textContent) return;
+    const x = el.getAttribute("x");
+    const y = Number(el.getAttribute("y"));
+    done.setAttribute("x", x);
+    done.setAttribute("y", (y - 5.2).toFixed(1));
+    fails.setAttribute("x", x);
+    fails.setAttribute("y", (y + 4.4).toFixed(1));
+    fails.removeAttribute("dx");
+    el.style.fontSize = "";
+    sz = 9.5;
+    shrink(() => Math.max(done.getComputedTextLength(), fails.getComputedTextLength()), 7);
   }
 
   /** Fit every word that has a fixed room (names, specs, lane labels) to the reader's font, and draw every tag to its words. */
   function fitWords() {
     for (const el of root.querySelectorAll("svg text[data-fit]")) fitInto(el, el.dataset.full, Number(el.dataset.fit), Number(el.dataset.size), Number(el.dataset.min), true);
+    for (const el of root.querySelectorAll("svg .dx-count[data-room]")) fitCount(el);
     for (const g of root.querySelectorAll(".dx-tag")) {
       const t = g.querySelector("text");
       const r = g.querySelector("rect");
@@ -2652,11 +3227,187 @@ function mount(root, def, options = {}) {
   // ---- the inspector ------------------------------------------------------------------------------
   const kindName = { station: "Step", start: "Start", end: "End", choice: "Decision", split: "Parallel split", join: "Parallel join", timer: "Wait", store: "Store" };
 
+  /** A chance in words: "12%", or by kind, "60% of bots, 0.2% of people". */
+  function chanceWords(v) {
+    if (typeof v === "number") return pctFine(v);
+    const kinds = classNames.length ? classNames : Object.keys(v);
+    return kinds
+      .map((k) => [k, chanceOf(v, k)])
+      .sort((a, b) => b[1] - a[1])
+      .map(([k, x]) => `${pctFine(x)} of ${k}`)
+      .join(", ");
+  }
+
+  /** A start's rate and pause as they stand at the clock: the model, then every change up to now. */
+  function startNow(path) {
+    const p = parts.get(path);
+    let every = p.every;
+    let paused = false;
+    for (const r of R.changes) {
+      if (r.at !== path || !r.set) continue;
+      if (r.set.every != null) every = r.set.every;
+      if ("paused" in r.set) paused = Boolean(r.set.paused);
+    }
+    return { every, paused };
+  }
+
+  const bornAt = (path) => R.bornAt.get(path) || 0;
+
+  /** How one kind of item fared lately: where it ended, the commonest first. */
+  function fared(c) {
+    const r = R.recent(recentSpan, clock).filter((f) => f.cls === c);
+    if (!r.length) return "-";
+    const by = new Map();
+    for (const f of r) by.set(f.at, (by.get(f.at) || 0) + 1);
+    return [...by]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([at, n]) => `${pctFine(n / r.length)} ${parts.get(at)?.label ?? at}`)
+      .join(", ");
+  }
+
+  // ---- a part's settings, on the figure -------------------------------------------------------
+  // A part with dials, or servers that scale, keeps its settings in a panel next to it on the
+  // drawing: what it is doing now, its dials, its switch. A click on the part opens it (its
+  // badge, for a part that opens into a level); the close key, Escape or a click elsewhere
+  // closes it, and so does going to another level.
+  const viewEl = $(".dx-view");
+  const dock = $(".dx-dock");
+  const panel = document.createElement("div");
+  panel.className = "dx-panel";
+  panel.hidden = true;
+  panel.setAttribute("role", "dialog");
+  viewEl.append(panel);
+  let panelFor = null;
+  let panelLive = [];
+  const settingsOf = (path) => {
+    const p = parts.get(path);
+    return p && (p.dials?.length || p.scale) ? p : null;
+  };
+  /** A scaling station's policy as it stands at the clock (null: no autoscaling). */
+  function scaleNow(path) {
+    const p = parts.get(path);
+    let pol = p.scale ? { ...p.scale } : null;
+    for (const r of R.changes) if (r.at === path && r.set && "scale" in r.set) pol = r.set.scale ? { ...(p.scale || {}), ...r.set.scale } : null;
+    return pol;
+  }
+  function openPanel(path, { focus = false } = {}) {
+    if (!settingsOf(path)) return closePanel();
+    panelFor = path;
+    panel.hidden = false;
+    // the inspector draws the panel with it (and drops its pointer to the settings)
+    renderInspector();
+    for (const e of els.values()) for (const [p, g] of e.partEl) g.toggleAttribute("data-panel", p === panelFor);
+    if (focus) (panel.querySelector('[data-ctl][aria-checked="true"]') || panel.querySelector("button"))?.focus();
+  }
+  function closePanel({ focus = false } = {}) {
+    if (!panelFor) return;
+    const was = panelFor;
+    panelFor = null;
+    panel.hidden = true;
+    for (const e of els.values()) for (const g of e.partEl.values()) g.removeAttribute("data-panel");
+    if (selected === was) renderInspector();
+    if (focus) els.get(view)?.partEl.get(was)?.focus();
+  }
+  function renderPanel() {
+    if (!panelFor) return;
+    const p = parts.get(panelFor);
+    // keep the reader's place when the panel is drawn again (after a choice)
+    const had = panel.contains(document.activeElement) ? [document.activeElement.getAttribute("data-ctl"), document.activeElement.getAttribute("data-i")] : null;
+    panelLive = [];
+    const live = (fn) => {
+      const k = `p${panelLive.length}`;
+      panelLive.push([k, fn]);
+      return `<span data-pk="${k}">${esc(fn())}</span>`;
+    };
+    let h = `<div class="dx-panel-head"><span><span class="dx-panel-kind">Settings</span><span class="dx-panel-title">${esc(p.label)}</span></span><button type="button" class="dx-key dx-icon" data-panel-close title="Close (Escape)" aria-label="Close the settings of ${esc(p.label)}"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg></button></div>`;
+    if (p.scale) {
+      const pol = scaleNow(panelFor);
+      h += `<div class="dx-panel-live"><span class="dx-cells" data-cells aria-hidden="true">${"<i></i>".repeat(p.scale.max)}</span>${live(() => serversWords(panelFor))}</div>`;
+      h += pol ? `<p class="dx-panel-note">${esc(`Every ${fmt(meanOf(pol.every ?? model.horizon / 40))} it looks at the work that came in, and starts servers to keep them about ${pct(pol.target ?? 0.6)} busy, up to ${pol.max}; a new one takes ${pol.boot != null ? describe(pol.boot, unit) : "a while"} to start.`)}</p>` : `<p class="dx-panel-note">Autoscaling is off: the servers running stay, and no more start.</p>`;
+    } else if (p.kind === "start") h += `<div class="dx-panel-live">${live(() => (startNow(panelFor).paused ? "It sends nothing now." : `Now: ${rateWords(startNow(panelFor).every, unit, perDot)}`))}</div>`;
+    else if (p.kind === "station") h += `<div class="dx-panel-live">${live(() => `busy ${pct(R.utilization(panelFor, clock))}, ${count(R.st.get(panelFor)?.queue.length ?? 0)} waiting`)}</div>`;
+    h += controlsHtml(controls.filter((c) => c.path === panelFor), false);
+    panel.innerHTML = h;
+    panel.setAttribute("aria-label", `Settings of ${p.label}`);
+    refreshPanel();
+    if (had) panel.querySelector(`[data-ctl="${had[0]}"][data-i="${had[1]}"]`)?.focus();
+  }
+  function serversWords(path) {
+    const s = R.st.get(path);
+    const pol = scaleNow(path);
+    return `${s.servers} running${s.booting ? `, ${s.booting} starting` : ""}; ${pol ? `up to ${pol.max}` : "autoscaling off"}; busy ${pct(R.utilization(path, clock))}`;
+  }
+  function refreshPanel() {
+    if (!panelFor || panel.hidden) return;
+    for (const [k, fn] of panelLive) {
+      const el = panel.querySelector(`[data-pk="${k}"]`);
+      if (el) el.textContent = fn();
+    }
+    const cells = panel.querySelector("[data-cells]");
+    if (cells) {
+      const s = R.st.get(panelFor);
+      const max = scaleNow(panelFor)?.max ?? s.servers;
+      [...cells.children].forEach((c, i) => {
+        c.className = i < s.servers ? "dx-run" : i < s.servers + s.booting ? "dx-boot" : i >= max ? "dx-out" : "";
+      });
+    }
+  }
+  /** Next to its part: under it, else over it; on a narrow card, at the bottom of the drawing. */
+  function placePanel() {
+    if (!panelFor || panel.hidden) return;
+    const g = els.get(view)?.partEl.get(panelFor);
+    if (!g) return closePanel();
+    const vr = viewEl.getBoundingClientRect();
+    const pr = g.getBoundingClientRect();
+    const top0 = stage.getBoundingClientRect().top - vr.top;
+    const floor = dock.getBoundingClientRect().top - vr.top;
+    const narrow = vr.width < 560;
+    panel.style.width = narrow ? `${Math.round(vr.width - 16)}px` : "";
+    const w = panel.offsetWidth;
+    const h = panel.offsetHeight;
+    let left;
+    let top;
+    if (narrow) {
+      left = 8;
+      top = Math.max(top0 + 8, floor - h - 8);
+    } else {
+      left = Math.min(Math.max(8, pr.left - vr.left + pr.width / 2 - w / 2), vr.width - w - 8);
+      const below = pr.bottom - vr.top + 10;
+      const above = pr.top - vr.top - 10 - h;
+      top = below + h <= floor - 6 ? below : above >= top0 + 6 ? above : Math.max(top0 + 6, Math.min(below, floor - h - 6));
+    }
+    panel.style.left = `${Math.round(left)}px`;
+    panel.style.top = `${Math.round(top)}px`;
+  }
+  stage.addEventListener("scroll", placePanel, { passive: true });
+
+  /** The reader's controls (switches and dials) as rows of options; `named` puts the part's name in each. */
+  function controlsHtml(list, named) {
+    if (!list.length) return "";
+    let h = `<div class="dx-dials">`;
+    for (const c of list) {
+      const label = c.kind === "switch" ? (named ? c.name : "On or off") : named ? `${c.part.label}: ${c.dial.label}` : c.dial.label;
+      const options = c.kind === "switch" ? ["on", "off"] : c.dial.options.map((o) => o.label);
+      const at = c.kind === "switch" ? (settings.get(c.key) ? 0 : 1) : settings.get(c.key);
+      // a switch fits on one line with its name; a dial's options go under its label
+      h += `<div class="dx-dial${c.kind === "switch" ? " dx-dial-row" : ""}"><span class="dx-dial-label">${esc(label)}</span><span class="dx-seg" role="radiogroup" aria-label="${esc(label)}">`;
+      options.forEach((o, i) => (h += `<button type="button" role="radio" aria-checked="${i === at}" data-ctl="${esc(c.key)}" data-i="${i}">${esc(o)}</button>`));
+      h += `</span></div>`;
+    }
+    return `${h}</div>`;
+  }
+
   function stationWords(p) {
+    if (isOff(p.path)) return "Switched off: everything passes straight through, with no work and no waiting.";
     if (p.inside) return `A process of its own (${p.inside.parts.filter((q) => q.kind === "station").length} steps). Click it to go inside.`;
+    if (p.scale) {
+      const sc = p.scale;
+      return `Scales between ${sc.min} and ${sc.max} servers: it starts more when they would be over ${pct(sc.target ?? 0.6)} busy, and a new one takes ${sc.boot != null ? describe(sc.boot, unit) : "a while"} to be ready. Each ${noun} takes ${describe(p.work, unit)}${p.patience != null ? `; ${plural} give up after waiting ${short(p.patience, unit)}` : ""}.`;
+    }
     const cap = Number.isFinite(p.servers) ? (p.servers === 1 ? "One item at a time" : `${p.servers} items at a time`) : "No limit on how many at once";
     const extra = [];
-    if (p.fail) extra.push(`${Math.round(p.fail * 100)}% ${p.failLabel || "fail"}`);
+    if (p.fail) extra.push(`${chanceWords(p.fail)} ${p.failLabel || "fail"}`);
     if (p.patience != null) extra.push(`items give up after waiting ${short(p.patience, unit)}`);
     if (p.capacity != null) extra.push(`room for ${p.capacity} in the queue`);
     return `${cap}; each takes ${describe(p.work, unit)}${extra.length ? `; ${extra.join("; ")}` : ""}.`;
@@ -2692,9 +3443,13 @@ function mount(root, def, options = {}) {
   function actionsFor(p) {
     const acts = [];
     const base = parts.get(p.path);
+    if (isOff(p.path)) return acts;
     if (p.kind === "station" && Number.isFinite(p.servers)) {
       const cur = R.st.get(p.path)?.servers ?? p.servers;
-      if (cur >= 4) {
+      // a station that scales sets its own number of servers (its dials change how)
+      if (p.scale) {
+        /* no capacity what-ifs */
+      } else if (cur >= 4) {
         // with many at once, plus or minus one is noise: halve it or double it
         acts.push(["Twice as many at once", () => inject({ part: p.path, set: { servers: cur * 2 } }, `${p.label} now takes ${cur * 2} at a time.`)]);
         acts.push(["Half as many", () => inject({ part: p.path, set: { servers: Math.max(1, Math.floor(cur / 2)) } }, `${p.label} now takes ${Math.max(1, Math.floor(cur / 2))} at a time.`)]);
@@ -2710,19 +3465,22 @@ function mount(root, def, options = {}) {
       acts.push(["Twice as fast", () => inject({ part: p.path, set: { work: scaleSpec(base.work, 0.5) } }, `${p.label} now takes half as long.`)]);
       if (p.fail) acts.push(["Never fails", () => inject({ part: p.path, set: { fail: 0 } }, `${p.label} no longer fails.`)]);
     }
-    if (p.kind === "start" && p.every != null && !levelOf(p.path)) {
-      acts.push(["50% more work", () => inject({ part: p.path, set: { every: scaleSpec(base.every, 1 / 1.5) } }, "Work now arrives 50% more often.")]);
-      acts.push(["Half the work", () => inject({ part: p.path, set: { every: scaleSpec(base.every, 2) } }, "Work now arrives half as often.")]);
-      // a burst: three times the work for a while, then back to normal
+    // a start that sends nothing has no rate to change: its dial lets it go first
+    if (p.kind === "start" && p.every != null && !levelOf(p.path) && !startNow(p.path).paused) {
+      // from the rate it has now (a dial or an earlier what-if may have set it)
+      const every = startNow(p.path).every;
+      acts.push(["50% more work", () => inject({ part: p.path, set: { every: scaleSpec(every, 1 / 1.5) } }, "Work now arrives 50% more often.")]);
+      acts.push(["Half the work", () => inject({ part: p.path, set: { every: scaleSpec(every, 2) } }, "Work now arrives half as often.")]);
+      // a burst: three times the work for a while, then back to what it was
       const span = options.burst ?? Math.max(1e-6, model.horizon / 10);
-      acts.push([`A burst (${fmt(span)})`, () => inject([{ part: p.path, set: { every: scaleSpec(base.every, 1 / 3) } }, { part: p.path, set: { every: base.every }, t: clock + span }], `Three times the work for ${fmt(span)}.`)]);
+      acts.push([`A burst (${fmt(span)})`, () => inject([{ part: p.path, set: { every: scaleSpec(every, 1 / 3) } }, { part: p.path, set: { every }, t: clock + span }], `Three times the work for ${fmt(span)}.`)]);
       // with several kinds of work: half of one kind stops arriving (the rest arrive as before)
       const mix = Object.entries(p.classes || {});
       if (mix.length > 1) {
         const total = mix.reduce((a, [, w]) => a + w, 0);
         for (const [c, w] of mix) {
           const kept = total - w / 2;
-          acts.push([`Half the ${c}`, () => inject({ part: p.path, set: { classes: { ...p.classes, [c]: w / 2 }, every: scaleSpec(base.every, total / kept) } }, `Half the ${c} no longer arrives.`)]);
+          acts.push([`Half the ${c}`, () => inject({ part: p.path, set: { classes: { ...p.classes, [c]: w / 2 }, every: scaleSpec(every, total / kept) } }, `Half the ${c} no longer arrives.`)]);
         }
       }
     }
@@ -2730,7 +3488,7 @@ function mount(root, def, options = {}) {
       // decisions by chance: shift the odds of the rarer way
       const lv = levels.get(levelOf(p.path));
       const outs = lv.outs.get(p.id);
-      if (outs.every((r) => r.p != null)) {
+      if (outs.every((r) => typeof r.p === "number")) {
         const last = [...changes].reverse().find((c) => c.part === p.path && c.set?.p);
         const total = last ? Object.values(last.set.p).reduce((a, b) => a + b, 0) : 1;
         const cur = new Map(outs.map((r) => [r.id, last ? (last.set.p[r.id] ?? 0) / total : r.p]));
@@ -2781,10 +3539,16 @@ function mount(root, def, options = {}) {
       if (p.about) html += `<p>${esc(p.about)}</p>`;
       if (p.kind === "station") {
         html += `<p>${esc(stationWords(p))}</p><dl>`;
-        html += `<dt>waiting now</dt>${val(() => String(R.st.get(selected)?.queue.length ?? 0))}`;
-        html += `<dt>in work now</dt>${val(() => String(R.st.get(selected)?.busy ?? 0))}`;
-        html += `<dt>done</dt>${val(() => String(R.st.get(selected)?.finished ?? 0))}`;
+        html += `<dt>waiting now</dt>${val(() => count(R.st.get(selected)?.queue.length ?? 0))}`;
+        html += `<dt>in work now</dt>${val(() => count(R.st.get(selected)?.busy ?? 0))}`;
+        html += `<dt>done</dt>${val(() => count(R.st.get(selected)?.finished ?? 0))}`;
         if (Number.isFinite(p.servers)) html += `<dt>busy</dt>${val(() => pct(R.utilization(selected, clock)))}`;
+        if (p.scale)
+          html += `<dt>servers</dt>${val(() => {
+            const s = R.st.get(selected);
+            return `${s.servers} running${s.booting ? `, ${s.booting} starting` : ""}`;
+          })}`;
+        if (p.switch) html += `<dt>passed while off</dt>${val(() => count(R.st.get(selected)?.passed ?? 0))}`;
         html += `<dt>average wait</dt>${val(() => {
           const s = R.st.get(selected);
           return s?.waitN ? fmt(s.waitSum / s.waitN) : "-";
@@ -2799,13 +3563,15 @@ function mount(root, def, options = {}) {
       } else if (p.kind === "choice") {
         const lv = levels.get(levelOf(selected));
         const outs = lv.outs.get(p.id);
-        html += `<p>${esc(outs.some((r) => r.p != null) ? "Decides by chance:" : "Decides by how the item did:")}</p><dl>`;
+        const byKind = outs.some((r) => r.p != null && typeof r.p === "object");
+        const off = isOff(selected) && outs.find((r) => r.bypass);
+        html += `<p>${esc(off ? `Switched off: everything goes to ${lv.byId.get(off.to).label}.` : outs.some((r) => r.p != null) ? (byKind ? "Decides by chance, and the chance depends on the kind of item:" : "Decides by chance:") : "Decides by how the item did:")}</p><dl>`;
         for (const r of outs) {
           const key = `${lv.path}::${r.id}`;
           const to = lv.byId.get(r.to);
           const last = [...changes].reverse().find((c) => c.part === selected && c.set?.p);
           const pNow = last ? (last.set.p[r.id] ?? 0) / Object.values(last.set.p).reduce((a, b) => a + b, 0) : r.p;
-          const rule = r.p != null ? `${Math.round(pNow * 100)}%` : r.when === "else" || r.when == null ? "otherwise" : r.when.startsWith("class:") ? r.when.slice(6) : `if ${r.when}`;
+          const rule = r.p != null ? (typeof pNow === "object" ? chanceWords(pNow) : `${Math.round(pNow * 100)}%`) : r.when === "else" || r.when == null ? "otherwise" : r.when.startsWith("class:") ? r.when.slice(6) : `if ${r.when}`;
           html += `<dt>${esc(rule)}${r.max ? ` (at most ${r.max}×)` : ""} → ${esc(to.label)}</dt>${val(() => {
             const c = R.choices.get(selected);
             const total = c ? Object.values(c.counts).reduce((a, b) => a + b, 0) : 0;
@@ -2814,16 +3580,19 @@ function mount(root, def, options = {}) {
         }
         html += `</dl>`;
       } else if (p.kind === "start" && p.every != null) {
-        html += `<p>New work arrives every ${esc(describe(p.every, unit))}${p.count ? `, ${p.count} items in all` : ""}.</p><dl><dt>arrived</dt>${val(() => String(R.born))}</dl>`;
+        const now = startNow(selected);
+        const how = now.paused ? "It sends nothing now." : perDot > 1 ? `About ${compact(perDot / meanOf(now.every))} ${plural} arrive each ${unit === "s" ? "second" : unit}; each dot is ${perDot} of them.` : `New work arrives every ${describe(now.every, unit)}${p.count ? `, ${p.count} items in all` : ""}.`;
+        html += `<p>${esc(how)}</p><dl><dt>arrived</dt>${val(() => count(bornAt(selected)))}</dl>`;
       } else if (p.kind === "end") {
-        html += `<dl><dt>arrived here</dt>${val(() => String(R.ends.get(selected) || 0))}</dl>`;
+        html += `<dl><dt>arrived here</dt>${val(() => count(R.ends.get(selected) || 0))}</dl>`;
       } else if (p.kind === "timer") {
-        html += `<p>Holds each item ${esc(describe(p.wait, unit))}.</p><dl><dt>waiting now</dt>${val(() => String(R.timers.get(selected)?.size ?? 0))}</dl>`;
+        html += `<p>Holds each item ${esc(describe(p.wait, unit))}.</p><dl><dt>waiting now</dt>${val(() => count(R.timers.get(selected)?.size ?? 0))}</dl>`;
       } else if (p.kind === "join") {
         html += `<p>An item goes on only when every branch of its split has arrived. It is as late as its slowest branch.</p>`;
       } else if (p.kind === "split") {
         html += `<p>Each item becomes one item per branch, all at once.</p>`;
       }
+      if (settingsOf(selected) && panelFor !== selected) html += `<p>Its settings are on the figure, next to it: click it, or press Enter.</p>`;
       acts = actionsFor(p);
     } else {
       const holder = view ? parts.get(view) : null;
@@ -2833,10 +3602,18 @@ function mount(root, def, options = {}) {
       if (holder) {
         // this level's own numbers: the station that holds it
         const S = () => R.st.get(view);
-        html += `<dl><dt>done</dt>${val(() => String(S().finished))}<dt>inside now</dt>${val(() => String(S().busy))}<dt>average time inside</dt>${val(() => (S().workN ? fmt(S().workSum / S().workN) : "-"))}`;
-        if (Number.isFinite(holder.servers)) html += `<dt>waiting to get in</dt>${val(() => String(S().queue.length))}`;
+        html += `<dl><dt>done</dt>${val(() => count(S().finished))}<dt>inside now</dt>${val(() => count(S().busy))}<dt>average time inside</dt>${val(() => (S().workN ? fmt(S().workSum / S().workN) : "-"))}`;
+        if (Number.isFinite(holder.servers)) html += `<dt>waiting to get in</dt>${val(() => count(S().queue.length))}`;
         html += `</dl>`;
-      } else html += `<dl><dt>done</dt>${val(() => String(R.done))}<dt>in flight</dt>${val(() => String(R.alive.size))}<dt>median time</dt>${val(() => (R.done ? fmt(R.quantile(0.5)) : "-"))}<dt>slowest 5%</dt>${val(() => (R.done >= 5 ? `over ${fmt(R.quantile(0.95))}` : "-"))}</dl>`;
+      } else {
+        html += `<dl><dt>done</dt>${val(() => count(R.done))}<dt>in flight</dt>${val(() => count(R.alive.size))}<dt>median time</dt>${val(() => (R.done ? fmt(R.quantile(0.5)) : "-"))}<dt>slowest 5%</dt>${val(() => (R.done >= 5 ? `over ${fmt(R.quantile(0.95))}` : "-"))}</dl>`;
+        // with several kinds of item: how each kind has fared lately, by where it ended
+        if (classNames.length > 1) {
+          html += `<div class="dx-kind">In the last ${esc(fmt(recentSpan))}</div><dl>`;
+          for (const c of classNames) html += `<dt>${esc(c)}</dt>${val(() => fared(c))}`;
+          html += `</dl>`;
+        }
+      }
       const words = () => bottleneckWords(view);
       html += `<p data-k="b">${esc(words())}</p>`;
       refreshers.push(["b", words]);
@@ -2858,6 +3635,10 @@ function mount(root, def, options = {}) {
       box.append(b);
     }
     refreshInspector(true);
+    if (panelFor) {
+      renderPanel();
+      placePanel();
+    }
   }
 
   function bottleneckWords(within = "") {
@@ -2953,6 +3734,7 @@ function mount(root, def, options = {}) {
         split: () => `split into ${r.children.length} parallel branches`,
         join: () => `all branches met at ${name(r.at)}`,
         wait: () => `waits at ${name(r.at)}`,
+        pass: () => `passed through ${name(r.at)}, which is switched off`,
         done: () => `ended: ${name(r.at)}${r.outcome !== "ok" && r.outcome !== parts.get(r.at)?.outcome ? ` (${r.outcome})` : ""}`,
       }[r.k];
       if (words) rows.push([r.t, words()]);
@@ -3062,6 +3844,7 @@ function mount(root, def, options = {}) {
     root.dispatchEvent(new CustomEvent(`dissect:${type}`, { bubbles: true, detail }));
   }
   function select(path) {
+    if (panelFor && path !== panelFor) closePanel();
     selected = path;
     emit("select", { path, part: path ? parts.get(path) : null });
     for (const e of els.values()) for (const [p, g] of e.partEl) g.classList.toggle("dx-sel", p === path);
@@ -3083,6 +3866,21 @@ function mount(root, def, options = {}) {
   hint.textContent = hintText;
   stage.addEventListener("pointerdown", touch);
   stage.addEventListener("click", (e) => {
+    const gear = e.target.closest("[data-settings]");
+    if (gear) {
+      const path = gear.getAttribute("data-settings");
+      if (selected !== path) select(path);
+      openPanel(path);
+      return;
+    }
+    const sw = e.target.closest("[data-switch]");
+    if (sw) {
+      // turning a part off or on selects it, and never opens it
+      const path = sw.getAttribute("data-switch");
+      toggle(path);
+      if (selected !== path) select(path);
+      return;
+    }
     const tokEl = e.target.closest("[data-tok]");
     if (tokEl) {
       setFollow(tokEl.getAttribute("data-tok"));
@@ -3094,7 +3892,11 @@ function mount(root, def, options = {}) {
       if (g.getAttribute("data-open") === "1") {
         select(path);
         setView(path, { focus: false });
-      } else select(path);
+      } else {
+        select(path);
+        // a part with settings opens them, next to it
+        if (settingsOf(path)) openPanel(path);
+      }
       return;
     }
     select(null);
@@ -3103,8 +3905,46 @@ function mount(root, def, options = {}) {
     const g = e.target.closest?.(".dx-part");
     if (g) select(g.getAttribute("data-path"));
   });
+  // a control in the panel (or anywhere in the card) sets what it names
+  const onControl = (e) => {
+    if (e.target.closest("[data-panel-close]")) {
+      touch();
+      closePanel({ focus: true });
+      return;
+    }
+    const b = e.target.closest("[data-ctl]");
+    if (!b) return;
+    touch();
+    const c = controlOf.get(b.getAttribute("data-ctl"));
+    const i = Number(b.getAttribute("data-i"));
+    if (c.kind === "switch") {
+      if (settings.get(c.key) !== (i === 0)) toggle(c.path);
+    } else chooseOption(c.key, i);
+  };
+  inspector.addEventListener("click", onControl);
+  panel.addEventListener("click", onControl);
   root.addEventListener("keydown", (e) => {
     if (e.target.closest?.("button") && (e.key === " " || e.key === "Enter")) return;
+    const swEl = e.target.closest?.("[data-switch]");
+    if (swEl && (e.key === " " || e.key === "Enter")) {
+      e.preventDefault();
+      touch();
+      toggle(swEl.getAttribute("data-switch"));
+      return;
+    }
+    const gearEl = e.target.closest?.("[data-settings]");
+    if (gearEl && (e.key === " " || e.key === "Enter")) {
+      e.preventDefault();
+      touch();
+      openPanel(gearEl.getAttribute("data-settings"), { focus: true });
+      return;
+    }
+    // Escape closes the settings first, and takes the reader back to their part
+    if (e.key === "Escape" && panelFor) {
+      touch();
+      closePanel({ focus: true });
+      return;
+    }
     touch();
     const g = e.target.closest?.(".dx-part");
     if (e.key === " " || e.key === "k") {
@@ -3112,8 +3952,12 @@ function mount(root, def, options = {}) {
       playing ? pause() : play();
     } else if (e.key === "Enter" && g) {
       e.preventDefault();
-      if (g.getAttribute("data-open") === "1") setView(g.getAttribute("data-path"), { focus: true });
-      else select(g.getAttribute("data-path"));
+      const path = g.getAttribute("data-path");
+      if (g.getAttribute("data-open") === "1") setView(path, { focus: true });
+      else {
+        select(path);
+        if (settingsOf(path)) openPanel(path, { focus: true });
+      }
     } else if (e.key === "Escape") {
       if (followed && !idleFollow) setFollow(null);
       else if (view) setView(levelOf(view), { focus: true, from: view });
@@ -3161,6 +4005,7 @@ function mount(root, def, options = {}) {
       const width = m.width <= w ? Math.min(w, m.width * 1.15) : Math.max(m.width * 0.68, w);
       svg.style.width = `${Math.round(width)}px`;
     }
+    placePanel();
   }
   if (typeof ResizeObserver === "function") new ResizeObserver(fit).observe(stage);
   fit();
@@ -3185,8 +4030,9 @@ function mount(root, def, options = {}) {
   }
   renderCrumbs();
   renderControls();
-  renderInspector();
   fitWords();
+  syncSwitches();
+  renderInspector();
   if (document.fonts?.ready) document.fonts.ready.then(fitWords);
   draw();
   drawSlow();
@@ -3205,6 +4051,12 @@ function mount(root, def, options = {}) {
     inject,
     undo,
     restart,
+    /** Turn a part's switch (a station or a choice) off or back on. */
+    toggle,
+    /** Set dial number i of a part to one of its options. */
+    setDial: (path, i, index) => chooseOption(`dial:${path}#${i}`, index),
+    /** Open a part's settings on the figure (a part with dials or servers that scale), or close them. */
+    settings: (path) => (path ? (select(path), openPanel(path)) : closePanel()),
     /** Jump the clock (tests and captures): runs the model to t. */
     seek(t) {
       if (t < clock) restart(false);
@@ -3218,7 +4070,7 @@ function mount(root, def, options = {}) {
     },
     /** Fit the words again (after the page's fonts change). */
     refit: fitWords,
-    state: () => ({ clock, view, selected, followed, playing, speed, layer, done: R.done, alive: R.alive.size, changes: changes.length, pace, basePace, median: R.quantile(0.5) }),
+    state: () => ({ clock, view, selected, followed, playing, speed, layer, done: R.done, alive: R.alive.size, changes: changes.length, pace, basePace, median: R.quantile(0.5), settings: Object.fromEntries(settings), panel: panelFor }),
     get replay() {
       return R;
     },

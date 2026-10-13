@@ -10,6 +10,7 @@
 // slots, bays, needles, pins, mini-maps.
 
 import { short } from "./dist.mjs";
+import { SWITCH_ROOM, SETTINGS_ROOM, hasSettings } from "./layout.mjs";
 import { along, roundedPath } from "./geom.mjs";
 
 export const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
@@ -112,11 +113,12 @@ export const THEMES = {
     warn: "#b35c00",
     bad: "#c92a2a",
     tag: "#ffffff",
+    // kinds of items, in the order they appear; green comes last, since green is also "busy" and "on"
     c0: "#1d1c1a",
     c1: "#1864ab",
-    c2: "#2b8a3e",
-    c3: "#862e9c",
-    c4: "#0b7285",
+    c2: "#862e9c",
+    c3: "#0b7285",
+    c4: "#2b8a3e",
   },
   dark: {
     paper: "#121211",
@@ -144,9 +146,9 @@ export const THEMES = {
     tag: "#1f1f1c",
     c0: "#eceae4",
     c1: "#74c0fc",
-    c2: "#8ce99a",
-    c3: "#e599f7",
-    c4: "#66d9e8",
+    c2: "#e599f7",
+    c3: "#66d9e8",
+    c4: "#8ce99a",
   },
 };
 export const CLASS_COLORS = 5;
@@ -192,7 +194,27 @@ export function css() {
 .dx-seg button{all:unset;cursor:pointer;padding:0 9px;display:inline-flex;align-items:center;font-size:11.5px;font-weight:600;color:var(--dx-ink2)}
 .dx-seg button+button{border-left:1px solid var(--dx-rule)}
 .dx-seg button:hover{color:var(--dx-ink);background:var(--dx-plate2)}
-.dx-seg button[aria-pressed="true"]{background:var(--dx-ink);color:var(--dx-plate)}
+.dx-seg button[aria-pressed="true"],.dx-seg button[aria-checked="true"]{background:var(--dx-ink);color:var(--dx-plate)}
+.dx-dials{display:flex;flex-direction:column;gap:9px;margin:12px 0}
+.dx-dial{display:flex;flex-direction:column;align-items:flex-start;gap:4px}
+.dx-dial-label{color:var(--dx-ink3);font-size:11.5px}
+.dx-panel{position:absolute;z-index:4;width:276px;max-width:calc(100% - 16px);padding:10px 12px 12px;border:1px solid var(--dx-edge);border-radius:12px;background:var(--dx-paper);box-shadow:inset 0 1px 0 var(--dx-bevel),0 16px 36px -16px var(--dx-shade);font-size:12.5px;color:var(--dx-ink2)}
+.dx-panel[hidden]{display:none}
+.dx-panel-head{display:flex;align-items:center;gap:8px;margin:-2px -4px 6px 0}
+.dx-panel-head>span{flex:1;min-width:0}
+.dx-panel-kind{display:block;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--dx-ink3)}
+.dx-panel-title{display:block;font-size:13.5px;font-weight:650;color:var(--dx-ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dx-panel-live{margin:2px 0 4px;color:var(--dx-ink)}
+.dx-panel-note{margin:8px 0 0;color:var(--dx-ink3);font-size:11.5px}
+.dx-panel .dx-dials{margin:10px 0 0}
+.dx-cells{display:flex;flex-wrap:wrap;gap:3px;margin:6px 0}
+.dx-cells i{display:block;width:11px;height:15px;border-radius:3px;border:1px solid var(--dx-seam);opacity:.55}
+.dx-cells i.dx-run{background:var(--dx-ink2);border-color:var(--dx-ink2);opacity:1}
+.dx-cells i.dx-boot{border:1px dashed var(--dx-warn);opacity:1;animation:dx-boot 1.2s ease-in-out infinite}
+.dx-cells i.dx-out{opacity:.22;border-style:dotted}
+.dx-dial.dx-dial-row{flex-direction:row;align-items:center;justify-content:space-between;gap:12px;max-width:240px}
+.dx-dial .dx-seg{height:auto;min-height:26px;max-width:100%;flex-wrap:wrap}
+.dx-dial .dx-seg button{min-height:24px}
 .dx-seg button:focus-visible{outline:2px solid var(--dx-accent);outline-offset:-2px}
 .dx-readout{margin-left:auto;padding-left:8px;color:var(--dx-ink);white-space:nowrap;font-variant-numeric:tabular-nums}
 .dx-close svg{width:12px;height:12px}
@@ -212,7 +234,7 @@ export function css() {
 .dx-journey{list-style:none;margin:8px 0 0;padding:0;max-height:210px;overflow:auto;font-size:12px}
 .dx-journey li{display:grid;grid-template-columns:5.2em 1fr;gap:8px;padding:3px 0;border-bottom:1px dashed var(--dx-rule)}
 .dx-journey time{color:var(--dx-ink3);text-align:right}
-.dx-caption{margin:12px 4px 0;font-size:13px;color:var(--dx-ink2);max-width:80ch}
+.dx-caption{margin:12px 4px 0;font-size:13px;color:var(--dx-ink2)}
 .dx-legend{display:flex;flex-wrap:wrap;gap:16px;margin:8px 4px 0;font-size:12px;color:var(--dx-ink3)}
 .dx-legend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:-1px}
 .dx-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
@@ -240,6 +262,27 @@ export function css() {
 .dx-spec{fill:var(--dx-ink3);font-size:10px}
 .dx-alt-text{fill:var(--dx-ink2);font-size:10px;font-weight:600;opacity:0}
 .dx-bay{fill:var(--dx-bay);stroke:var(--dx-seam);stroke-width:.8}
+.dx-bay.dx-bay-off{fill:none;stroke-dasharray:1.5 1.5;opacity:.6}
+.dx-bay.dx-bay-boot{fill:none;stroke:var(--dx-warn);stroke-dasharray:2 1.4;animation:dx-boot 1.2s ease-in-out infinite}
+@keyframes dx-boot{50%{opacity:.35}}
+.dx-gear{cursor:pointer;outline:none}
+.dx-gear-hit{fill:transparent;pointer-events:all}
+.dx-gear-box{fill:var(--dx-plate2);stroke:var(--dx-edge);stroke-width:.9;transition:fill .15s}
+.dx-gear-glyph{fill:none;stroke:var(--dx-ink2);stroke-width:1.3;stroke-linecap:round}
+.dx-gear-knob{fill:var(--dx-plate);stroke:var(--dx-ink2);stroke-width:1.2}
+.dx-gear:hover .dx-gear-box{fill:var(--dx-plate)}
+.dx-gear:focus-visible .dx-gear-hit{stroke:var(--dx-accent);stroke-width:1.6}
+.dx-part[data-panel] .dx-gear-box{stroke:var(--dx-accent);stroke-width:1.4}
+.dx-switch{cursor:pointer;outline:none}
+.dx-switch-hit{fill:transparent;pointer-events:all}
+.dx-switch-track{fill:var(--dx-ok);transition:fill .15s}
+.dx-switch-knob{fill:var(--dx-paper);stroke:var(--dx-ink3);stroke-width:.8;transition:transform .15s}
+.dx-switch:hover .dx-switch-track{filter:brightness(1.08)}
+.dx-switch:focus-visible .dx-switch-hit{stroke:var(--dx-accent);stroke-width:1.6}
+.dx-part[data-off] .dx-switch-track{fill:var(--dx-seam)}
+.dx-part[data-off] .dx-switch-knob{transform:translateX(-10px)}
+.dx-part[data-off] .dx-plate{stroke-dasharray:5 3}
+.dx-part[data-off] :is(.dx-glyph,.dx-flowrow,.dx-window,.dx-mini,.dx-gate-mark,.dx-needle,.dx-gauge-track,.dx-gauge,.dx-lamp,.dx-count){opacity:.3}
 .dx-bay-fill{fill:var(--dx-ink);opacity:.8}
 .dx-bay-fill.dx-c-bad{fill:var(--dx-bad);opacity:1}
 .dx-bay-fill.dx-lit{fill:var(--dx-accent);opacity:1}
@@ -299,7 +342,7 @@ export function css() {
 .dx[data-layer="fail"] .dx-route[data-fail="1"] .dx-rail{stroke:var(--dx-bad);stroke-width:2}
 .dx-flowrow{transition:opacity .3s}
 .dx-spec,.dx-alt-text{transition:opacity .3s}
-@media (prefers-reduced-motion:reduce){.dx *{transition:none!important}}
+@media (prefers-reduced-motion:reduce){.dx *{transition:none!important;animation:none!important}}
 `;
 }
 
@@ -331,7 +374,10 @@ const stepsInside = (m) => m.parts.filter((p) => p.kind === "station").length;
 /** The spec line a station shows under its name. */
 export function specOf(part, unit) {
   if (part.spec) return part.spec;
-  if (part.inside) return `${stepsInside(part.inside)} steps inside`;
+  if (part.inside) {
+    const k = stepsInside(part.inside);
+    return `${k} step${k === 1 ? "" : "s"} inside`;
+  }
   // capacity is drawn (one bay per server), so the line only says how long one item takes
   return short(part.work, unit);
 }
@@ -347,8 +393,10 @@ function station(box, part, model, meta, sheet) {
   const servers = part.servers;
   const open = Boolean(part.inside);
   const finite = Number.isFinite(servers);
-  // the name's room ends short of the lamp, which an open step carries in its top corner
-  const nameRoom = w - 46 - (open ? 10 : 0);
+  // the name's room ends short of the lamp, which an open step carries in its top corner, and of a switch
+  const nameRoom = w - 46 - (open ? 10 : 0) - (part.switch ? SWITCH_ROOM : 0) - (hasSettings(part) ? SETTINGS_ROOM : 0);
+  // the name row's right end: the lamp of an open step, then its switch, then its settings badge
+  const badgeX = L + w - (open ? 22 : 12) - (part.switch ? 28 : 0) - 16;
   const name = fitText(part.label, nameRoom, 12.5);
   const specFit = fitText(specOf(part, model.unit), w - 24 - (open ? 30 : 0), 10, 9);
   let s = halo(x, y, w, h, 9);
@@ -373,22 +421,29 @@ function station(box, part, model, meta, sheet) {
     const c = 5;
     s += `<path class="dx-corner" d="M${n(wx - 2)} ${n(wy + c)}v${-c - 2}h${c + 2}M${n(wx + ww - c)} ${n(wy - 2)}h${c + 2}v${c + 2}M${n(wx + ww + 2)} ${n(wy + wh - c)}v${c + 2}h${-c - 2}M${n(wx + c)} ${n(wy + wh + 2)}h${-c - 2}v${-c - 2}"/>`;
     s += `<circle class="dx-lamp" data-lamp cx="${n(L + w - 15)}" cy="${n(T + 18)}" r="3.2"/>`;
-    // the counters share the spec's row, in the 30 px its room leaves them
-    s += `<text class="dx-count" data-count data-room="26" x="${n(L + w - 12)}" y="${n(T + 38)}" text-anchor="end"><tspan data-done>✓0</tspan><tspan class="dx-bad" data-fails></tspan></text>`;
+    if (part.switch) s += switchSvg(L + w - 44, T + 12, part);
+    if (hasSettings(part)) s += settingsSvg(badgeX, T + 10, part);
+    // the counters share the spec's row: the page gives them what the spec leaves
+    s += `<text class="dx-count" data-count data-room="26" data-after-spec x="${n(L + w - 12)}" y="${n(T + 38)}" text-anchor="end"><tspan data-done>✓0</tspan><tspan class="dx-bad" data-fails dx="4"></tspan></text>`;
   } else {
     s += `<line class="dx-seam" x1="${n(L + 8)}" y1="${n(T + 46)}" x2="${n(L + w - 8)}" y2="${n(T + 46)}"/>`;
     const rowY = T + 58;
     let row = "";
+    if (part.switch) s += switchSvg(L + w - 34, T + 12, part);
+    if (hasSettings(part)) s += settingsSvg(badgeX, T + 10, part);
     // the row's left holds the work (bays or a rack), its right the counters and the gauge
     let used;
-    if (finite && servers <= 8) {
+    // a station that scales has a bay for every server it can have; the page shows which run
+    const bays = part.scale && part.scale.max <= 16 ? part.scale.max : finite && servers <= 8 ? servers : 0;
+    if (bays) {
       // one bay per server, in a fixed room: one row of up to three, two rows from four
-      const rows = servers > 3 ? 2 : 1;
-      const k = Math.ceil(servers / rows);
-      const gap = k <= 2 ? 4 : 3;
-      const bw = Math.min(30, Math.floor((BAY_ROOM - (k - 1) * gap) / k));
+      const rows = bays > 3 ? 2 : 1;
+      const k = Math.ceil(bays / rows);
+      const gap = k <= 2 ? 4 : k > 4 ? 2 : 3;
+      const room = part.scale ? 64 : BAY_ROOM;
+      const bw = Math.min(30, Math.floor((room - (k - 1) * gap) / k));
       const bh = rows === 2 ? 8 : 9;
-      for (let i = 0; i < servers; i++) {
+      for (let i = 0; i < bays; i++) {
         const bx = L + 12 + (i % k) * (bw + gap);
         const by = rows === 2 ? rowY + (i < k ? -4.8 : 4.8) : rowY;
         row += `<rect class="dx-bay" x="${n(bx)}" y="${n(by - bh / 2)}" width="${bw}" height="${bh}" rx="2"/>`;
@@ -397,14 +452,14 @@ function station(box, part, model, meta, sheet) {
       }
       used = k * (bw + gap) - gap;
     } else {
-      // no limit: items in work sit in a row; past five, a count
-      row += `<text class="dx-rack" data-rack x="${n(L + 12 + 5 * 9 + 1)}" y="${n(rowY + 3.4)}"></text>`;
-      st.rack = { x: L + 16, y: rowY, step: 9, max: 5 };
-      used = 5 * 9 + 1 + 16;
+      // no limit: items in work sit in a row; past four, a count
+      row += `<text class="dx-rack" data-rack x="${n(L + 12 + 4 * 9 + 1)}" y="${n(rowY + 3.4)}"></text>`;
+      st.rack = { x: L + 16, y: rowY, step: 9, max: 4 };
+      used = 4 * 9 + 1 + 16;
     }
     const gx = L + w - 15;
-    // the page sets the counters smaller when they outgrow the room the work leaves them
-    row += `<text class="dx-count" data-count data-room="${n(gx - 11 - (L + 12 + used + 6))}" x="${n(gx - 11)}" y="${n(rowY + 3.4)}" text-anchor="end"><tspan data-done>✓0</tspan><tspan class="dx-bad" data-fails></tspan></text>`;
+    // the page sets the counters smaller when they outgrow the room the work leaves them, then on two lines
+    row += `<text class="dx-count" data-count data-two data-room="${n(gx - 11 - (L + 12 + used + 6))}" x="${n(gx - 11)}" y="${n(rowY + 3.4)}" text-anchor="end"><tspan data-done>✓0</tspan><tspan class="dx-bad" data-fails dx="4"></tspan></text>`;
     s += `<g class="dx-flowrow">${row}</g>`;
     if (finite) {
       s += `<circle class="dx-gauge-track" cx="${n(gx)}" cy="${n(rowY)}" r="6.2"/>`;
@@ -483,8 +538,27 @@ function gateway(box, part, model, meta, L) {
   }
   if (part.kind === "join") gate.ins = L.routes.filter((q) => q.to === part.id).map((q) => q.key);
   s += wordsOf(box);
+  if (part.switch && box.switchAt) s += switchSvg(box.switchAt.x, box.switchAt.y, part);
+  if (box.settingsAt) s += settingsSvg(box.settingsAt.x, box.settingsAt.y, part);
   meta.gates[part.path] = gate;
   return s;
+}
+
+/**
+ * A part's settings badge: the panel with its live state and its dials opens
+ * from here, or from a click on the part (unless the part opens into a level).
+ */
+function settingsSvg(x, y, part) {
+  return `<g class="dx-gear" data-settings="${esc(part.path)}" role="button" tabindex="0" aria-haspopup="dialog" aria-label="${esc(part.label)}: settings"><title>${esc(part.label)}: settings</title><rect class="dx-gear-hit" x="${n(x - 5)}" y="${n(y - 5)}" width="26" height="26" rx="6"/><rect class="dx-gear-box" x="${n(x)}" y="${n(y)}" width="16" height="16" rx="4"/><path class="dx-gear-glyph" d="M${n(x + 3.4)} ${n(y + 5.6)}h9.2M${n(x + 3.4)} ${n(y + 10.4)}h9.2"/><circle class="dx-gear-knob" cx="${n(x + 6.2)}" cy="${n(y + 5.6)}" r="1.9"/><circle class="dx-gear-knob" cx="${n(x + 10)}" cy="${n(y + 10.4)}" r="1.9"/></g>`;
+}
+
+/**
+ * A part's switch: a small track and knob the reader turns it off and on with
+ * (click, Enter or Space). Its hit area is larger than what it draws.
+ */
+function switchSvg(x, y, part) {
+  const name = part.switch?.label ?? part.label;
+  return `<g class="dx-switch" data-switch="${esc(part.path)}" role="switch" aria-checked="true" tabindex="0" aria-label="${esc(name)}: on"><title>Turn ${esc(name)} off</title><rect class="dx-switch-hit" x="${n(x - 6)}" y="${n(y - 7)}" width="34" height="26" rx="6"/><rect class="dx-switch-track" x="${n(x)}" y="${n(y)}" width="22" height="12" rx="6"/><circle class="dx-switch-knob" cx="${n(x + 16)}" cy="${n(y + 6)}" r="4.2"/></g>`;
 }
 
 function event(box, part, model, meta) {
@@ -507,6 +581,7 @@ function event(box, part, model, meta) {
     s += `<text class="dx-done" data-count x="${n(x)}" y="${n(y + 3.6)}" text-anchor="middle">0</text>`;
     meta.ends[part.path] = { x, y };
   }
+  if (box.settingsAt) s += settingsSvg(box.settingsAt.x, box.settingsAt.y, part);
   return s + wordsOf(box);
 }
 
@@ -524,6 +599,7 @@ function timer(box, part, model, meta) {
   s += `<line class="dx-hand" data-hand x1="${n(x)}" y1="${n(y)}" x2="${n(x)}" y2="${n(y - r + 8)}" style="transform-origin:${n(x)}px ${n(y)}px"/>`;
   s += `<circle class="dx-port-core" cx="${n(x)}" cy="${n(y)}" r="1.6"/>`;
   meta.timers[part.path] = { x, y, r };
+  if (box.settingsAt) s += settingsSvg(box.settingsAt.x, box.settingsAt.y, part);
   return s + wordsOf(box);
 }
 
@@ -542,7 +618,7 @@ function store(box, part) {
 
 /** The words the layout placed around a small part (it keeps routes off them). */
 function wordsOf(box) {
-  return (box.texts || []).map((t) => `<text class="dx-under${t.strong ? " dx-strong" : ""}" x="${n(t.x)}" y="${n(t.y)}" text-anchor="${t.anchor}">${esc(t.text)}</text>`).join("");
+  return (box.texts || []).map((t) => `<text class="dx-under${t.strong ? " dx-strong" : ""}"${t.role ? ` data-${t.role}` : ""} x="${n(t.x)}" y="${n(t.y)}" text-anchor="${t.anchor}">${esc(t.text)}</text>`).join("");
 }
 
 /** What a screen reader hears for a part. */

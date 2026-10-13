@@ -64,7 +64,7 @@ export async function buildFile(file, argv = []) {
   if (flag("--audit")) auditOrExit(def, { strict: flag("--strict") });
   const theme = flag("--light") ? "light" : flag("--dark") ? "dark" : "auto";
   const caption = typeof figure.caption === "function" ? figure.caption(captionContext(def)) : figure.caption;
-  const opts = { fig: figure.fig, title: figure.title, hint: figure.hint, caption, theme, pace: figure.pace, outage: figure.outage, burst: figure.burst, levelPace: figure.levelPace, speed: figure.speed, autoplay: figure.autoplay, idle: figure.idle };
+  const opts = { fig: figure.fig, title: figure.title, hint: figure.hint, caption, theme, pace: figure.pace, outage: figure.outage, burst: figure.burst, levelPace: figure.levelPace, speed: figure.speed, autoplay: figure.autoplay, idle: figure.idle, watch: figure.watch };
   const stem = basename(path).replace(/\.(m?js|json)$/, "") === "model" ? def.id || "figure" : basename(path).replace(/\.(m?js|json)$/, "");
   if (flag("--embed")) {
     const out = resolve(opt("--out") ?? join(dirname(path), `${stem}.fragment.html`));

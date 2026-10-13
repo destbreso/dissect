@@ -6,22 +6,25 @@ Plain ES modules, no dependencies, Node 20.10+ or any modern browser. The browse
 
 - `normalize(def, path?)`: fills defaults and builds the indexes (`byId`, `outs`, `ins`) for a level and, recursively, every `inside`. Pure.
 - `validate(def, { throws? })` → `{ errors, warnings, model }`: every structural check, in sentences that name the part or route.
-- `KINDS`, `OUTCOMES`.
+- `chanceOf(v, kind)`, `chanceMax(v)`: a chance that may differ by kind of item.
+- `switchChanges(level, part, on)`, `dialChanges(level, part, dial, option)`, `initialChanges(model)`: what turning a switch or choosing an option changes, and what a run starts from; `restoreOf(level, path, fields)` is the model as written.
+- `KINDS`, `OUTCOMES`, `SETTABLE` (what a change can set, by kind of part), `SCALE` (autoscaling's defaults), `kindsOf(model)`.
 
 ## kit/dist.mjs
 
 - `sampler(spec)` → `(rng) => duration`; `checkDuration(spec)` → error or `null`; `meanOf(spec)`.
 - `describe(spec, unit)`: in words ("median 12 min, p95 30 min"); `short(spec, unit)`: for plates ("12 min, p95 30"; picoseconds below a nanosecond).
-- `formatDuration(v, unit)`: a time for people ("2 h 15 min", "1.3 min", "50 ps").
+- `formatDuration(v, unit)`: a time for people ("2 h 15 min", "1.3 min", "50 ps"). A time too small for its unit reads in the next one down (0.002 s is "2 ms").
+- `compact(n)`: a count for a plate ("9.4k"); `rateWords(every, unit, per)`: what a start says under it ("every ~20 min", or "~10k/s" when a dot stands for many).
 - `scaleSpec(spec, k)`: the same distribution stretched by `k` (what-ifs use it).
 
 ## kit/sim.mjs
 
 - `createSim(def, { seed, horizon, changes, warmup })` → a simulator: `runUntil(t)`, `runToEnd(limit?)`, `stats()`, `log`, `now`.
 - `simulate(def, opts)`: create and run (`until` or to the end).
-- `changes`: `[{ t, part: "<path>", set: { servers, work, fail, patience, wait, capacity, every, p, classes } }, { t, route: "<level>::<id>", set: { latency } }]`. A change applies from its moment on; the run before it is identical to the run without it, because every part draws from its own random stream.
-- `stats()` → `{ t, born, done, inSystem, outcomes, throughput, wip, meanLead, p50Lead, p95Lead, p99Lead, steady, stations: { <path>: { arrivals, started, finished, failed, timedOut, rejected, busy, utilization, meanQueue, maxQueue, meanWait, p95Wait, meanWork } }, routes, choices }`. It describes the run up to the time it has reached.
-- The log, one record per event: `{ t, k, tok, at, ... }` with `k` one of `born move queue start finish renege reject decide split joinwait join wait enter exit done change`. `at` is a part path (`"ci/unit"`), `route` is `"<level path>::<route id>"`. The page and the audit read only the log.
+- `changes`: `[{ t, part: "<path>", set: { servers, work, fail, patience, wait, capacity, every, p, classes, bypass, take, paused, scale } }, { t, route: "<level>::<id>", set: { latency } }]`. A change applies from its moment on; the run before it is identical to the run without it, because every part draws from its own random stream. A change at `t <= 0` is where the run starts from (after the model's own switches and dials).
+- `stats()` → `{ t, born, done, inSystem, outcomes, throughput, wip, meanLead, p50Lead, p95Lead, p99Lead, steady, stations: { <path>: { arrivals, started, finished, failed, timedOut, rejected, busy, utilization, meanQueue, maxQueue, meanWait, p95Wait, meanWork } }, routes, choices, ends, kinds: { <kind>: { done, outcomes, ends, p50Lead, p95Lead } }, servers }`. It describes the run up to the time it has reached.
+- The log, one record per event: `{ t, k, tok, at, ... }` with `k` one of `born move queue start finish renege reject decide split joinwait join wait enter exit done change pass scale`. A station with no limit records no `queue` (its items start as they arrive); `pass` is an item going through a station that is switched off; `scale` is a station that scales, `{ servers, booting }` from then on. `at` is a part path (`"ci/unit"`), `route` is `"<level path>::<route id>"`. The page and the audit read only the log.
 
 ## kit/metrics.mjs
 
@@ -40,19 +43,19 @@ Plain ES modules, no dependencies, Node 20.10+ or any modern browser. The browse
 
 ## kit/replay.mjs
 
-- `new Replay(log, { stations, ends })`: `advance(t)`, `next`, `drain()` (the events since the last call), `utilization(path, t)`, `quantile(q)`, and the state: `tokens`, `alive`, `st` (per station: queue, bays, counters, waits), `timers`, `choices`, `ends`.
+- `new Replay(log, { stations, ends })`: `advance(t)`, `next`, `drain()` (the events since the last call), `utilization(path, t)`, `quantile(q)`, `recent(window, t)` (the items that left lately: `{ t, cls, outcome, at, lead }`), and the state: `tokens`, `alive`, `st` (per station: queue, bays, counters, waits, `servers`, `booting`, `passed`), `timers`, `choices`, `ends`, `bornAt`.
 - `placeOf(replay, token, metas, view, t)`: where an item is drawn on a level's sheet at time t (on a route, in a queue slot, docked in a bay, on a timer's rim, small in a station's window).
 
 ## kit/live.mjs (browser)
 
-- `mount(root, def, { metas, pace, speed, autoplay, idle, outage, burst, levelPace, hint })` → the figure's handle; also on `root.dissect`.
+- `mount(root, def, { metas, pace, speed, autoplay, idle, outage, burst, levelPace, watch, hint })` → the figure's handle; also on `root.dissect`.
 - `boot()`: mounts every figure on the page from its embedded `<script type="application/json" data-dissect="<id>">`.
-- The handle: `play()`, `pause()`, `step()`, `setSpeed(k)`, `setLayer("flow" | "time" | "fail")`, `open(path)`, `up()`, `select(path)`, `follow(id)`, `inject(changes, words?)`, `undo()`, `restart(nextSeed?)`, `seek(t)`, `state()`, `replay`.
+- The handle: `play()`, `pause()`, `step()`, `setSpeed(k)`, `setLayer("flow" | "time" | "fail")`, `open(path)`, `up()`, `select(path)`, `follow(id)`, `inject(changes, words?)`, `toggle(path)`, `setDial(path, i, option)`, `settings(path)`, `undo()`, `restart(nextSeed?)`, `seek(t)`, `refit()`, `state()` (with `settings` and `panel`), `replay`.
 - Events, bubbling from the `<figure>`: `dissect:select` and `dissect:open` (`{ path, part }`), `dissect:follow` (`{ id }`). `part` carries any field you put on it in the model.
 
 ## kit/page.mjs (Node)
 
-- `buildFigure(def, { id, fig, title, caption, hint, theme, pace, speed, autoplay, idle, outage, layout, legend })` → `{ html, data, warnings, levels, model }`: every level laid out and drawn (the top one visible), the legend, and the data script.
+- `buildFigure(def, { id, fig, title, caption, hint, theme, pace, speed, autoplay, idle, outage, burst, levelPace, watch, layout, legend })` → `{ html, data, warnings, levels, model }`: every level laid out and drawn (the top one visible), the legend, and the data script.
 - `standalonePage(def, opts)` and `writePage(def, path, opts)`: a whole page; `opts.figures: [{ def, opts }]` puts several figures on it, with `intro` and `outro` HTML around them.
 - `embed(def, opts)` → `{ html, styles, script }`: for a page you already have. Put `styles` once, each figure's `html` where it goes, and `script` once after the last.
 - `runtimeScript()`: the runtime as one classic script (the inliner wraps each module in its own scope; the kit keeps to single-line `import { a } from "./x.mjs"` and `export function|const|class` so it can).
@@ -64,7 +67,7 @@ Plain ES modules, no dependencies, Node 20.10+ or any modern browser. The browse
 
 ## scripts
 
-- `scripts/build.mjs <model.mjs | model.json> [--out f] [--light | --dark] [--audit] [--strict] [--embed]`. A model module exports the model as default and may export `figure` (`fig`, `title`, `hint`, `pace`, `outage`, `caption`). `load(file)` and `captionContext(def)` are exported for build scripts of your own (the auth-flows example builds two figures on one page with them).
+- `scripts/build.mjs <model.mjs | model.json> [--out f] [--light | --dark] [--audit] [--strict] [--embed]`. A model module exports the model as default and may export `figure` (`fig`, `title`, `hint`, `pace`, `speed`, `outage`, `burst`, `levelPace`, `watch`, `caption`). `load(file)` and `captionContext(def)` are exported for build scripts of your own (the auth-flows example builds two figures on one page with them).
 - `scripts/check.mjs page.html`: the visual check in headless Chrome (`build.mjs --check` runs it); `scripts/capture.mjs`, `scripts/drive.mjs`: see `verify.md`.
 
 ## Linking a figure to something else

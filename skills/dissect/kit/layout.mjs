@@ -12,7 +12,7 @@
 // loop back (a retry, a rework) returns under the parts it skips.
 
 import { dedupe, roundedPath, lengthOf, segmentsOf, segHitsRect, overlapLength, crosses, rectOf, rectsOverlap } from "./geom.mjs";
-import { short } from "./dist.mjs";
+import { short, rateWords } from "./dist.mjs";
 import { wideWidth } from "./metrics.mjs";
 
 export const DEFAULTS = {
@@ -49,14 +49,30 @@ const TEXT_HIT = 2500;
 // the smallest size the page sets a step's name in: it shrinks a long name down to this before it cuts it
 const NAME_MIN = 10.5;
 
+// a switch takes this much of the name's row (its track and a gap), and so does a settings badge
+export const SWITCH_ROOM = 26;
+export const SETTINGS_ROOM = 22;
+/** A part whose settings open in a panel on the figure: it has dials, or servers that scale. */
+export const hasSettings = (p) => Boolean(p.dials?.length || p.scale);
+
 function sizeOf(p) {
   if (p.size) return p.size;
   if (p.kind === "station") {
     const [w, h] = p.inside ? SIZES.open : SIZES.station;
-    // wide enough for its name in a wide font, clear of the icon (and of the lamp an open step carries)
-    return [Math.max(w, Math.ceil(wideWidth(p.label || p.id, NAME_MIN, true)) + (p.inside ? 56 : 46) + 2), h];
+    // wide enough for its name in a wide font, clear of the icon (and of the lamp an open step carries, and of its switch)
+    const named = Math.ceil(wideWidth(p.label || p.id, NAME_MIN, true)) + (p.inside ? 56 : 46) + (p.switch ? SWITCH_ROOM : 0) + (hasSettings(p) ? SETTINGS_ROOM : 0) + 2;
+    // a station that scales shows a bay for every server it can have
+    return [Math.max(w, named, p.scale ? 150 : 0), h];
   }
   return SIZES[p.kind] || [40, 40];
+}
+
+/** Where a choice's switch sits: under the diamond, or over it when its ways out go down. */
+export function choiceSwitchAt(box, boxes, routes) {
+  const outs = routes.filter((r) => r.from === box.id).map((r) => boxes[r.to]);
+  const down = outs.some((b) => b && b.y > box.y + 1);
+  const up = outs.some((b) => b && b.y < box.y - 1);
+  return { x: box.x - 11, y: down && !up ? box.y - box.h / 2 - 17 : box.y + box.h / 2 + 5 };
 }
 
 function portsOf(box) {
@@ -154,6 +170,20 @@ export function layout(model, options = {}) {
     if (gates.includes(box)) continue;
     box.texts = textsOf(box, model, model.routes);
     for (const t of box.texts) texts.push({ ...textRect(t), id: box.id });
+  }
+  // a small part's settings badge sits on its left, where nothing enters a start: words and routes keep off it
+  for (const box of allBoxes) {
+    if (box.kind === "station" || !hasSettings(box.part)) continue;
+    box.settingsAt = { x: box.x - box.w / 2 - 24, y: box.y - 8 };
+    const at = box.settingsAt;
+    texts.push({ x0: at.x - 3, y0: at.y - 3, x1: at.x + 19, y1: at.y + 19, id: box.id, control: true });
+  }
+  // a choice's switch is under its diamond: words and routes keep off it
+  for (const box of gates) {
+    if (!box.part.switch) continue;
+    box.switchAt = choiceSwitchAt(box, boxes, model.routes);
+    const at = box.switchAt;
+    texts.push({ x0: at.x - 3, y0: at.y - 3, x1: at.x + 25, y1: at.y + 15, id: box.id, control: true });
   }
   for (const box of gates) {
     box.texts = gateLabel(box, model, allBoxes, texts);
@@ -504,14 +534,15 @@ export function textsOf(box, model, routes) {
   const r = h / 2;
   const named = p.label && p.label !== p.id;
   const out = [];
-  const add = (text, tx, ty, anchor = "middle", strong = false, size = 10) => out.push({ text, x: tx, y: ty, anchor, strong, size });
+  const add = (text, tx, ty, anchor = "middle", strong = false, size = 10, role = null) => out.push({ text, x: tx, y: ty, anchor, strong, size, role });
   switch (p.kind) {
     case "start":
       add(p.label || p.id, x, y - r - 8, "middle", true);
-      if (p.every != null) add(`every ${short(p.every, model.unit)}`, x, y + r + 14);
+      // the page keeps this up to date when the reader changes the rate
+      if (p.every != null) add(rateWords(p.every, model.unit, model.per), x, y + r + 14, "middle", false, 10, "rate");
       break;
     case "end":
-      add(named ? p.label : p.outcome || p.id, x, y + r + 14, "middle", true);
+      add(named || p.named ? p.label : p.outcome || p.id, x, y + r + 14, "middle", true);
       break;
     case "timer":
       // below the orbit where waiting items ride the rim

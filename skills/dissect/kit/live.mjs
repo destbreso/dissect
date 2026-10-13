@@ -8,9 +8,9 @@
 // Browser only. Build pages with page.mjs, which inlines this module.
 
 import { createSim } from "./sim.mjs";
-import { normalize } from "./model.mjs";
+import { normalize, chanceOf, switchChanges, dialChanges } from "./model.mjs";
 import { Replay, placeOf, levelOf } from "./replay.mjs";
-import { formatDuration, short, describe, scaleSpec } from "./dist.mjs";
+import { formatDuration, short, describe, scaleSpec, compact, rateWords, meanOf } from "./dist.mjs";
 import { along } from "./geom.mjs";
 
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
@@ -19,6 +19,9 @@ const SPEEDS = [0.25, 0.5, 1, 2, 4, 8, 16];
 const GLIDE_PX_S = 520;
 const IDLE_MS = 7000;
 const pct = (v) => (v == null || !Number.isFinite(v) ? "-" : `${Math.round(v * 100)}%`);
+// a share that may be small: 0.2% says more than 0%
+const pctFine = (v) => (v == null || !Number.isFinite(v) ? "-" : v > 0 && v < 0.0995 ? `${(v * 100).toFixed(1).replace(/\.0$/, "")}%` : `${Math.round(v * 100)}%`);
+
 
 /**
  * Bring a figure to life.
@@ -51,6 +54,13 @@ export function mount(root, def, options = {}) {
   for (const p of model.parts) if (p.kind === "start") for (const c of Object.keys(p.classes || { item: 1 })) if (!classNames.includes(c)) classNames.push(c);
   const classIndex = (c) => Math.max(0, classNames.indexOf(c)) % 5;
   const noun = model.raw.item || "item";
+  // one dot can stand for many real items (a hundred requests): counts the reader sees are real ones
+  const perDot = model.per || 1;
+  const count = (n) => (perDot === 1 ? String(n) : compact(n * perDot));
+  const plural = model.raw.items || `${noun}s`;
+  // the window the recent numbers are over (who got served lately, not since the start)
+  const watch = options.watch || null;
+  const recentSpan = watch?.window ?? model.horizon / 20;
 
   // ---- the DOM -----------------------------------------------------------------
   const $ = (sel, el = root) => el.querySelector(sel);
@@ -87,6 +97,8 @@ export function mount(root, def, options = {}) {
         heatWork: g.querySelector('[data-heat="work"]'),
         altTime: g.querySelector('[data-alt="time"]'),
         altFail: g.querySelector('[data-alt="fail"]'),
+        frames: [...g.querySelectorAll(".dx-bay")],
+        rate: g.querySelector("[data-rate]"),
       });
     }
     els.set(lv, { svg, partEl, routeEl, useEl, qmore, per, tokens: svg.querySelector(".dx-tokens"), trails: svg.querySelector(".dx-trails"), dots: new Map() });
@@ -116,6 +128,29 @@ export function mount(root, def, options = {}) {
   const pulses = [];
   const lastPulse = new Map();
   const trail = [];
+
+  // ---- settings: the reader's switches and dials ---------------------------------------------
+  // They hold from the moment they are set, and a new run starts with them as they are.
+  const controls = [];
+  for (const [path, p] of parts) {
+    const lv = levels.get(levelOf(path));
+    if (p.switch) controls.push({ key: `switch:${path}`, kind: "switch", path, part: p, level: lv, name: p.switch.label ?? p.label, initial: p.switch.on !== false });
+    (p.dials || []).forEach((d, di) => controls.push({ key: `dial:${path}#${di}`, kind: "dial", path, part: p, level: lv, dial: d, initial: d.value ?? 0 }));
+  }
+  const controlOf = new Map(controls.map((c) => [c.key, c]));
+  const settings = new Map(controls.map((c) => [c.key, c.initial]));
+  /** The changes that start a run where the reader left the settings. */
+  function settingChanges() {
+    const out = [];
+    for (const c of controls) {
+      const v = settings.get(c.key);
+      if (v === c.initial) continue;
+      const list = c.kind === "switch" ? switchChanges(c.level, c.part, v) : dialChanges(c.level, c.part, c.dial, v);
+      out.push(...list.map((x) => ({ ...x, t: 0 })));
+    }
+    return out;
+  }
+  const isOff = (path) => settings.get(`switch:${path}`) === false;
 
   function build() {
     sim = createSim(model, { seed: model.seed + seedShift, changes });
@@ -166,6 +201,8 @@ export function mount(root, def, options = {}) {
       R.advance(clock);
       R.drain();
     }
+    // the change itself shows at once (a dial's new value, a policy), even while paused
+    R.advance(t);
     glides.clear();
     if (words) announce(words);
     renderInspector();
@@ -175,6 +212,8 @@ export function mount(root, def, options = {}) {
   function undo() {
     if (!changes.length) return;
     changes = [];
+    for (const c of controls) settings.set(c.key, c.initial);
+    syncSwitches();
     build();
     sim.runUntil(clock + lookahead());
     R.advance(clock);
@@ -188,7 +227,8 @@ export function mount(root, def, options = {}) {
   function restart(nextSeed = false) {
     if (nextSeed) seedShift += 1;
     else seedShift = 0;
-    changes = [];
+    // what-ifs end with the run; the settings carry over to the next
+    changes = settingChanges();
     clock = 0;
     endedAt = null;
     build();
@@ -205,10 +245,53 @@ export function mount(root, def, options = {}) {
     renderControls();
   }
 
+  /** Show every switch as it is set (the part dims, the knob moves, the words say so). */
+  function syncSwitches() {
+    for (const c of controls) {
+      if (c.kind !== "switch") continue;
+      const on = settings.get(c.key);
+      for (const e of els.values()) {
+        const g = e.partEl.get(c.path);
+        if (!g) continue;
+        g.toggleAttribute("data-off", !on);
+        const sw = g.querySelector("[data-switch]");
+        if (sw) {
+          sw.setAttribute("aria-checked", String(on));
+          sw.setAttribute("aria-label", `${c.name}: ${on ? "on" : "off"}`);
+          const tip = sw.querySelector("title");
+          if (tip) tip.textContent = `Turn ${c.name} ${on ? "off" : "on"}`;
+        }
+        const spec = g.querySelector(".dx-spec[data-fit]");
+        if (spec) fitInto(spec, on ? spec.dataset.full : "switched off", Number(spec.dataset.fit), Number(spec.dataset.size), Number(spec.dataset.min), true);
+      }
+    }
+  }
+
+  /** Turn a part off or back on, from now on. */
+  function toggle(path) {
+    const c = controlOf.get(`switch:${path}`);
+    if (!c) return;
+    const on = !settings.get(c.key);
+    settings.set(c.key, on);
+    const way = c.part.kind === "choice" ? c.level.outs.get(c.part.id).find((r) => r.bypass) : null;
+    const offWords = way ? `everything goes to ${c.level.byId.get(way.to).label}` : "everything passes straight through it";
+    syncSwitches();
+    inject(switchChanges(c.level, c.part, on), on ? `${c.name} is on again.` : `${c.name} is off: ${offWords}.`);
+  }
+
+  /** Set a dial to one of its options, from now on. */
+  function chooseOption(key, index) {
+    const c = controlOf.get(key);
+    if (!c || settings.get(key) === index) return;
+    settings.set(key, index);
+    inject(dialChanges(c.level, c.part, c.dial, index), `${c.part.label}: ${c.dial.label}, ${c.dial.options[index].label}.`);
+  }
+
   // ---- levels -----------------------------------------------------------------------------
   let heightTimer = 0;
   function setView(path, { focus = false, from = null } = {}) {
     if (!sheets.has(path) || path === view) return;
+    closePanel();
     const prev = view;
     const a = sheets.get(prev);
     const b = sheets.get(path);
@@ -428,8 +511,14 @@ export function mount(root, def, options = {}) {
       } else if (e.k === "join" && followed && e.children?.includes(followed)) {
         setFollow(e.tok, { idle: idleFollow });
       } else if (e.k === "change") renderControls();
+      else if (e.k === "scale") {
+        const before = lastBooting.get(e.at) ?? 0;
+        if (e.booting > before) announce(`${parts.get(e.at)?.label}: ${e.booting} more server${e.booting === 1 ? "" : "s"} starting.`);
+        lastBooting.set(e.at, e.booting);
+      }
     }
   }
+  const lastBooting = new Map();
 
   function flash(el, cls, ms) {
     el.classList.add(cls);
@@ -476,7 +565,7 @@ export function mount(root, def, options = {}) {
         // in work: the item sits in its bay (or in the row of a step with no limit)
         const st = meta.stations[p.dock];
         const s = R.st.get(p.dock);
-        if (st?.bays[p.bay]) p = { x: st.bays[p.bay].x0 + Math.min(4.2, st.bays[p.bay].w / 2), y: st.bays[p.bay].y };
+        if (st?.bays[p.bay]) p = { x: st.bays[p.bay].x0 + Math.min(4.2, st.bays[p.bay].w / 2), y: st.bays[p.bay].y, narrow: st.bays[p.bay].w + 2.8 };
         else if (st?.rack && s) {
           const k = s.bays.slice(0, tok.server).filter(Boolean).length;
           if (k >= st.rack.max) return;
@@ -495,7 +584,7 @@ export function mount(root, def, options = {}) {
         E.dots.set(id, dot);
       }
       const [hit, halo, core] = dot.children;
-      const r = p.mini ? 2.3 : docked ? 3.4 : 4.6;
+      const r = p.mini ? 2.3 : docked ? Math.min(3.4, (p.narrow ?? 9) / 2 - 0.4) : 4.6;
       core.setAttribute("r", r);
       hit.setAttribute("r", p.mini ? 0 : 9);
       dot.setAttribute("transform", `translate(${p.x.toFixed(1)} ${p.y.toFixed(1)})`);
@@ -599,9 +688,16 @@ export function mount(root, def, options = {}) {
         const bad = s.failed + s.timedOut + s.rejected;
         if (per.count && per.count.__n !== `${okN}/${bad}`) {
           per.count.__n = `${okN}/${bad}`;
-          if (per.done) per.done.textContent = `✓${okN}`;
-          if (per.fails) per.fails.textContent = bad ? `  ✗${bad}` : "";
+          if (per.done) per.done.textContent = `✓${count(okN)}`;
+          if (per.fails) per.fails.textContent = bad ? `✗${count(bad)}` : "";
           fitCount(per.count);
+        }
+        // a station that scales: which of its bays run, which are starting, which are not there
+        if (p.scale && per.frames.length) {
+          per.frames.forEach((f, i) => {
+            f.classList.toggle("dx-bay-off", i >= s.servers + s.booting);
+            f.classList.toggle("dx-bay-boot", i >= s.servers && i < s.servers + s.booting);
+          });
         }
         const rackMax = metas[view].stations[path]?.rack?.max ?? 5;
         if (per.rack) per.rack.textContent = s.busy > rackMax ? `+${s.busy - rackMax}` : "";
@@ -627,7 +723,11 @@ export function mount(root, def, options = {}) {
           fitInto(per.altFail, n ? (bad ? `${pct(bad / n)} ${p.failLabel || "failed"}` : "none failed") : "nothing yet", altW);
         }
       } else if (p.kind === "end") {
-        if (per.count) per.count.textContent = String(R.ends.get(path) || 0);
+        if (per.count) per.count.textContent = count(R.ends.get(path) || 0);
+      } else if (p.kind === "start" && per.rate) {
+        const now = startNow(path);
+        const words = now.paused ? "sends nothing" : rateWords(now.every, unit, perDot);
+        if (per.rate.textContent !== words) per.rate.textContent = words;
       } else if (p.kind === "choice" && per.needle) {
         const c = R.choices.get(path);
         const a = c ? metas[view].gates[path]?.needle[c.last] : null;
@@ -636,8 +736,15 @@ export function mount(root, def, options = {}) {
     }
     const p50 = R.quantile(0.5);
     const zoom = basePace / pace;
-    readout.textContent = `${fmt(clock)} in · ${R.done} done · ${R.alive.size} in flight${R.done ? ` · median ${fmt(p50)}` : ""}${zoom > 1.5 ? ` · time ×1/${Math.round(zoom)}` : ""}`;
+    const slow = zoom > 1.5 ? ` · time ×1/${Math.round(zoom)}` : "";
+    if (watch) {
+      // the one number the figure is about, over the last few moments, then the usual
+      const r = R.recent(recentSpan, clock).filter((f) => f.cls === watch.class);
+      const lead = r.map((f) => f.lead).sort((a, b) => a - b);
+      readout.textContent = `${fmt(clock)} in · ${watch.label} ${r.length ? pct(r.filter((f) => f.outcome === "ok").length / r.length) : "-"}${lead.length ? ` · median ${fmt(lead[Math.floor(lead.length / 2)])}` : ""} · ${count(R.alive.size)} in flight${slow}`;
+    } else readout.textContent = `${fmt(clock)} in · ${count(R.done)} done · ${count(R.alive.size)} in flight${R.done ? ` · median ${fmt(p50)}` : ""}${slow}`;
     refreshInspector();
+    refreshPanel();
   }
 
   /**
@@ -670,21 +777,52 @@ export function mount(root, def, options = {}) {
     }
   }
 
-  /** Set a station's counters smaller when they outgrow the room its work leaves them. */
+  /**
+   * Fit a station's counters to the room its plate leaves them: a little
+   * smaller first, then (on a flow row) on two lines, done over failed.
+   */
   function fitCount(el) {
-    const room = Number(el.dataset.room);
-    if (!room || !el.getComputedTextLength) return;
+    if (!el.getComputedTextLength) return;
+    const done = el.querySelector("[data-done]");
+    const fails = el.querySelector("[data-fails]");
+    let room = Number(el.dataset.room);
+    if (el.dataset.afterSpec != null) {
+      // on the spec's line: what the spec leaves of it
+      const spec = el.closest(".dx-part")?.querySelector(".dx-spec");
+      if (spec?.getComputedTextLength) room = Math.max(room, Number(el.getAttribute("x")) - (Number(spec.getAttribute("x")) + spec.getComputedTextLength() + 8));
+    }
+    if (!room) return;
+    for (const t of [done, fails]) {
+      t?.removeAttribute("x");
+      t?.removeAttribute("y");
+    }
+    fails?.setAttribute("dx", "4");
     el.style.fontSize = "";
     let sz = 9.5;
-    while (el.getComputedTextLength() > room && sz > 7) {
-      sz -= 0.5;
-      el.style.fontSize = `${sz}px`;
-    }
+    const shrink = (wide, min) => {
+      while (wide() > room && sz > min) {
+        sz -= 0.5;
+        el.style.fontSize = `${sz}px`;
+      }
+    };
+    shrink(() => el.getComputedTextLength(), el.dataset.two != null && fails?.textContent ? 8 : 7);
+    if (el.getComputedTextLength() <= room || el.dataset.two == null || !fails?.textContent) return;
+    const x = el.getAttribute("x");
+    const y = Number(el.getAttribute("y"));
+    done.setAttribute("x", x);
+    done.setAttribute("y", (y - 5.2).toFixed(1));
+    fails.setAttribute("x", x);
+    fails.setAttribute("y", (y + 4.4).toFixed(1));
+    fails.removeAttribute("dx");
+    el.style.fontSize = "";
+    sz = 9.5;
+    shrink(() => Math.max(done.getComputedTextLength(), fails.getComputedTextLength()), 7);
   }
 
   /** Fit every word that has a fixed room (names, specs, lane labels) to the reader's font, and draw every tag to its words. */
   function fitWords() {
     for (const el of root.querySelectorAll("svg text[data-fit]")) fitInto(el, el.dataset.full, Number(el.dataset.fit), Number(el.dataset.size), Number(el.dataset.min), true);
+    for (const el of root.querySelectorAll("svg .dx-count[data-room]")) fitCount(el);
     for (const g of root.querySelectorAll(".dx-tag")) {
       const t = g.querySelector("text");
       const r = g.querySelector("rect");
@@ -699,11 +837,187 @@ export function mount(root, def, options = {}) {
   // ---- the inspector ------------------------------------------------------------------------------
   const kindName = { station: "Step", start: "Start", end: "End", choice: "Decision", split: "Parallel split", join: "Parallel join", timer: "Wait", store: "Store" };
 
+  /** A chance in words: "12%", or by kind, "60% of bots, 0.2% of people". */
+  function chanceWords(v) {
+    if (typeof v === "number") return pctFine(v);
+    const kinds = classNames.length ? classNames : Object.keys(v);
+    return kinds
+      .map((k) => [k, chanceOf(v, k)])
+      .sort((a, b) => b[1] - a[1])
+      .map(([k, x]) => `${pctFine(x)} of ${k}`)
+      .join(", ");
+  }
+
+  /** A start's rate and pause as they stand at the clock: the model, then every change up to now. */
+  function startNow(path) {
+    const p = parts.get(path);
+    let every = p.every;
+    let paused = false;
+    for (const r of R.changes) {
+      if (r.at !== path || !r.set) continue;
+      if (r.set.every != null) every = r.set.every;
+      if ("paused" in r.set) paused = Boolean(r.set.paused);
+    }
+    return { every, paused };
+  }
+
+  const bornAt = (path) => R.bornAt.get(path) || 0;
+
+  /** How one kind of item fared lately: where it ended, the commonest first. */
+  function fared(c) {
+    const r = R.recent(recentSpan, clock).filter((f) => f.cls === c);
+    if (!r.length) return "-";
+    const by = new Map();
+    for (const f of r) by.set(f.at, (by.get(f.at) || 0) + 1);
+    return [...by]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([at, n]) => `${pctFine(n / r.length)} ${parts.get(at)?.label ?? at}`)
+      .join(", ");
+  }
+
+  // ---- a part's settings, on the figure -------------------------------------------------------
+  // A part with dials, or servers that scale, keeps its settings in a panel next to it on the
+  // drawing: what it is doing now, its dials, its switch. A click on the part opens it (its
+  // badge, for a part that opens into a level); the close key, Escape or a click elsewhere
+  // closes it, and so does going to another level.
+  const viewEl = $(".dx-view");
+  const dock = $(".dx-dock");
+  const panel = document.createElement("div");
+  panel.className = "dx-panel";
+  panel.hidden = true;
+  panel.setAttribute("role", "dialog");
+  viewEl.append(panel);
+  let panelFor = null;
+  let panelLive = [];
+  const settingsOf = (path) => {
+    const p = parts.get(path);
+    return p && (p.dials?.length || p.scale) ? p : null;
+  };
+  /** A scaling station's policy as it stands at the clock (null: no autoscaling). */
+  function scaleNow(path) {
+    const p = parts.get(path);
+    let pol = p.scale ? { ...p.scale } : null;
+    for (const r of R.changes) if (r.at === path && r.set && "scale" in r.set) pol = r.set.scale ? { ...(p.scale || {}), ...r.set.scale } : null;
+    return pol;
+  }
+  function openPanel(path, { focus = false } = {}) {
+    if (!settingsOf(path)) return closePanel();
+    panelFor = path;
+    panel.hidden = false;
+    // the inspector draws the panel with it (and drops its pointer to the settings)
+    renderInspector();
+    for (const e of els.values()) for (const [p, g] of e.partEl) g.toggleAttribute("data-panel", p === panelFor);
+    if (focus) (panel.querySelector('[data-ctl][aria-checked="true"]') || panel.querySelector("button"))?.focus();
+  }
+  function closePanel({ focus = false } = {}) {
+    if (!panelFor) return;
+    const was = panelFor;
+    panelFor = null;
+    panel.hidden = true;
+    for (const e of els.values()) for (const g of e.partEl.values()) g.removeAttribute("data-panel");
+    if (selected === was) renderInspector();
+    if (focus) els.get(view)?.partEl.get(was)?.focus();
+  }
+  function renderPanel() {
+    if (!panelFor) return;
+    const p = parts.get(panelFor);
+    // keep the reader's place when the panel is drawn again (after a choice)
+    const had = panel.contains(document.activeElement) ? [document.activeElement.getAttribute("data-ctl"), document.activeElement.getAttribute("data-i")] : null;
+    panelLive = [];
+    const live = (fn) => {
+      const k = `p${panelLive.length}`;
+      panelLive.push([k, fn]);
+      return `<span data-pk="${k}">${esc(fn())}</span>`;
+    };
+    let h = `<div class="dx-panel-head"><span><span class="dx-panel-kind">Settings</span><span class="dx-panel-title">${esc(p.label)}</span></span><button type="button" class="dx-key dx-icon" data-panel-close title="Close (Escape)" aria-label="Close the settings of ${esc(p.label)}"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg></button></div>`;
+    if (p.scale) {
+      const pol = scaleNow(panelFor);
+      h += `<div class="dx-panel-live"><span class="dx-cells" data-cells aria-hidden="true">${"<i></i>".repeat(p.scale.max)}</span>${live(() => serversWords(panelFor))}</div>`;
+      h += pol ? `<p class="dx-panel-note">${esc(`Every ${fmt(meanOf(pol.every ?? model.horizon / 40))} it looks at the work that came in, and starts servers to keep them about ${pct(pol.target ?? 0.6)} busy, up to ${pol.max}; a new one takes ${pol.boot != null ? describe(pol.boot, unit) : "a while"} to start.`)}</p>` : `<p class="dx-panel-note">Autoscaling is off: the servers running stay, and no more start.</p>`;
+    } else if (p.kind === "start") h += `<div class="dx-panel-live">${live(() => (startNow(panelFor).paused ? "It sends nothing now." : `Now: ${rateWords(startNow(panelFor).every, unit, perDot)}`))}</div>`;
+    else if (p.kind === "station") h += `<div class="dx-panel-live">${live(() => `busy ${pct(R.utilization(panelFor, clock))}, ${count(R.st.get(panelFor)?.queue.length ?? 0)} waiting`)}</div>`;
+    h += controlsHtml(controls.filter((c) => c.path === panelFor), false);
+    panel.innerHTML = h;
+    panel.setAttribute("aria-label", `Settings of ${p.label}`);
+    refreshPanel();
+    if (had) panel.querySelector(`[data-ctl="${had[0]}"][data-i="${had[1]}"]`)?.focus();
+  }
+  function serversWords(path) {
+    const s = R.st.get(path);
+    const pol = scaleNow(path);
+    return `${s.servers} running${s.booting ? `, ${s.booting} starting` : ""}; ${pol ? `up to ${pol.max}` : "autoscaling off"}; busy ${pct(R.utilization(path, clock))}`;
+  }
+  function refreshPanel() {
+    if (!panelFor || panel.hidden) return;
+    for (const [k, fn] of panelLive) {
+      const el = panel.querySelector(`[data-pk="${k}"]`);
+      if (el) el.textContent = fn();
+    }
+    const cells = panel.querySelector("[data-cells]");
+    if (cells) {
+      const s = R.st.get(panelFor);
+      const max = scaleNow(panelFor)?.max ?? s.servers;
+      [...cells.children].forEach((c, i) => {
+        c.className = i < s.servers ? "dx-run" : i < s.servers + s.booting ? "dx-boot" : i >= max ? "dx-out" : "";
+      });
+    }
+  }
+  /** Next to its part: under it, else over it; on a narrow card, at the bottom of the drawing. */
+  function placePanel() {
+    if (!panelFor || panel.hidden) return;
+    const g = els.get(view)?.partEl.get(panelFor);
+    if (!g) return closePanel();
+    const vr = viewEl.getBoundingClientRect();
+    const pr = g.getBoundingClientRect();
+    const top0 = stage.getBoundingClientRect().top - vr.top;
+    const floor = dock.getBoundingClientRect().top - vr.top;
+    const narrow = vr.width < 560;
+    panel.style.width = narrow ? `${Math.round(vr.width - 16)}px` : "";
+    const w = panel.offsetWidth;
+    const h = panel.offsetHeight;
+    let left;
+    let top;
+    if (narrow) {
+      left = 8;
+      top = Math.max(top0 + 8, floor - h - 8);
+    } else {
+      left = Math.min(Math.max(8, pr.left - vr.left + pr.width / 2 - w / 2), vr.width - w - 8);
+      const below = pr.bottom - vr.top + 10;
+      const above = pr.top - vr.top - 10 - h;
+      top = below + h <= floor - 6 ? below : above >= top0 + 6 ? above : Math.max(top0 + 6, Math.min(below, floor - h - 6));
+    }
+    panel.style.left = `${Math.round(left)}px`;
+    panel.style.top = `${Math.round(top)}px`;
+  }
+  stage.addEventListener("scroll", placePanel, { passive: true });
+
+  /** The reader's controls (switches and dials) as rows of options; `named` puts the part's name in each. */
+  function controlsHtml(list, named) {
+    if (!list.length) return "";
+    let h = `<div class="dx-dials">`;
+    for (const c of list) {
+      const label = c.kind === "switch" ? (named ? c.name : "On or off") : named ? `${c.part.label}: ${c.dial.label}` : c.dial.label;
+      const options = c.kind === "switch" ? ["on", "off"] : c.dial.options.map((o) => o.label);
+      const at = c.kind === "switch" ? (settings.get(c.key) ? 0 : 1) : settings.get(c.key);
+      // a switch fits on one line with its name; a dial's options go under its label
+      h += `<div class="dx-dial${c.kind === "switch" ? " dx-dial-row" : ""}"><span class="dx-dial-label">${esc(label)}</span><span class="dx-seg" role="radiogroup" aria-label="${esc(label)}">`;
+      options.forEach((o, i) => (h += `<button type="button" role="radio" aria-checked="${i === at}" data-ctl="${esc(c.key)}" data-i="${i}">${esc(o)}</button>`));
+      h += `</span></div>`;
+    }
+    return `${h}</div>`;
+  }
+
   function stationWords(p) {
+    if (isOff(p.path)) return "Switched off: everything passes straight through, with no work and no waiting.";
     if (p.inside) return `A process of its own (${p.inside.parts.filter((q) => q.kind === "station").length} steps). Click it to go inside.`;
+    if (p.scale) {
+      const sc = p.scale;
+      return `Scales between ${sc.min} and ${sc.max} servers: it starts more when they would be over ${pct(sc.target ?? 0.6)} busy, and a new one takes ${sc.boot != null ? describe(sc.boot, unit) : "a while"} to be ready. Each ${noun} takes ${describe(p.work, unit)}${p.patience != null ? `; ${plural} give up after waiting ${short(p.patience, unit)}` : ""}.`;
+    }
     const cap = Number.isFinite(p.servers) ? (p.servers === 1 ? "One item at a time" : `${p.servers} items at a time`) : "No limit on how many at once";
     const extra = [];
-    if (p.fail) extra.push(`${Math.round(p.fail * 100)}% ${p.failLabel || "fail"}`);
+    if (p.fail) extra.push(`${chanceWords(p.fail)} ${p.failLabel || "fail"}`);
     if (p.patience != null) extra.push(`items give up after waiting ${short(p.patience, unit)}`);
     if (p.capacity != null) extra.push(`room for ${p.capacity} in the queue`);
     return `${cap}; each takes ${describe(p.work, unit)}${extra.length ? `; ${extra.join("; ")}` : ""}.`;
@@ -739,9 +1053,13 @@ export function mount(root, def, options = {}) {
   function actionsFor(p) {
     const acts = [];
     const base = parts.get(p.path);
+    if (isOff(p.path)) return acts;
     if (p.kind === "station" && Number.isFinite(p.servers)) {
       const cur = R.st.get(p.path)?.servers ?? p.servers;
-      if (cur >= 4) {
+      // a station that scales sets its own number of servers (its dials change how)
+      if (p.scale) {
+        /* no capacity what-ifs */
+      } else if (cur >= 4) {
         // with many at once, plus or minus one is noise: halve it or double it
         acts.push(["Twice as many at once", () => inject({ part: p.path, set: { servers: cur * 2 } }, `${p.label} now takes ${cur * 2} at a time.`)]);
         acts.push(["Half as many", () => inject({ part: p.path, set: { servers: Math.max(1, Math.floor(cur / 2)) } }, `${p.label} now takes ${Math.max(1, Math.floor(cur / 2))} at a time.`)]);
@@ -757,19 +1075,22 @@ export function mount(root, def, options = {}) {
       acts.push(["Twice as fast", () => inject({ part: p.path, set: { work: scaleSpec(base.work, 0.5) } }, `${p.label} now takes half as long.`)]);
       if (p.fail) acts.push(["Never fails", () => inject({ part: p.path, set: { fail: 0 } }, `${p.label} no longer fails.`)]);
     }
-    if (p.kind === "start" && p.every != null && !levelOf(p.path)) {
-      acts.push(["50% more work", () => inject({ part: p.path, set: { every: scaleSpec(base.every, 1 / 1.5) } }, "Work now arrives 50% more often.")]);
-      acts.push(["Half the work", () => inject({ part: p.path, set: { every: scaleSpec(base.every, 2) } }, "Work now arrives half as often.")]);
-      // a burst: three times the work for a while, then back to normal
+    // a start that sends nothing has no rate to change: its dial lets it go first
+    if (p.kind === "start" && p.every != null && !levelOf(p.path) && !startNow(p.path).paused) {
+      // from the rate it has now (a dial or an earlier what-if may have set it)
+      const every = startNow(p.path).every;
+      acts.push(["50% more work", () => inject({ part: p.path, set: { every: scaleSpec(every, 1 / 1.5) } }, "Work now arrives 50% more often.")]);
+      acts.push(["Half the work", () => inject({ part: p.path, set: { every: scaleSpec(every, 2) } }, "Work now arrives half as often.")]);
+      // a burst: three times the work for a while, then back to what it was
       const span = options.burst ?? Math.max(1e-6, model.horizon / 10);
-      acts.push([`A burst (${fmt(span)})`, () => inject([{ part: p.path, set: { every: scaleSpec(base.every, 1 / 3) } }, { part: p.path, set: { every: base.every }, t: clock + span }], `Three times the work for ${fmt(span)}.`)]);
+      acts.push([`A burst (${fmt(span)})`, () => inject([{ part: p.path, set: { every: scaleSpec(every, 1 / 3) } }, { part: p.path, set: { every }, t: clock + span }], `Three times the work for ${fmt(span)}.`)]);
       // with several kinds of work: half of one kind stops arriving (the rest arrive as before)
       const mix = Object.entries(p.classes || {});
       if (mix.length > 1) {
         const total = mix.reduce((a, [, w]) => a + w, 0);
         for (const [c, w] of mix) {
           const kept = total - w / 2;
-          acts.push([`Half the ${c}`, () => inject({ part: p.path, set: { classes: { ...p.classes, [c]: w / 2 }, every: scaleSpec(base.every, total / kept) } }, `Half the ${c} no longer arrives.`)]);
+          acts.push([`Half the ${c}`, () => inject({ part: p.path, set: { classes: { ...p.classes, [c]: w / 2 }, every: scaleSpec(every, total / kept) } }, `Half the ${c} no longer arrives.`)]);
         }
       }
     }
@@ -777,7 +1098,7 @@ export function mount(root, def, options = {}) {
       // decisions by chance: shift the odds of the rarer way
       const lv = levels.get(levelOf(p.path));
       const outs = lv.outs.get(p.id);
-      if (outs.every((r) => r.p != null)) {
+      if (outs.every((r) => typeof r.p === "number")) {
         const last = [...changes].reverse().find((c) => c.part === p.path && c.set?.p);
         const total = last ? Object.values(last.set.p).reduce((a, b) => a + b, 0) : 1;
         const cur = new Map(outs.map((r) => [r.id, last ? (last.set.p[r.id] ?? 0) / total : r.p]));
@@ -828,10 +1149,16 @@ export function mount(root, def, options = {}) {
       if (p.about) html += `<p>${esc(p.about)}</p>`;
       if (p.kind === "station") {
         html += `<p>${esc(stationWords(p))}</p><dl>`;
-        html += `<dt>waiting now</dt>${val(() => String(R.st.get(selected)?.queue.length ?? 0))}`;
-        html += `<dt>in work now</dt>${val(() => String(R.st.get(selected)?.busy ?? 0))}`;
-        html += `<dt>done</dt>${val(() => String(R.st.get(selected)?.finished ?? 0))}`;
+        html += `<dt>waiting now</dt>${val(() => count(R.st.get(selected)?.queue.length ?? 0))}`;
+        html += `<dt>in work now</dt>${val(() => count(R.st.get(selected)?.busy ?? 0))}`;
+        html += `<dt>done</dt>${val(() => count(R.st.get(selected)?.finished ?? 0))}`;
         if (Number.isFinite(p.servers)) html += `<dt>busy</dt>${val(() => pct(R.utilization(selected, clock)))}`;
+        if (p.scale)
+          html += `<dt>servers</dt>${val(() => {
+            const s = R.st.get(selected);
+            return `${s.servers} running${s.booting ? `, ${s.booting} starting` : ""}`;
+          })}`;
+        if (p.switch) html += `<dt>passed while off</dt>${val(() => count(R.st.get(selected)?.passed ?? 0))}`;
         html += `<dt>average wait</dt>${val(() => {
           const s = R.st.get(selected);
           return s?.waitN ? fmt(s.waitSum / s.waitN) : "-";
@@ -846,13 +1173,15 @@ export function mount(root, def, options = {}) {
       } else if (p.kind === "choice") {
         const lv = levels.get(levelOf(selected));
         const outs = lv.outs.get(p.id);
-        html += `<p>${esc(outs.some((r) => r.p != null) ? "Decides by chance:" : "Decides by how the item did:")}</p><dl>`;
+        const byKind = outs.some((r) => r.p != null && typeof r.p === "object");
+        const off = isOff(selected) && outs.find((r) => r.bypass);
+        html += `<p>${esc(off ? `Switched off: everything goes to ${lv.byId.get(off.to).label}.` : outs.some((r) => r.p != null) ? (byKind ? "Decides by chance, and the chance depends on the kind of item:" : "Decides by chance:") : "Decides by how the item did:")}</p><dl>`;
         for (const r of outs) {
           const key = `${lv.path}::${r.id}`;
           const to = lv.byId.get(r.to);
           const last = [...changes].reverse().find((c) => c.part === selected && c.set?.p);
           const pNow = last ? (last.set.p[r.id] ?? 0) / Object.values(last.set.p).reduce((a, b) => a + b, 0) : r.p;
-          const rule = r.p != null ? `${Math.round(pNow * 100)}%` : r.when === "else" || r.when == null ? "otherwise" : r.when.startsWith("class:") ? r.when.slice(6) : `if ${r.when}`;
+          const rule = r.p != null ? (typeof pNow === "object" ? chanceWords(pNow) : `${Math.round(pNow * 100)}%`) : r.when === "else" || r.when == null ? "otherwise" : r.when.startsWith("class:") ? r.when.slice(6) : `if ${r.when}`;
           html += `<dt>${esc(rule)}${r.max ? ` (at most ${r.max}×)` : ""} → ${esc(to.label)}</dt>${val(() => {
             const c = R.choices.get(selected);
             const total = c ? Object.values(c.counts).reduce((a, b) => a + b, 0) : 0;
@@ -861,16 +1190,19 @@ export function mount(root, def, options = {}) {
         }
         html += `</dl>`;
       } else if (p.kind === "start" && p.every != null) {
-        html += `<p>New work arrives every ${esc(describe(p.every, unit))}${p.count ? `, ${p.count} items in all` : ""}.</p><dl><dt>arrived</dt>${val(() => String(R.born))}</dl>`;
+        const now = startNow(selected);
+        const how = now.paused ? "It sends nothing now." : perDot > 1 ? `About ${compact(perDot / meanOf(now.every))} ${plural} arrive each ${unit === "s" ? "second" : unit}; each dot is ${perDot} of them.` : `New work arrives every ${describe(now.every, unit)}${p.count ? `, ${p.count} items in all` : ""}.`;
+        html += `<p>${esc(how)}</p><dl><dt>arrived</dt>${val(() => count(bornAt(selected)))}</dl>`;
       } else if (p.kind === "end") {
-        html += `<dl><dt>arrived here</dt>${val(() => String(R.ends.get(selected) || 0))}</dl>`;
+        html += `<dl><dt>arrived here</dt>${val(() => count(R.ends.get(selected) || 0))}</dl>`;
       } else if (p.kind === "timer") {
-        html += `<p>Holds each item ${esc(describe(p.wait, unit))}.</p><dl><dt>waiting now</dt>${val(() => String(R.timers.get(selected)?.size ?? 0))}</dl>`;
+        html += `<p>Holds each item ${esc(describe(p.wait, unit))}.</p><dl><dt>waiting now</dt>${val(() => count(R.timers.get(selected)?.size ?? 0))}</dl>`;
       } else if (p.kind === "join") {
         html += `<p>An item goes on only when every branch of its split has arrived. It is as late as its slowest branch.</p>`;
       } else if (p.kind === "split") {
         html += `<p>Each item becomes one item per branch, all at once.</p>`;
       }
+      if (settingsOf(selected) && panelFor !== selected) html += `<p>Its settings are on the figure, next to it: click it, or press Enter.</p>`;
       acts = actionsFor(p);
     } else {
       const holder = view ? parts.get(view) : null;
@@ -880,10 +1212,18 @@ export function mount(root, def, options = {}) {
       if (holder) {
         // this level's own numbers: the station that holds it
         const S = () => R.st.get(view);
-        html += `<dl><dt>done</dt>${val(() => String(S().finished))}<dt>inside now</dt>${val(() => String(S().busy))}<dt>average time inside</dt>${val(() => (S().workN ? fmt(S().workSum / S().workN) : "-"))}`;
-        if (Number.isFinite(holder.servers)) html += `<dt>waiting to get in</dt>${val(() => String(S().queue.length))}`;
+        html += `<dl><dt>done</dt>${val(() => count(S().finished))}<dt>inside now</dt>${val(() => count(S().busy))}<dt>average time inside</dt>${val(() => (S().workN ? fmt(S().workSum / S().workN) : "-"))}`;
+        if (Number.isFinite(holder.servers)) html += `<dt>waiting to get in</dt>${val(() => count(S().queue.length))}`;
         html += `</dl>`;
-      } else html += `<dl><dt>done</dt>${val(() => String(R.done))}<dt>in flight</dt>${val(() => String(R.alive.size))}<dt>median time</dt>${val(() => (R.done ? fmt(R.quantile(0.5)) : "-"))}<dt>slowest 5%</dt>${val(() => (R.done >= 5 ? `over ${fmt(R.quantile(0.95))}` : "-"))}</dl>`;
+      } else {
+        html += `<dl><dt>done</dt>${val(() => count(R.done))}<dt>in flight</dt>${val(() => count(R.alive.size))}<dt>median time</dt>${val(() => (R.done ? fmt(R.quantile(0.5)) : "-"))}<dt>slowest 5%</dt>${val(() => (R.done >= 5 ? `over ${fmt(R.quantile(0.95))}` : "-"))}</dl>`;
+        // with several kinds of item: how each kind has fared lately, by where it ended
+        if (classNames.length > 1) {
+          html += `<div class="dx-kind">In the last ${esc(fmt(recentSpan))}</div><dl>`;
+          for (const c of classNames) html += `<dt>${esc(c)}</dt>${val(() => fared(c))}`;
+          html += `</dl>`;
+        }
+      }
       const words = () => bottleneckWords(view);
       html += `<p data-k="b">${esc(words())}</p>`;
       refreshers.push(["b", words]);
@@ -905,6 +1245,10 @@ export function mount(root, def, options = {}) {
       box.append(b);
     }
     refreshInspector(true);
+    if (panelFor) {
+      renderPanel();
+      placePanel();
+    }
   }
 
   function bottleneckWords(within = "") {
@@ -1000,6 +1344,7 @@ export function mount(root, def, options = {}) {
         split: () => `split into ${r.children.length} parallel branches`,
         join: () => `all branches met at ${name(r.at)}`,
         wait: () => `waits at ${name(r.at)}`,
+        pass: () => `passed through ${name(r.at)}, which is switched off`,
         done: () => `ended: ${name(r.at)}${r.outcome !== "ok" && r.outcome !== parts.get(r.at)?.outcome ? ` (${r.outcome})` : ""}`,
       }[r.k];
       if (words) rows.push([r.t, words()]);
@@ -1109,6 +1454,7 @@ export function mount(root, def, options = {}) {
     root.dispatchEvent(new CustomEvent(`dissect:${type}`, { bubbles: true, detail }));
   }
   function select(path) {
+    if (panelFor && path !== panelFor) closePanel();
     selected = path;
     emit("select", { path, part: path ? parts.get(path) : null });
     for (const e of els.values()) for (const [p, g] of e.partEl) g.classList.toggle("dx-sel", p === path);
@@ -1130,6 +1476,21 @@ export function mount(root, def, options = {}) {
   hint.textContent = hintText;
   stage.addEventListener("pointerdown", touch);
   stage.addEventListener("click", (e) => {
+    const gear = e.target.closest("[data-settings]");
+    if (gear) {
+      const path = gear.getAttribute("data-settings");
+      if (selected !== path) select(path);
+      openPanel(path);
+      return;
+    }
+    const sw = e.target.closest("[data-switch]");
+    if (sw) {
+      // turning a part off or on selects it, and never opens it
+      const path = sw.getAttribute("data-switch");
+      toggle(path);
+      if (selected !== path) select(path);
+      return;
+    }
     const tokEl = e.target.closest("[data-tok]");
     if (tokEl) {
       setFollow(tokEl.getAttribute("data-tok"));
@@ -1141,7 +1502,11 @@ export function mount(root, def, options = {}) {
       if (g.getAttribute("data-open") === "1") {
         select(path);
         setView(path, { focus: false });
-      } else select(path);
+      } else {
+        select(path);
+        // a part with settings opens them, next to it
+        if (settingsOf(path)) openPanel(path);
+      }
       return;
     }
     select(null);
@@ -1150,8 +1515,46 @@ export function mount(root, def, options = {}) {
     const g = e.target.closest?.(".dx-part");
     if (g) select(g.getAttribute("data-path"));
   });
+  // a control in the panel (or anywhere in the card) sets what it names
+  const onControl = (e) => {
+    if (e.target.closest("[data-panel-close]")) {
+      touch();
+      closePanel({ focus: true });
+      return;
+    }
+    const b = e.target.closest("[data-ctl]");
+    if (!b) return;
+    touch();
+    const c = controlOf.get(b.getAttribute("data-ctl"));
+    const i = Number(b.getAttribute("data-i"));
+    if (c.kind === "switch") {
+      if (settings.get(c.key) !== (i === 0)) toggle(c.path);
+    } else chooseOption(c.key, i);
+  };
+  inspector.addEventListener("click", onControl);
+  panel.addEventListener("click", onControl);
   root.addEventListener("keydown", (e) => {
     if (e.target.closest?.("button") && (e.key === " " || e.key === "Enter")) return;
+    const swEl = e.target.closest?.("[data-switch]");
+    if (swEl && (e.key === " " || e.key === "Enter")) {
+      e.preventDefault();
+      touch();
+      toggle(swEl.getAttribute("data-switch"));
+      return;
+    }
+    const gearEl = e.target.closest?.("[data-settings]");
+    if (gearEl && (e.key === " " || e.key === "Enter")) {
+      e.preventDefault();
+      touch();
+      openPanel(gearEl.getAttribute("data-settings"), { focus: true });
+      return;
+    }
+    // Escape closes the settings first, and takes the reader back to their part
+    if (e.key === "Escape" && panelFor) {
+      touch();
+      closePanel({ focus: true });
+      return;
+    }
     touch();
     const g = e.target.closest?.(".dx-part");
     if (e.key === " " || e.key === "k") {
@@ -1159,8 +1562,12 @@ export function mount(root, def, options = {}) {
       playing ? pause() : play();
     } else if (e.key === "Enter" && g) {
       e.preventDefault();
-      if (g.getAttribute("data-open") === "1") setView(g.getAttribute("data-path"), { focus: true });
-      else select(g.getAttribute("data-path"));
+      const path = g.getAttribute("data-path");
+      if (g.getAttribute("data-open") === "1") setView(path, { focus: true });
+      else {
+        select(path);
+        if (settingsOf(path)) openPanel(path, { focus: true });
+      }
     } else if (e.key === "Escape") {
       if (followed && !idleFollow) setFollow(null);
       else if (view) setView(levelOf(view), { focus: true, from: view });
@@ -1208,6 +1615,7 @@ export function mount(root, def, options = {}) {
       const width = m.width <= w ? Math.min(w, m.width * 1.15) : Math.max(m.width * 0.68, w);
       svg.style.width = `${Math.round(width)}px`;
     }
+    placePanel();
   }
   if (typeof ResizeObserver === "function") new ResizeObserver(fit).observe(stage);
   fit();
@@ -1232,8 +1640,9 @@ export function mount(root, def, options = {}) {
   }
   renderCrumbs();
   renderControls();
-  renderInspector();
   fitWords();
+  syncSwitches();
+  renderInspector();
   if (document.fonts?.ready) document.fonts.ready.then(fitWords);
   draw();
   drawSlow();
@@ -1252,6 +1661,12 @@ export function mount(root, def, options = {}) {
     inject,
     undo,
     restart,
+    /** Turn a part's switch (a station or a choice) off or back on. */
+    toggle,
+    /** Set dial number i of a part to one of its options. */
+    setDial: (path, i, index) => chooseOption(`dial:${path}#${i}`, index),
+    /** Open a part's settings on the figure (a part with dials or servers that scale), or close them. */
+    settings: (path) => (path ? (select(path), openPanel(path)) : closePanel()),
     /** Jump the clock (tests and captures): runs the model to t. */
     seek(t) {
       if (t < clock) restart(false);
@@ -1265,7 +1680,7 @@ export function mount(root, def, options = {}) {
     },
     /** Fit the words again (after the page's fonts change). */
     refit: fitWords,
-    state: () => ({ clock, view, selected, followed, playing, speed, layer, done: R.done, alive: R.alive.size, changes: changes.length, pace, basePace, median: R.quantile(0.5) }),
+    state: () => ({ clock, view, selected, followed, playing, speed, layer, done: R.done, alive: R.alive.size, changes: changes.length, pace, basePace, median: R.quantile(0.5), settings: Object.fromEntries(settings), panel: panelFor }),
     get replay() {
       return R;
     },

@@ -149,3 +149,33 @@ test("every example passes its audit", async () => {
     assert.deepEqual(r.warnings, [], name);
   }
 });
+
+test("times too small for their unit read in the next one down", async () => {
+  const { short, describe, formatDuration } = await import("../skills/dissect/kit/dist.mjs");
+  assert.equal(short("const 0.002", "s"), "2 ms");
+  assert.equal(short("uni 0.02 0.06", "s"), "20-60 ms");
+  assert.equal(short("logn 0.3 0.8", "s"), "0.3 s, p95 0.8");
+  assert.equal(describe("const 0.5", "min"), "30 s");
+  assert.equal(formatDuration(0.0005, "s"), "0.5 ms");
+  assert.equal(formatDuration(0.3, "ns"), "300 ps");
+  assert.equal(formatDuration(135, "min"), "2 h 15 min");
+  assert.equal(describe("const 1", "cycles"), "1 cycle");
+});
+
+test("a dial's option puts back what the other options change, then sets its own", async () => {
+  const { normalize, dialChanges, switchChanges } = await import("../skills/dissect/kit/model.mjs");
+  const m = normalize({
+    id: "d",
+    parts: [
+      { id: "s", kind: "start", at: [0, 0], every: "exp 1", dials: [{ label: "Load", options: [{ label: "none", set: { paused: true } }, { label: "normal" }, { label: "heavy", set: { every: "exp 0.5" } }] }] },
+      { id: "w", kind: "station", at: [1, 0], work: 1, switch: true },
+      { id: "e", kind: "end", at: [2, 0] },
+    ],
+    routes: [{ from: "s", to: "w" }, { from: "w", to: "e" }],
+  });
+  const d = m.byId.get("s").dials[0];
+  assert.deepEqual(dialChanges(m, m.byId.get("s"), d, 1), [{ part: "s", set: { paused: false, every: "exp 1" } }]);
+  assert.deepEqual(dialChanges(m, m.byId.get("s"), d, 2).at(-1), { part: "s", set: { every: "exp 0.5" } });
+  assert.deepEqual(switchChanges(m, m.byId.get("w"), false), [{ part: "w", set: { bypass: true } }]);
+  assert.deepEqual(switchChanges(m, m.byId.get("w"), true), [{ part: "w", set: { bypass: false } }]);
+});

@@ -98,7 +98,8 @@ export function auditLayout(lv, L) {
  *   <station>.failShare                             share of its finished items that failed
  */
 export function metricsOf(def, seed) {
-  const all = simulate(def, { seed }).stats();
+  const run = simulate(def, { seed });
+  const all = run.stats();
   const day = createSim(def, { seed }).runUntil(def.horizon ?? 600).stats();
   const m = { "lead.p50": all.p50Lead, "lead.p95": all.p95Lead, "lead.p99": all.p99Lead, "lead.mean": all.meanLead, done: all.done, throughput: day.done / Math.max(1e-9, day.t) };
   for (const [k, v] of Object.entries(all.outcomes)) m[`outcome.${k}`] = v / Math.max(1, all.done);
@@ -113,6 +114,17 @@ export function metricsOf(def, seed) {
     m[`${path}.rejectShare`] = s.arrivals ? s.rejected / s.arrivals : 0;
     m[`${path}.failShare`] = s.finished ? s.failed / s.finished : 0;
   }
+  // where items ended, and how each kind of item fared
+  for (const [path, n] of Object.entries(all.ends)) m[`end.${path}`] = n / Math.max(1, all.done);
+  for (const [k, K] of Object.entries(all.kinds)) {
+    m[`kind.${k}.done`] = K.done;
+    m[`kind.${k}.lead.p50`] = K.p50Lead;
+    m[`kind.${k}.lead.p95`] = K.p95Lead;
+    for (const [o, n] of Object.entries(K.outcomes)) m[`kind.${k}.outcome.${o}`] = n / Math.max(1, K.done);
+    for (const [path, n] of Object.entries(K.ends)) m[`kind.${k}.end.${path}`] = n / Math.max(1, K.done);
+  }
+  // the most servers a station that scales ran at once
+  for (const r of run.log) if (r.k === "scale") m[`${r.at}.maxServers`] = Math.max(m[`${r.at}.maxServers`] ?? 0, r.servers);
   return { m, all, day };
 }
 

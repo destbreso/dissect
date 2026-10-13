@@ -10,11 +10,14 @@
 // The log is the contract with the renderer. Each record is
 //   { t, k, tok, at, ... }  with k one of
 //   born  move  queue  start  finish  renege  reject  decide  split  joinwait
-//   join  wait  enter  exit  done  change
+//   join  wait  enter  exit  done  change  pass  scale
 // `at` is a part path ("deploy", "test/unit"); `route` is "<level path>::<route id>".
+// A station with no limit records no `queue`: its items start the moment they arrive.
+// `pass` is an item going straight through a station that is switched off;
+// `scale` is a station that scales: { servers, booting } from that moment.
 
-import { normalize, validate, OUTCOMES } from "./model.mjs";
-import { sampler } from "./dist.mjs";
+import { normalize, validate, OUTCOMES, SCALE, chanceOf, initialChanges } from "./model.mjs";
+import { sampler, meanOf } from "./dist.mjs";
 import { streams } from "./rng.mjs";
 
 class Heap {
@@ -92,8 +95,11 @@ export function quantile(sorted, q) {
  * Build a simulator. Options:
  *   seed      overrides the model's seed
  *   horizon   last time a start may create an item (default model.horizon)
- *   changes   [{ t, part: "path", set: { servers, work, fail, patience, wait, capacity, every, p, classes } },
+ *   changes   [{ t, part: "path", set: { servers, work, fail, patience, wait, capacity, every, p, classes,
+ *                                         bypass, take, paused, scale } },
  *              { t, route: "<level>::<id>", set: { latency } }]
+ *             A change at t <= 0 is where the run starts from. The model's own
+ *             switches and dials set theirs first.
  *   warmup    time excluded from the steady-state statistics (default 0)
  */
 export function createSim(def, opts = {}) {
@@ -118,6 +124,11 @@ export function createSim(def, opts = {}) {
       capacity: part.capacity ?? Infinity,
       odds: null, // a choice's p per route id, once a change sets them
       classes: null, // a start's class mix, once a change sets it
+      workSpec: part.work ?? null,
+      bypass: false, // a station switched off: items go straight through
+      take: null, // a choice switched off: everything takes this route
+      paused: false, // a start that sends nothing
+      scale: null, // a station's autoscaling policy, while it has one
     });
   }
   const routeParams = new Map();
@@ -145,6 +156,8 @@ export function createSim(def, opts = {}) {
     stations: new Map(),
     routes: new Map(),
     choices: new Map(),
+    kinds: new Map(), // per kind of item: { done, outcomes, ends, lead }
+    ends: {},
   };
   for (const [path, { part }] of parts) {
     if (part.kind === "station")
@@ -231,18 +244,21 @@ export function createSim(def, opts = {}) {
     const { part, level } = parts.get(path);
     const outs = level.outs.get(part.id);
     let route = null;
-    if (outs.some((r) => r.p != null)) {
+    // a choice switched off sends everything one way
+    const take = params.get(path)?.take;
+    if (take != null) route = outs.find((r) => r.id === take) || null;
+    if (!route && outs.some((r) => r.p != null)) {
       const odds = params.get(path).odds;
       let u = stream(`choose:${path}`)();
       for (const r of outs) {
-        u -= odds ? (odds.get(r.id) ?? 0) : r.p;
+        u -= odds ? (odds.get(r.id) ?? 0) : chanceOf(r.p, tok.cls);
         if (u < 0) {
           route = r;
           break;
         }
       }
       route = route || outs[outs.length - 1];
-    } else {
+    } else if (!route) {
       for (const r of outs) {
         const w = r.when;
         const matches = w == null || w === "else" || w === tok.outcome || (w.startsWith("class:") && w.slice(6) === tok.cls);
@@ -327,6 +343,12 @@ export function createSim(def, opts = {}) {
         const S = stationState.get(path);
         const s = st.stations.get(path);
         const prm = params.get(path);
+        if (prm.bypass) {
+          // switched off: no work, no queue, no failing
+          record({ t, k: "pass", tok: tok.id, at: path });
+          leaveVia(tok, path, t);
+          return;
+        }
         s.arrivals += 1;
         if (S.queue.length >= prm.capacity && s.busy >= prm.servers) {
           s.rejects += 1;
@@ -339,7 +361,8 @@ export function createSim(def, opts = {}) {
         tok.queuedAt = t;
         S.queue.push(tok.id);
         s.maxQueue = Math.max(s.maxQueue, S.queue.length);
-        record({ t, k: "queue", tok: tok.id, at: path });
+        // where there is no limit an item starts at once: its start says it arrived
+        if (Number.isFinite(prm.servers)) record({ t, k: "queue", tok: tok.id, at: path });
         if (prm.patience) {
           const limit = prm.patience(stream(`patience:${path}`));
           tok.renege = { at: path, cancelled: false };
@@ -420,6 +443,13 @@ export function createSim(def, opts = {}) {
         st.outcomes[outcome] = (st.outcomes[outcome] || 0) + 1;
         const lead = t - tok.born;
         st.lead.push(lead);
+        st.ends[path] = (st.ends[path] || 0) + 1;
+        if (!st.kinds.has(tok.cls)) st.kinds.set(tok.cls, { done: 0, outcomes: {}, ends: {}, lead: [] });
+        const K = st.kinds.get(tok.cls);
+        K.done += 1;
+        K.outcomes[outcome] = (K.outcomes[outcome] || 0) + 1;
+        K.ends[path] = (K.ends[path] || 0) + 1;
+        K.lead.push(lead);
         if (tok.born >= warmup) {
           st.leadAfterWarmup.push(lead);
           st.doneAfterWarmup += 1;
@@ -441,7 +471,17 @@ export function createSim(def, opts = {}) {
     return tok;
   }
 
-  function applyChange(c, t) {
+  // a start's arrivals begin again from t (a new rate, or let go after a pause);
+  // the ones already on their way are called off
+  function restartArrivals(path, t) {
+    const v = (arrivalVersion.get(path) || 0) + 1;
+    arrivalVersion.set(path, v);
+    const prm = params.get(path);
+    if (!prm.paused && prm.every) schedule(t + prm.every(stream(`arrive:${path}`)), "arrival", { at: path, v });
+  }
+
+  /** Apply a change at t. A change at the very start (initial) sets where the run starts from. */
+  function applyChange(c, t, initial = false) {
     if (c.part) {
       const prm = params.get(c.part);
       if (!prm) throw new Error(`dissect: a change names part "${c.part}", which does not exist`);
@@ -450,25 +490,32 @@ export function createSim(def, opts = {}) {
         if (st.stations.has(c.part)) touchStation(c.part, t);
         prm.servers = set.servers;
       }
-      if (set.work != null) prm.work = sampler(set.work);
+      if (set.work != null) {
+        prm.work = sampler(set.work);
+        prm.workSpec = set.work;
+      }
       if (set.fail != null) prm.fail = set.fail;
-      if (set.patience != null) prm.patience = sampler(set.patience);
+      if ("patience" in set) prm.patience = set.patience != null ? sampler(set.patience) : null;
       if (set.wait != null) prm.wait = sampler(set.wait);
       if (set.capacity != null) prm.capacity = set.capacity;
       if (set.classes != null) prm.classes = { ...set.classes };
-      if (set.p != null) {
-        // new odds for a choice, by route id; they are scaled to add up to 1
-        const total = Object.values(set.p).reduce((a, b) => a + b, 0);
-        if (!(total > 0)) throw new Error(`dissect: a change gives choice "${c.part}" odds that add up to ${total}`);
-        prm.odds = new Map(Object.entries(set.p).map(([k, v]) => [k, v / total]));
+      if ("p" in set) {
+        if (set.p == null) prm.odds = null;
+        else {
+          // new odds for a choice, by route id; they are scaled to add up to 1
+          const total = Object.values(set.p).reduce((a, b) => a + b, 0);
+          if (!(total > 0)) throw new Error(`dissect: a change gives choice "${c.part}" odds that add up to ${total}`);
+          prm.odds = new Map(Object.entries(set.p).map(([k, v]) => [k, v / total]));
+        }
       }
-      if (set.every != null) {
-        prm.every = sampler(set.every);
-        const v = (arrivalVersion.get(c.part) || 0) + 1;
-        arrivalVersion.set(c.part, v);
-        schedule(t + prm.every(stream(`arrive:${c.part}`)), "arrival", { at: c.part, v });
-      }
+      if ("take" in set) prm.take = set.take ?? null;
+      if ("bypass" in set) prm.bypass = Boolean(set.bypass);
+      if ("scale" in set) setScale(c.part, set.scale, t);
+      if (set.every != null) prm.every = sampler(set.every);
+      if ("paused" in set) prm.paused = Boolean(set.paused);
+      if (!initial && (set.every != null || "paused" in set)) restartArrivals(c.part, t);
       record({ t, k: "change", at: c.part, set: c.set });
+      if (scaling.has(c.part) && set.servers != null) noteScale(c.part, t);
       if (st.stations.has(c.part)) tryStart(c.part, t);
     } else if (c.route) {
       const rp = routeParams.get(c.route);
@@ -477,8 +524,88 @@ export function createSim(def, opts = {}) {
       record({ t, k: "change", route: c.route, set: c.set });
     }
   }
+  // ---- autoscaling ---------------------------------------------------------------
+  // A station with `scale` looks at its load every `every`: the work that
+  // arrived over the last look, in servers' worth, over the busy share it aims
+  // at. It starts servers when it wants more (each ready after `boot`), and
+  // stops some when it wants fewer, once `cooldown` has passed since it last
+  // added any. The model's servers are what it starts with.
+  const scaling = new Map();
+  const policyOf = (base, set) => {
+    const pol = { ...base, ...set };
+    if (set.every != null) pol.every = meanOf(set.every);
+    if (set.cooldown != null) pol.cooldown = meanOf(set.cooldown);
+    if (set.boot != null) pol.boot = sampler(set.boot);
+    return pol;
+  };
+  for (const [path, { part }] of parts) {
+    if (part.kind !== "station" || !part.scale) continue;
+    const every = meanOf(part.scale.every ?? SCALE.every(horizon));
+    const base = { target: SCALE.target, min: part.scale.min, max: part.scale.max, every, boot: sampler(part.scale.boot ?? SCALE.boot(every)), cooldown: meanOf(part.scale.cooldown ?? SCALE.cooldown(every)) };
+    params.get(path).scale = base;
+    scaling.set(path, { base, booting: 0, v: 0, lastOut: -Infinity, arrivals0: 0, t0: 0 });
+    schedule(every, "scale", { at: path });
+  }
+  function noteScale(path, t) {
+    record({ t, k: "scale", at: path, servers: params.get(path).servers, booting: scaling.get(path).booting });
+  }
+  function setScale(path, val, t) {
+    const S = scaling.get(path);
+    if (!S) return;
+    const prm = params.get(path);
+    const callOff = () => {
+      S.v += 1;
+      S.booting = 0;
+    };
+    if (val === false || val == null) {
+      // no autoscaling: the servers running stay, no more start
+      prm.scale = null;
+      callOff();
+    } else {
+      prm.scale = policyOf(S.base, val);
+      const n = Math.min(prm.scale.max, Math.max(prm.scale.min, prm.servers));
+      if (n !== prm.servers) {
+        touchStation(path, t);
+        prm.servers = n;
+      }
+      // servers still starting come, if the new policy has room for them
+      if (prm.servers + S.booting > prm.scale.max) callOff();
+    }
+    noteScale(path, t);
+  }
+  function look(path, t) {
+    const S = scaling.get(path);
+    const prm = params.get(path);
+    const s = st.stations.get(path);
+    const arrived = s.arrivals - S.arrivals0;
+    const span = t - S.t0;
+    S.arrivals0 = s.arrivals;
+    S.t0 = t;
+    const pol = prm.scale;
+    if (pol && span > 0 && prm.workSpec != null) {
+      const need = (arrived * meanOf(prm.workSpec)) / span;
+      const want = Math.min(pol.max, Math.max(pol.min, Math.ceil(need / pol.target - 1e-9)));
+      const have = prm.servers + S.booting;
+      if (want > have) {
+        for (let i = 0; i < want - have; i++) schedule(t + pol.boot(stream(`boot:${path}`)), "ready", { at: path, v: S.v });
+        S.booting = want - prm.servers;
+        S.lastOut = t;
+        noteScale(path, t);
+      } else if (want < prm.servers && S.booting === 0 && t - S.lastOut >= pol.cooldown) {
+        touchStation(path, t);
+        prm.servers = want;
+        noteScale(path, t);
+      }
+    }
+    const every = pol?.every ?? S.base.every;
+    if (t + every <= horizon) schedule(t + every, "scale", { at: path });
+  }
+
+  // where the run starts from: the model's own switches and dials, then the changes at t <= 0
+  for (const c of initialChanges(model)) applyChange(c, 0, true);
+  for (const c of opts.changes || []) if (c.t <= 0) applyChange(c, 0, true);
   const madeByStart = new Map();
-  for (const c of opts.changes || []) schedule(c.t, "change", { change: c });
+  for (const c of opts.changes || []) if (c.t > 0) schedule(c.t, "change", { change: c });
 
   function step(e) {
     now = e.t;
@@ -486,6 +613,8 @@ export function createSim(def, opts = {}) {
       case "arrival": {
         if (e.v !== arrivalVersion.get(e.at)) return;
         if (e.t > horizon) return;
+        // a paused start sends nothing; its next item comes after it is let go again
+        if (params.get(e.at).paused) return;
         const { part } = parts.get(e.at);
         const made = (madeByStart.get(e.at) || 0) + 1;
         madeByStart.set(e.at, made);
@@ -505,7 +634,8 @@ export function createSim(def, opts = {}) {
       case "finish": {
         const tok = tokens.get(e.tok);
         const prm = params.get(e.at);
-        const failed = prm.fail > 0 && stream(`fail:${e.at}`)() < prm.fail;
+        const pf = chanceOf(prm.fail, tok.cls);
+        const failed = pf > 0 && stream(`fail:${e.at}`)() < pf;
         return finishAt(e.at, tok.id, e.slot, e.t, failed ? "fail" : "ok");
       }
       case "renege": {
@@ -526,6 +656,18 @@ export function createSim(def, opts = {}) {
         return leaveVia(tokens.get(e.tok), e.at, e.t);
       case "change":
         return applyChange(e.change, e.t);
+      case "scale":
+        return look(e.at, e.t);
+      case "ready": {
+        const S = scaling.get(e.at);
+        // a policy changed since this server was asked for: it never comes
+        if (e.v !== S.v) return;
+        S.booting -= 1;
+        touchStation(e.at, e.t);
+        params.get(e.at).servers += 1;
+        noteScale(e.at, e.t);
+        return tryStart(e.at, e.t);
+      }
     }
   }
 
@@ -615,6 +757,15 @@ function statsOf(sim, st, t, warmup, params) {
     stations,
     routes: Object.fromEntries(st.routes),
     choices: Object.fromEntries([...st.choices].map(([k, v]) => [k, { ...v }])),
+    // where items ended (top-level ends), and the same per kind of item
+    ends: { ...st.ends },
+    kinds: Object.fromEntries(
+      [...st.kinds].map(([k, K]) => {
+        const l = K.lead.slice().sort((a, b) => a - b);
+        return [k, { done: K.done, outcomes: { ...K.outcomes }, ends: { ...K.ends }, p50Lead: quantile(l, 0.5), p95Lead: quantile(l, 0.95) }];
+      }),
+    ),
+    servers: Object.fromEntries([...params].filter(([p]) => st.stations.has(p)).map(([p, v]) => [p, v.servers])),
   };
 }
 

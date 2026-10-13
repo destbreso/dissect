@@ -108,10 +108,29 @@ export function meanOf(spec) {
   return KINDS[p.kind].mean(p.args);
 }
 
+// A time too small for its unit reads in the next one down: 0.002 s is 2 ms,
+// 0.5 min is 30 s, 0.3 ns is 300 ps. Seconds and their fractions keep one
+// decimal place (0.3 s); minutes, hours, days and nanoseconds step down below 1.
+const BELOW = { s: [1e3, "ms"], ms: [1e3, "µs"], us: [1e3, "ns"], "µs": [1e3, "ns"], ns: [1e3, "ps"], min: [60, "s"], h: [60, "min"], d: [24, "h"] };
+const floorOf = (unit) => (unit === "s" || unit === "ms" || unit === "us" || unit === "µs" ? 0.1 : 1);
+/** The unit some times read best in, and what to multiply them by. */
+function downUnit(values, unit) {
+  let k = 1;
+  let u = unit;
+  while (BELOW[u] && values.some((v) => v !== 0) && values.every((v) => Math.abs(v * k) < floorOf(u))) {
+    k *= BELOW[u][0];
+    u = BELOW[u][1];
+  }
+  return { k, unit: u };
+}
+
 /** A short human description, e.g. "median 4, p95 9" or "about 6 on average". */
 export function describe(spec, unit = "") {
-  const p = parse(spec);
-  const u = unit ? ` ${unit}` : "";
+  const p0 = parse(spec);
+  const d = downUnit(p0.args, unit);
+  const p = { ...p0, args: p0.args.map((v) => v * d.k) };
+  unit = d.unit;
+  const u = unit ? ` ${p.kind === "const" ? one(p.args[0], unit) : unit}` : "";
   const f = (v) => (Math.abs(v - Math.round(v)) < 1e-9 ? String(Math.round(v)) : v.toFixed(2).replace(/0+$/, "").replace(/\.$/, ""));
   switch (p.kind) {
     case "const":
@@ -145,12 +164,10 @@ const one = (v, unit) => (v === 1 && unit && !LADDERS[unit] && /[^s]s$/.test(uni
 /** A label short enough for a plate: "4 min, p95 9", "2-6 min", "~4 min". */
 export function short(spec, unit = "") {
   const p = parse(spec);
-  let u = unit ? ` ${p.kind === "const" ? one(p.args[0], unit) : unit}` : "";
-  let a = p.args;
-  if (unit === "ns" && a.every((v) => v < 1)) {
-    a = a.map((v) => Math.round(v * 1000));
-    u = " ps";
-  }
+  const d = downUnit(p.args, unit);
+  unit = d.unit;
+  const u = unit ? ` ${p.kind === "const" ? one(p.args[0], unit) : unit}` : "";
+  const a = p.args.map((v) => v * d.k);
   switch (p.kind) {
     case "const":
       return `${num(a[0])}${u}`;
@@ -189,8 +206,11 @@ const LADDERS = {
  */
 export function formatDuration(v, unit = "") {
   if (!Number.isFinite(v)) return "-";
-  // below a nanosecond, picoseconds read better than decimals
-  if (unit === "ns" && Math.abs(v) < 1 && v !== 0) return `${Math.round(v * 1000)} ps`;
+  const d = downUnit([v], unit);
+  v *= d.k;
+  unit = d.unit;
+  // picoseconds are the smallest step: whole ones
+  if (unit === "ps") return `${Math.round(v)} ps`;
   const ladder = LADDERS[unit];
   if (!ladder) {
     const r = v < 10 ? Math.round(v * 10) / 10 : Math.round(v);
@@ -216,4 +236,24 @@ export function scaleSpec(spec, k) {
   const a = p.args.map((v) => Math.round(v * k * 1e6) / 1e6);
   if (p.kind === "const") return a[0];
   return `${p.kind} ${a.join(" ")}`;
+}
+
+/** A count for a plate or a readout: 940, 9.4k, 94k, 9.4M. */
+export function compact(n) {
+  if (n < 1000) return String(Math.round(n));
+  if (n < 1e4) return `${(n / 1e3).toFixed(1).replace(/\.0$/, "")}k`;
+  if (n < 1e6) return `${Math.round(n / 1e3)}k`;
+  return `${(n / 1e6).toFixed(1).replace(/\.0$/, "")}M`;
+}
+
+/**
+ * How often a start sends work, in the words under it: "every ~20 min", or,
+ * when one dot stands for many real items, how many arrive per unit ("~10k/s").
+ */
+export function rateWords(every, unit, per = 1) {
+  if (per > 1) {
+    const m = meanOf(every);
+    return m > 0 ? `~${compact(per / m)}/${unit || "unit"}` : "";
+  }
+  return `every ${short(every, unit)}`;
 }

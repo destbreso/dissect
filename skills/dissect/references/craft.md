@@ -22,6 +22,9 @@ Before any part, write one sentence the reader should leave with, and the click 
 | Neural network | The GPU waits for data | "Twice as many at once" on the data loader |
 | ETL | One step, the join, is most of the time from source to dashboard | "Twice as fast" on the join |
 | CUDA | A memory-bound kernel is as fast as the warps that can wait at once | "Half as many" on the resident warps |
+| DDoS | The edge stops nearly all of an attack before it costs the origin anything; autoscaling alone is a minute too slow | The challenge's switch |
+
+Some figures answer a question about a design rather than a number: how does a site survive an attack, what does the cache buy us, what happens without the retry. Build the design that works, give its parts switches and its load a dial, put the number that says whether it still works in the readout (`figure.watch`), and let the caption measure what each part does by turning it off in a variant.
 
 If you cannot write the sentence, the figure will be a flowchart that moves. Lessons that work are almost always one of: where the time goes (waiting, not working), what happens near capacity (queues grow steeply before the limit and without bound past it), how failures cost time (retries, timeouts, rework), how layers or nesting explain a single number, or what a dependency costs when it breaks.
 

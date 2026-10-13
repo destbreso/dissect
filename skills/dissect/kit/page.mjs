@@ -55,7 +55,7 @@ function levelsOf(model) {
  * Build one figure. Options:
  *   id, fig ("Fig 1"), title, caption, hint, theme ("auto" | "light" | "dark"),
  *   pace (model time per second at 1x; chosen from the run when left out),
- *   speed, autoplay, idle, outage, layout (overrides for the floor plan)
+ *   speed, autoplay, idle, outage, burst, levelPace, watch, layout (overrides for the floor plan)
  * Returns { html, data, warnings, levels: [{ path, width, height }] }.
  */
 export function buildFigure(def, opts = {}) {
@@ -93,7 +93,7 @@ export function buildFigure(def, opts = {}) {
     legend,
     theme: opts.theme ?? "auto",
   });
-  const options = { metas, pace: opts.pace, speed: opts.speed, autoplay: opts.autoplay, idle: opts.idle, outage: opts.outage, burst: opts.burst, levelPace: opts.levelPace, hint: opts.hint };
+  const options = { metas, pace: opts.pace, speed: opts.speed, autoplay: opts.autoplay, idle: opts.idle, outage: opts.outage, burst: opts.burst, levelPace: opts.levelPace, hint: opts.hint, watch: opts.watch };
   const data = `<script type="application/json" data-dissect="${esc(id)}">${toJson({ model: def, options })}</script>`;
   return { html: `${html}\n${data}`, data, warnings, levels: levels.map(({ path, width, height }) => ({ path, width, height })), model };
 }

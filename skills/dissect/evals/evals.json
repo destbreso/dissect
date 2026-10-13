@@ -48,6 +48,12 @@
       "prompt": "make a simple animated flowchart of our support ticket process: ticket comes in, tier 1 handles it, if they can't solve it it goes to tier 2, then it's closed. nothing fancy, just for a slide",
       "expected_output": "Even for a 'simple' request, a real model rather than a flowchart that moves: a Figure-sized level (start, tier 1 and tier 2 as stations with servers and logn work times, a choice or outcome routes for escalation, an end), plausible numbers stated as assumptions and offered for the user to replace, a generated caption with one measured lesson (where tickets wait), audit passing, a standalone page, built in well under an hour without asking for permission to start.",
       "files": []
+    },
+    {
+      "id": 9,
+      "prompt": "How does a site actually survive a DDoS? I want an interactive figure for a talk: a Cloudflare-style edge (WAF, rate limiting, a challenge, the CDN cache), then a load balancer, autoscaled app servers and a database. I want to switch each layer on and off, change the size of the attack and the autoscaling limit, and see when the site falls over.",
+      "expected_output": "A figure that starts from the design that works and lets the reader take it apart: kinds of items (people's requests and bots, ideally pages that need the origin apart from cacheable assets) with their own odds at every layer (fail and p by kind), a switch on each defense layer (a bypass route on the cache), dials on the attack's start (with a none option that pauses it) and on the autoscaling (scale with min, max, target, every and boot), whose settings open on the figure next to their parts rather than in a panel of their own, a database that does not scale, a dot that stands for many requests (per) so the page stays light (no heavy-run warning), figure.watch on the share of pages served, a caption generated from the run and from variants with layers off (what each layer stops, what happens while new servers boot), claims checked on eight seeds, timeout routes marked seldom, --audit --check passing, and a drive that turns a layer off and sees the readout fall.",
+      "files": []
     }
   ]
 }

@@ -20,19 +20,33 @@ export class Replay {
     this.tokens = new Map();
     this.alive = new Set();
     this.st = new Map();
-    for (const [path, servers] of stations) this.st.set(path, { servers, queue: [], bays: [], busy: 0, busyArea: 0, capArea: 0, at: 0, arrivals: 0, started: 0, finished: 0, failed: 0, timedOut: 0, rejected: 0, waitSum: 0, waitN: 0, workSum: 0, workN: 0, inside: 0 });
+    for (const [path, servers] of stations) this.st.set(path, { servers, booting: 0, passed: 0, queue: [], bays: [], busy: 0, busyArea: 0, capArea: 0, at: 0, arrivals: 0, started: 0, finished: 0, failed: 0, timedOut: 0, rejected: 0, waitSum: 0, waitN: 0, workSum: 0, workN: 0, inside: 0 });
     this.joins = new Map();
     this.timers = new Map();
     this.choices = new Map();
     this.ends = new Map(ends.map((p) => [p, 0]));
     this.passes = new Map();
     this.born = 0;
+    this.bornAt = new Map();
     this.done = 0;
     this.leads = [];
     this.leadSum = 0;
     this.outcomes = {};
     this.changes = [];
     this.events = [];
+    // every item that has left, in time order, for the numbers of a recent window
+    this.finished = [];
+    this.recentFrom = 0;
+  }
+
+  /** The items that left in the last `window` before t: [{ t, cls, outcome, at }]. */
+  recent(window, t = this.t) {
+    const f = this.finished;
+    while (this.recentFrom < f.length && f[this.recentFrom].t <= t - window) this.recentFrom += 1;
+    while (this.recentFrom > 0 && f[this.recentFrom - 1].t > t - window) this.recentFrom -= 1;
+    const out = [];
+    for (let i = this.recentFrom; i < f.length && f[i].t <= t; i++) out.push(f[i]);
+    return out;
   }
 
   get next() {
@@ -86,6 +100,7 @@ export class Replay {
         t.mode = "at";
         t.at = r.at;
         this.born += 1;
+        this.bornAt.set(r.at, (this.bornAt.get(r.at) || 0) + 1);
         break;
       }
       case "move": {
@@ -124,11 +139,13 @@ export class Replay {
       case "start": {
         const s = this.st.get(r.at);
         const qi = s.queue.indexOf(tok.id);
+        // a start with no queue record before it is an item that arrived and started at once
         if (qi >= 0) s.queue.splice(qi, 1);
+        else s.arrivals += 1;
         this.touch(s, r.t);
         s.busy += 1;
         s.started += 1;
-        s.waitSum += r.t - (tok.queuedAt ?? r.t);
+        s.waitSum += qi >= 0 ? r.t - (tok.queuedAt ?? r.t) : 0;
         s.waitN += 1;
         s.bays[r.server] = { tok: tok.id, t0: r.t, t1: r.t1 };
         tok.mode = r.t1 == null ? "inside" : "serve";
@@ -254,6 +271,7 @@ export class Replay {
         tok.doneAt = r.t;
         this.alive.delete(tok.id);
         this.ends.set(r.at, (this.ends.get(r.at) || 0) + 1);
+        this.finished.push({ t: r.t, cls: tok.cls, outcome: r.outcome, at: r.at, lead: r.t - tok.born });
         this.done += 1;
         this.outcomes[r.outcome] = (this.outcomes[r.outcome] || 0) + 1;
         const lead = r.t - tok.born;
@@ -268,6 +286,25 @@ export class Replay {
         }
         this.leads.splice(lo, 0, lead);
         this.events.push({ k: "done", tok: tok.id, at: r.at, outcome: r.outcome, lead });
+        break;
+      }
+      case "pass": {
+        // through a station that is switched off: nothing happens there
+        const s = this.st.get(r.at);
+        if (s) s.passed += 1;
+        tok.mode = "at";
+        tok.at = r.at;
+        this.events.push({ k: "pass", tok: tok.id, at: r.at });
+        break;
+      }
+      case "scale": {
+        const s = this.st.get(r.at);
+        if (s) {
+          this.touch(s, r.t);
+          s.servers = r.servers;
+          s.booting = r.booting;
+        }
+        this.events.push({ k: "scale", at: r.at, servers: r.servers, booting: r.booting });
         break;
       }
       case "change": {

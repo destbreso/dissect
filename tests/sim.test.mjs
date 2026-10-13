@@ -303,3 +303,102 @@ test("a fan-out sends one copy down every branch, each to its own end", () => {
   const bad = validate({ ...def, parts: [...def.parts.slice(0, 4), { id: "meet", kind: "join", at: [3, 0] }, { id: "out", kind: "end", at: [4, 0] }], routes: [...def.routes.slice(0, 3), { from: "a", to: "meet" }, { from: "b", to: "meet" }, { from: "meet", to: "out" }] });
   assert.match(bad.errors.join("\n"), /nothing would ever join them/);
 });
+
+// ---- kinds of items, switches, dials, autoscaling ----------------------------------------------
+const edge = (extra = {}) => ({
+  id: "edge",
+  seed: 5,
+  horizon: 400,
+  parts: [
+    { id: "people", kind: "start", at: [0, 0], every: "exp 1", classes: { people: 1 } },
+    { id: "bots", kind: "start", at: [0, 1], every: "exp 0.25", classes: { bots: 1 } },
+    { id: "waf", kind: "station", at: [1, 0], servers: "inf", work: 0.001, fail: { bots: 0.6, people: 0.02 }, switch: true, ...extra.waf },
+    { id: "cache", kind: "choice", at: [2, 0], switch: true },
+    { id: "hit", kind: "end", at: [3, 1] },
+    { id: "app", kind: "station", at: [3, 0], servers: 2, work: "exp 0.4", ...extra.app },
+    { id: "served", kind: "end", at: [4, 0] },
+    { id: "blocked", kind: "end", at: [2, 1], outcome: "fail" },
+  ],
+  routes: [
+    { from: "people", to: "waf" },
+    { from: "bots", to: "waf" },
+    { from: "waf", to: "cache", when: "ok" },
+    { from: "waf", to: "blocked", when: "fail" },
+    { id: "h", from: "cache", to: "hit", p: { people: 0.7, bots: 0 } },
+    { id: "m", from: "cache", to: "app", p: { people: 0.3, bots: 1 }, bypass: true },
+    { from: "app", to: "served" },
+  ],
+});
+
+test("chances by kind: a station fails, and a choice decides, with each kind's own odds", () => {
+  const st = simulate(edge(), { seed: 5 }).stats();
+  const P = st.kinds.people;
+  const B = st.kinds.bots;
+  near((B.ends.blocked ?? 0) / B.done, 0.6, 0.06, "bots blocked");
+  near((P.ends.blocked ?? 0) / P.done, 0.02, 0.6, "people blocked");
+  near((P.ends.hit ?? 0) / (P.done - (P.ends.blocked ?? 0)), 0.7, 0.08, "people served by the cache");
+  assert.equal(B.ends.hit ?? 0, 0, "no bot is ever in the cache");
+});
+
+test("a switch: off from a moment on, a station lets everything through and a choice takes its bypass", () => {
+  const def = edge();
+  const base = createSim(def);
+  base.runToEnd();
+  const off = createSim(def, { changes: [{ t: 100, part: "waf", set: { bypass: true } }, { t: 100, part: "cache", set: { take: "m" } }] });
+  off.runToEnd();
+  const i = base.log.findIndex((r) => r.t >= 100);
+  assert.deepEqual(off.log.slice(0, i), base.log.slice(0, i), "the run before the switch is the same");
+  const after = off.log.filter((r) => r.t > 100.01);
+  assert.ok(after.some((r) => r.k === "pass" && r.at === "waf"), "items pass the WAF while it is off");
+  assert.ok(!after.some((r) => r.k === "start" && r.at === "waf"), "and none is worked on there");
+  const blockedLate = after.filter((r) => r.k === "done" && r.at === "blocked").length;
+  assert.equal(blockedLate, 0, "nothing is blocked while it is off");
+  assert.ok(!after.some((r) => r.k === "decide" && r.route === "::h"), "the cache sends nothing to its hits while it is off");
+});
+
+test("a paused start sends nothing until it is let go", () => {
+  const sim = createSim(edge(), { changes: [{ t: 50, part: "bots", set: { paused: true } }, { t: 150, part: "bots", set: { paused: false } }] });
+  sim.runToEnd();
+  const botsBorn = sim.log.filter((r) => r.k === "born" && r.at === "bots").map((r) => r.t);
+  assert.ok(!botsBorn.some((t) => t > 50 && t < 150), "no bot between the pause and the release");
+  assert.ok(botsBorn.some((t) => t > 150), "bots again after the release");
+});
+
+test("autoscaling: servers follow the load, are ready only after their boot, and stay within min and max", () => {
+  const def = edge({ app: { scale: { min: 2, max: 9, target: 0.6, every: 10, boot: 30, cooldown: 40 } } });
+  // a heavier load from t = 100 to 250, then back
+  const sim = createSim(def, { changes: [{ t: 100, part: "bots", set: { every: "exp 0.08" } }, { t: 250, part: "bots", set: { every: "exp 0.25" } }] });
+  sim.runToEnd();
+  const scale = sim.log.filter((r) => r.k === "scale");
+  assert.ok(scale.length, "it scales");
+  for (const r of scale) assert.ok(r.servers >= 2 && r.servers + r.booting <= 9, `servers ${r.servers} (+${r.booting} starting) within 2 and 9 at ${r.t}`);
+  const asked = scale.find((r) => r.booting > 0 && r.t >= 100);
+  const ready = scale.find((r) => r.t > asked.t && r.servers > asked.servers);
+  assert.ok(ready.t - asked.t >= 30 - 1e-9, "a server is ready no sooner than its boot");
+  const peak = Math.max(...scale.map((r) => r.servers));
+  assert.ok(peak > 2, "the load brings more servers");
+  assert.ok(scale.at(-1).servers < peak, "and fewer once it has passed");
+  const off = createSim(def, { changes: [{ t: 0, part: "app", set: { scale: false } }] });
+  off.runToEnd();
+  assert.ok(!off.log.some((r) => r.k === "scale" && r.servers !== 2), "with autoscaling off the servers stay as they are");
+});
+
+test("a run starts from the model's own switches and dials", () => {
+  const def = edge();
+  def.parts[2].switch = { on: false };
+  def.parts[1].dials = [{ label: "Attack", value: 0, options: [{ label: "none", set: { paused: true } }, { label: "on" }] }];
+  const sim = createSim(def);
+  sim.runToEnd();
+  assert.ok(!sim.log.some((r) => r.k === "born" && r.at === "bots"), "the attack dial starts at none");
+  assert.ok(!sim.log.some((r) => r.k === "start" && r.at === "waf"), "the WAF starts off");
+});
+
+test("validation: chances by kind, switches, dials and scales explain what is wrong", () => {
+  const msgs = (f) => validate(f(edge())).errors.join("\n");
+  assert.match(msgs((d) => ((d.routes[4].p = { people: 0.6, bots: 0 }), d)), /for people, the p of its routes add up to 0\.9/);
+  assert.match(msgs((d) => ((d.routes[5].bypass = false), d)), /mark the one route it sends everything down when it is off with bypass: true/);
+  assert.match(msgs((d) => ((d.parts[0].switch = true), d)), /only a station or a choice can be turned off/);
+  assert.match(msgs((d) => ((d.parts[5].dials = [{ label: "Speed", options: [{ label: "a" }, { label: "b", set: { wait: 2 } }] }]), d)), /sets wait on station "app"/);
+  assert.match(msgs((d) => ((d.parts[5].scale = { min: 3, max: 8 }), d)), /starts with 2 servers, outside its scale/);
+  assert.match(msgs((d) => ((d.parts[2].fail = { bots: 1.5 }), d)), /fail is a probability/);
+});

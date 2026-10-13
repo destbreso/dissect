@@ -23,6 +23,44 @@ const HELP = `Check a built page in headless Chrome: layout measured in the brow
   --out <dir>   where the level PNGs go (default: shots/<page name>/)
   --strict      notes count as errors too`;
 
+// Runs in the page: opens the settings panel of every part on the visible level that has
+// one, and measures it: it opens, stays inside the figure, leaves its part in sight (on a
+// wide card), has a control, and its words have the contrast WCAG AA asks for.
+const PANELS = `(() => {
+  const out = [];
+  const rgb = (c) => { const m = String(c).match(/rgba?\\(([^)]+)\\)/); if (!m) return null; const v = m[1].split(/[ ,/]+/).filter(Boolean).map(Number); return { r: v[0], g: v[1], b: v[2], a: v.length > 3 ? v[3] : 1 }; };
+  const lum = ({ r, g, b }) => { const f = (x) => { x /= 255; return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; }; return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b); };
+  const mix = (top, under) => ({ r: top.r * top.a + under.r * (1 - top.a), g: top.g * top.a + under.g * (1 - top.a), b: top.b * top.a + under.b * (1 - top.a), a: 1 });
+  const ratio = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
+  const fig = document.querySelector(FIG);
+  const f = fig.dissect;
+  const level = fig.querySelector(".dx-stage > svg:not(.dx-off)").getAttribute("data-level") || "top";
+  for (const badge of fig.querySelectorAll(".dx-stage > svg:not(.dx-off) [data-settings]")) {
+    const path = badge.getAttribute("data-settings");
+    f.settings(path);
+    const p = fig.querySelector(".dx-panel");
+    if (!p || p.hidden) { out.push(level + ": the settings of " + path + " do not open"); continue; }
+    const v = fig.querySelector(".dx-view").getBoundingClientRect();
+    const r = p.getBoundingClientRect();
+    if (r.left < v.left - 0.5 || r.right > v.right + 0.5 || r.top < v.top - 0.5 || r.bottom > v.bottom + 0.5) out.push(level + ": the settings panel of " + path + " runs out of the figure");
+    const part = fig.querySelector('.dx-stage > svg:not(.dx-off) [data-path="' + path + '"]');
+    const body = (part.querySelector(".dx-plate, .dx-event") || part).getBoundingClientRect();
+    if (v.width >= 560 && r.left < body.right && body.left < r.right && r.top < body.bottom && body.top < r.bottom) out.push(level + ": the settings panel of " + path + " covers it");
+    if (!p.querySelector("[data-ctl]")) out.push(level + ": the settings panel of " + path + " has no control");
+    for (const el of p.querySelectorAll(".dx-panel-kind, .dx-panel-title, .dx-panel-live, .dx-panel-note, .dx-dial-label, .dx-seg button")) {
+      const cs = getComputedStyle(el);
+      if (!el.textContent.trim()) continue;
+      const fg = rgb(cs.color);
+      let n = el, bg = null;
+      while (n && n !== document.documentElement) { const c = rgb(getComputedStyle(n).backgroundColor); if (c && c.a > 0.5) { bg = c; break; } n = n.parentElement; }
+      if (fg && bg) { const c = ratio(mix(fg, bg), bg); if (c < 4.5) out.push(level + ": '" + el.textContent.trim().slice(0, 40) + "' in the settings of " + path + " has a contrast of " + c.toFixed(2) + ":1"); }
+    }
+    f.settings(null);
+    f.select(null);
+  }
+  return out;
+})()`;
+
 // Runs in the page: measures the visible level of one figure.
 const MEASURE = `(() => {
   const out = { errors: [], notes: [], cuts: [] };
@@ -67,8 +105,8 @@ const MEASURE = `(() => {
     if (owner && owner.classList.contains("dx-station") && !t.classList.contains("dx-under")) {
       const plate = box(owner.querySelector(".dx-plate"));
       if (b.x0 < plate.x0 + 2 || b.x1 > plate.x1 - 2 || b.y0 < plate.y0 || b.y1 > plate.y1) out.errors.push(level + ": '" + words + "' runs out of the plate of " + name(t));
-      // and clear of what else is on the plate: its lamp, gauge, icon, bays and window
-      for (const f of owner.querySelectorAll(".dx-lamp, .dx-gauge-track, .dx-glyph, .dx-bay, .dx-window")) if (hit(b, box(f), 0.5)) { out.errors.push(level + ": '" + words + "' runs into the " + f.getAttribute("class").replace("dx-", "").replace("-track", "") + " of " + name(t)); break; }
+      // and clear of what else is on the plate: its lamp, gauge, icon, bays, window and switch
+      for (const f of owner.querySelectorAll(".dx-lamp, .dx-gauge-track, .dx-glyph, .dx-bay, .dx-window, .dx-switch-track")) if (hit(b, box(f), 0.5)) { out.errors.push(level + ": '" + words + "' runs into the " + f.getAttribute("class").split(" ")[0].replace("dx-", "").replace("-track", "") + " of " + name(t)); break; }
     } else if (!inTag) {
       for (const p of parts) if (p.g !== owner && hit(b, p.body, 1)) out.errors.push(level + ": the words '" + words + "' of " + name(t) + " sit on " + p.path);
       for (const r of rails) if (r.x > b.x0 + 1 && r.x < b.x1 - 1 && r.y > b.y0 + 1 && r.y < b.y1 - 1) { out.errors.push(level + ": a rail (" + r.key + ") runs over '" + words + "'"); break; }
@@ -162,6 +200,7 @@ async function main() {
           await sleep(750);
           const r = await page.evaluate(MEASURE.replace("FIG", FIG));
           for (const e of r.errors) errors.add(`${id} (${label}, ${theme}) ${e}`);
+          for (const e of await page.evaluate(PANELS.replace("FIG", FIG))) errors.add(`${id} (${label}, ${theme}) ${e}`);
           if (label === "desktop") for (const n of r.notes) notes.add(`${id} ${n}`);
           for (const c of r.cuts) notes.add(`${id} (${label}) ${c}`);
           await page.scrollTo(`#${id} .dx-card`);
@@ -190,12 +229,23 @@ async function main() {
             const st = [...f.replay.st.keys()].find((p) => !p.includes("/"));
             if (st) f.inject({ part: st, set: { work: 1e-3 } });
             const changed = !st || f.state().changes === 1;
+            // a switch turns its part off, and undo turns it back on
+            const sw = root.querySelector(".dx-stage>svg:not(.dx-off) [data-switch]");
+            let switched = true;
+            if (sw) {
+              const path = sw.getAttribute("data-switch");
+              f.toggle(path);
+              switched = f.state().settings["switch:" + path] === false && root.querySelector('.dx-stage>svg:not(.dx-off) [data-path="' + path + '"]').hasAttribute("data-off");
+            }
             f.undo(); f.pause();
-            return { moved, followed, changed };
+            const restored = !sw || (f.state().settings["switch:" + sw.getAttribute("data-switch")] === true && !root.querySelector(".dx-stage>svg:not(.dx-off) [data-off]"));
+            return { moved, followed, changed, switched, restored };
           })()`);
           if (!ok.moved) errors.add(`${id}: the clock does not move when playing`);
           if (!ok.followed) errors.add(`${id}: following a dot does not take`);
           if (!ok.changed) errors.add(`${id}: a what-if does not apply`);
+          if (!ok.switched) errors.add(`${id}: turning a switch off does not take`);
+          if (!ok.restored) errors.add(`${id}: undo does not turn the switches back on`);
         }
       }
       for (const p of page.problems) errors.add(`console (${label}, ${theme}): ${p}`);
