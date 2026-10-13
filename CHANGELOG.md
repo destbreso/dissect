@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.1
+
+- A fifteenth example (sixteen figures in all): how Dissect makes a figure, from the description to the page, with the kit's build, audit and check timed on the shipped examples.
+- The inspector says when nothing can wait, in a figure or a step whose steps all take each item as it comes, instead of pointing at queues that cannot form.
+- A page built with `embedHeight` measures its own height, so the frame around it shrinks to fit as well as grows.
+- The README opens with a quick start that installs the skill and calls it by name, six of the examples, and every example listed below them; the new example is its main picture.
+
 ## 0.2.0
 
 - The notation: closed starts, virtual users in stages the way k6 runs them (`vus` and `think`: each user sends its next item when its answer comes back and a pause has passed, so a slower answer means fewer items, not a longer queue); work times by kind (`work: { cpu: "logn 5 6", else: 0.2 }`); routes that `emit` a new item of a kind as each item leaves a station or a choice (a metric sample, an event), drawn dashed; `late:<time>` routes for the items that have taken that long or more (a check's deadline, an SLA); dials that start the run again with their option (`restart`); colors for up to six kinds of item.

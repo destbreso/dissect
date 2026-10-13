@@ -13,7 +13,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const EX = join(ROOT, "skills", "dissect", "examples");
 const OUT = join(ROOT, "assets");
 // where to stop each figure for its picture (model time) and which figure on the page
-const AT = { "ci-pipeline": 170, "request-path": 260, "tcp-ip": 330, pubsub: 520, serverless: 900, "auth-flows": 640, memory: 60, "incident-response": 230, aes: 120, "llm-harness": 20000, "neural-network": 900, etl: 600, cuda: 6, ddos: 75 };
+const AT = { "ci-pipeline": 170, "request-path": 260, "tcp-ip": 330, pubsub: 520, serverless: 900, "auth-flows": 640, memory: 60, "incident-response": 230, aes: 120, "llm-harness": 20000, "neural-network": 900, etl: 600, cuda: 6, ddos: 75, "making-a-figure": 190 };
 const only = process.argv[2];
 for (const name of readdirSync(EX).sort()) {
   if (only && name !== only) continue;

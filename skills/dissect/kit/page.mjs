@@ -105,7 +105,7 @@ export function standalonePage(def, opts = {}) {
   const body = `${intro}${figs.map((f) => f.html).join('\n<div style="height:32px"></div>\n')}${opts.outro ? `<main class="dx-page">${opts.outro}</main>` : ""}`;
   // embedded in an iframe, the page tells the page around it how tall it is, so the frame can fit it
   const embed = opts.embedHeight
-    ? `<script>(function(){if(window.parent===window)return;var last=0;function post(){var h=Math.ceil(document.documentElement.scrollHeight);if(h!==last){last=h;window.parent.postMessage({type:"dissect:height",height:h},"*")}}addEventListener("load",post);if(window.ResizeObserver)new ResizeObserver(post).observe(document.documentElement);})();</script>`
+    ? `<script>(function(){if(window.parent===window)return;var last=0;function post(){var h=Math.ceil(document.documentElement.getBoundingClientRect().height);if(h!==last){last=h;window.parent.postMessage({type:"dissect:height",height:h},"*")}}addEventListener("load",post);if(window.ResizeObserver)new ResizeObserver(post).observe(document.documentElement);})();</script>`
     : "";
   const head = `<style>.dx-page{max-width:760px;margin:0 auto 28px;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Liberation Sans",system-ui,sans-serif;color:#1d1c1a}.dx-page h1{font-size:28px;line-height:1.2;margin:8px 0 12px}@media (prefers-color-scheme:dark){.dx-page{color:#eceae4}}</style>${embed}${opts.head || ""}`;
   return {

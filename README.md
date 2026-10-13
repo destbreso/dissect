@@ -1,24 +1,94 @@
 <h1 align="center">Dissect</h1>
 
-<p align="center"><b>Explain a process by running it.</b></p>
+<p align="center"><b>An Agent Skill that explains a process by running it.</b><br>For Claude Code, and also runs in OpenCode, Codex and Antigravity.<br>Interactive, simulated figures of pipelines, architectures, protocols and human processes, with steps you can open and what-ifs you can try.</p>
 
 <p align="center">
+  <a href="https://code.claude.com/docs/en/skills"><img src="https://img.shields.io/badge/Claude_Code-skill-1b1b19?style=flat-square&logo=claude&logoColor=white" alt="Claude Code skill"></a>
+  <a href="https://agentskills.io"><img src="https://img.shields.io/badge/Agent_Skills-compatible-1b1b19?style=flat-square" alt="Agent Skills compatible"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-1b1b19?style=flat-square" alt="MIT license"></a>
+  <a href="#requirements"><img src="https://img.shields.io/badge/node-%E2%89%A5%2020.10-1b1b19?style=flat-square&logo=nodedotjs&logoColor=white" alt="Node 20.10 or later"></a>
+  <a href="#requirements"><img src="https://img.shields.io/badge/dependencies-0-1b1b19?style=flat-square" alt="No dependencies"></a>
+  <a href="https://github.com/destbreso/dissect/actions/workflows/ci.yml"><img src="https://github.com/destbreso/dissect/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+</p>
+
+<p align="center">
+  <a href="https://destbreso.com/projects/dissect"><img src="https://img.shields.io/badge/Website-destbreso.com%2Fprojects%2Fdissect-1b1b19?style=for-the-badge" alt="Website: destbreso.com/projects/dissect"></a>
+  &nbsp;
+  <a href="https://github.com/destbreso/dissect/archive/refs/heads/main.zip"><img src="https://img.shields.io/badge/Download-ZIP-1b1b19?style=for-the-badge&logo=github&logoColor=white" alt="Download ZIP"></a>
+  &nbsp;
+  <a href="#install"><img src="https://img.shields.io/badge/Install-npx_skills_add-d7d7d0?style=for-the-badge&labelColor=1b1b19&logo=npm&logoColor=white" alt="Install with npx"></a>
+</p>
+
+<p align="center">
+  <a href="#quick-start">Quick start</a> ·
+  <a href="#gallery">Gallery</a> ·
   <a href="#install">Install</a> ·
   <a href="#use">Use</a> ·
-  <a href="#gallery">Gallery</a> ·
+  <a href="#examples">Examples</a> ·
   <a href="#how-it-works">How it works</a> ·
   <a href="#the-model">The model</a> ·
   <a href="#checks">Checks</a>
 </p>
 
-Dissect is an [Agent Skill](https://agentskills.io) for Claude Code (it also runs in Codex, OpenCode and Antigravity). Describe a process (a CI/CD pipeline, a request through your architecture, a network protocol, an LLM and its tools, a cipher's rounds, a memory access, an on-call rotation, a site under attack) and it builds an interactive figure of it: a floor plan of stations, queues, gates and lanes, driven by a seeded discrete-event simulation. A queue on screen is a queue in the model, and every number in the caption is measured from the run the figure plays. Any step that hides a process of its own opens into it, any item can be followed from start to end, and the reader can try what-ifs (an outage, one more reviewer, a colder cache), turn parts off with their switches, open a part's settings on the figure, and watch what happens.
-
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/ci-pipeline-dark.png">
-    <img src="assets/ci-pipeline-light.png" alt="The CI pipeline figure: lanes for author, CI, review and production; CI and Ship are steps with a window that opens into their own processes; a queue of changes waits before Code review." width="900">
-  </picture>
+  <a href="skills/dissect/examples/making-a-figure/making-a-figure.html"><picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/making-a-figure-dark.png">
+    <img src="assets/making-a-figure-light.png" width="900" alt="How Dissect makes a figure: lanes for you, the agent, the kit and headless Chrome. A process to explain goes to Write the model, then Build and Audit in the kit, then Check in Chrome; anything they find goes to Fix it and around again, and Read the pictures ends in your figure. Write the model, Build and Check are steps with a window that opens into their own processes.">
+  </picture></a>
 </p>
+
+<p align="center"><sub><code>skills/dissect/examples/making-a-figure</code>: the skill's own workflow, made with the skill. Write the model, Build and Check open into their own steps.</sub></p>
+
+---
+
+Describe a process to your agent (a CI/CD pipeline, a request through your architecture, a network protocol, an LLM and its tools, a cipher's rounds, a memory access, an on-call rotation, a site under attack) and Dissect has it build an interactive figure of it: a floor plan of stations, queues, gates and lanes, driven by a seeded discrete-event simulation. A queue on screen is a queue in the model, and every number in the caption is measured from the run the figure plays. Any step that hides a process of its own opens into it, any item can be followed from start to end, and the reader can try what-ifs (an outage, one more reviewer, a colder cache), turn parts off with their switches, open a part's settings on the figure, and watch what happens.
+
+## Quick start
+
+```sh
+npx skills add destbreso/dissect -g -a claude-code
+```
+
+Then, in Claude Code:
+
+```text
+/dissect make an interactive figure of our CI pipeline: about 30 PRs a day, CI takes 8 minutes, two of us review
+```
+
+As a Claude Code plugin instead: `/plugin marketplace add destbreso/dissect`, then `/plugin install dissect@dissect`, and call it with `/dissect:dissect`. For OpenCode or Codex, swap the agent: `-a opencode` or `-a codex`. OpenCode takes the same `/dissect` command; in Codex, type `$dissect`. You can also just ask: the skill triggers on processes, pipelines, workflows, architectures and protocols.
+
+That's it. No API keys and nothing to `npm install`: the kit uses only Node's built-in modules. The checks need Chrome or Chromium, found where it usually is.
+
+## Gallery
+
+<table>
+  <tr>
+    <td width="50%"><a href="skills/dissect/examples/ci-pipeline/ci-pipeline.html"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/ci-pipeline-dark.png"><img src="assets/ci-pipeline-light.png" alt="From commit to production"></picture></a></td>
+    <td width="50%"><a href="skills/dissect/examples/ddos/ddos.html"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/ddos-dark.png"><img src="assets/ddos-light.png" alt="A site under a DDoS attack"></picture></a></td>
+  </tr>
+  <tr>
+    <td><sub><b>From commit to production.</b> CI and Ship open into their own processes; red builds and requested changes go back to the author. A third of a change's time is waiting for the one reviewer on duty.</sub></td>
+    <td><sub><b>A site under a DDoS attack.</b> An edge network in front of an origin that scales, under a botnet's flood. Every layer has a switch on it, and a click on the botnet, the crowd or the app servers opens their settings next to them: turn the layers off one by one and watch the pages stop being served.</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><a href="skills/dissect/examples/tcp-ip/tcp-ip.html"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/tcp-ip-dark.png"><img src="assets/tcp-ip-light.png" alt="One segment through TCP/IP"></picture></a></td>
+    <td width="50%"><a href="skills/dissect/examples/llm-harness/llm-harness.html"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/llm-harness-dark.png"><img src="assets/llm-harness-light.png" alt="A message to an LLM, and its harness"></picture></a></td>
+  </tr>
+  <tr>
+    <td><sub><b>One segment through TCP/IP.</b> Down the sender's layers, through a router whose buffer overflows, up the receiver's. A loss costs a round trip, or a whole retransmission timer.</sub></td>
+    <td><sub><b>A message to an LLM, and its harness.</b> The model stays a closed box; the context, the tool loop and the output check are the figure. Every tool call is another full turn through the model.</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><a href="skills/dissect/examples/aes/aes.html"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/aes-dark.png"><img src="assets/aes-light.png" alt="AES, from the mode to the S-box"></picture></a></td>
+    <td width="50%"><a href="skills/dissect/examples/incident-response/incident-response.html"><picture><source media="(prefers-color-scheme: dark)" srcset="assets/incident-response-dark.png"><img src="assets/incident-response-light.png" alt="An alert, from page to resolved"></picture></a></td>
+  </tr>
+  <tr>
+    <td><sub><b>AES, from the mode to the S-box.</b> CBC and CTR with GCM encrypt the same message side by side; open AES for its rounds, a round for its steps, SubBytes for the S-box.</sub></td>
+    <td><sub><b>An alert, from page to resolved.</b> One on-call engineer, escalation after 15 minutes, a war room. Four alerts in five are noise, and real problems wait behind them.</sub></td>
+  </tr>
+</table>
+
+Six of the fifteen examples; [all of them](#examples) are listed below. Every picture is a page in [`skills/dissect/examples/`](skills/dissect/examples), in the light theme (the dark one on a dark GitHub), captured with [`tools/gallery.mjs`](tools/gallery.mjs). The built pages are committed: open any `.html` there in a browser and it runs, opens and answers what-ifs.
 
 ## Install
 
@@ -59,19 +129,27 @@ Ask for what you want to explain. The skill triggers on processes, pipelines, wo
 
 The agent writes a model of the process with real or stated numbers, calibrates it on several runs, writes the caption from the run, builds a standalone HTML page (or a fragment for a page you have, or a React component), audits it, and checks it in a headless browser. With `/dissect` (or `/dissect:dissect` from the plugin) you can call it by name.
 
-## Gallery
+## Examples
 
-Every example is a model in `skills/dissect/examples/<name>/model.mjs` and a page built from it next to it. Open the pages in a browser; each one runs, opens and answers what-ifs. Rebuild one with `node skills/dissect/examples/<name>/build.mjs` (`--light`, `--dark`, `--audit`).
+Every example is a model, `model.mjs`, and the page built from it next to it. Rebuild one with its build script; add `--light` or `--dark` for one theme, `--audit` for the audit.
 
-| | |
-|---|---|
-| <a href="skills/dissect/examples/ci-pipeline/ci-pipeline.html"><img src="assets/ci-pipeline-light.png" alt="From commit to production" width="420"></a><br>**From commit to production.** CI and Ship open into their own processes; red builds and requested changes go back to the author. A third of a change's time is waiting for the one reviewer on duty. | <a href="skills/dissect/examples/request-path/request-path.html"><img src="assets/request-path-light.png" alt="One request, edge to database" width="420"></a><br>**One request, edge to database.** Requests travel with real latencies. The trip is almost all of the time, and a colder cache fills the API's workers until 504s start. |
-| <a href="skills/dissect/examples/tcp-ip/tcp-ip.html"><img src="assets/tcp-ip-light.png" alt="One segment through TCP/IP" width="420"></a><br>**One segment through TCP/IP.** Down the sender's layers, through a router whose buffer overflows, up the receiver's. A loss costs a round trip, or a whole retransmission timer. | <a href="skills/dissect/examples/pubsub/pubsub.html"><img src="assets/pubsub-light.png" alt="One event, three subscribers" width="420"></a><br>**One event, three subscribers.** A fan-out to email, inventory and analytics, each with its own queue, retries and dead letters. Take one down and the others do not notice. |
-| <a href="skills/dissect/examples/serverless/serverless.html"><img src="assets/serverless-light.png" alt="A checkout on serverless" width="420"></a><br>**A checkout on serverless.** Concurrency limits and cold starts on the synchronous path, a queue on the asynchronous one. A burst is refused by one and absorbed by the other. | <a href="skills/dissect/examples/auth-flows/auth-flows.html"><img src="assets/auth-flows-light.png" alt="Sessions, JWTs and OAuth" width="420"></a><br>**Sessions, JWTs and OAuth.** The check on every request, with a session store outage as the what-if, and an OAuth login with PKCE in three phases you can open. |
-| <a href="skills/dissect/examples/llm-harness/llm-harness.html"><img src="assets/llm-harness-light.png" alt="A message to an LLM, and its harness" width="420"></a><br>**A message to an LLM, and its harness.** The model stays a closed box; the context, the tool loop and the output check are the figure. Every tool call is another full turn through the model. | <a href="skills/dissect/examples/aes/aes.html"><img src="assets/aes-light.png" alt="AES, from the mode to the S-box" width="420"></a><br>**AES, from the mode to the S-box.** CBC and CTR with GCM encrypt the same message side by side; open AES for its rounds, a round for its steps, SubBytes for the S-box. |
-| <a href="skills/dissect/examples/memory/memory.html"><img src="assets/memory-light.png" alt="A load, from the core to the bits" width="420"></a><br>**A load, from the core to the bits.** Five levels deep: L1 down to its SRAM array and output flip-flop, the miss path down to DRAM's row activation, where a bit is a capacitor. | <a href="skills/dissect/examples/cuda/cuda.html"><img src="assets/cuda-light.png" alt="A CUDA kernel, warp by warp" width="420"></a><br>**A CUDA kernel, warp by warp.** 640 warps alternate between waiting for memory and computing. Halve the warps that can wait at once and the kernel takes twice as long. |
-| <a href="skills/dissect/examples/neural-network/neural-network.html"><img src="assets/neural-network-light.png" alt="Training a neural network" width="420"></a><br>**Training a neural network.** A data loader feeds the GPU; the forward pass runs one way and the backward pass the other; a layer is 128 perceptrons. The GPU waits for data. | <a href="skills/dissect/examples/etl/etl.html"><img src="assets/etl-light.png" alt="A day of ETL, source to dashboard" width="420"></a><br>**A day of ETL, source to dashboard.** Three sources at their own rhythm, through extract, land, transform, load and checks. One step, the join, is most of the time to the dashboard. |
-| <a href="skills/dissect/examples/incident-response/incident-response.html"><img src="assets/incident-response-light.png" alt="An alert, from page to resolved" width="420"></a><br>**An alert, from page to resolved.** One on-call engineer, escalation after 15 minutes, a war room. Four alerts in five are noise, and real problems wait behind them. | <a href="skills/dissect/examples/ddos/ddos.html"><img src="assets/ddos-light.png" alt="A site under a DDoS attack" width="420"></a><br>**A site under a DDoS attack.** An edge network in front of an origin that scales, under a botnet's flood. Every layer has a switch on it, and a click on the botnet, the crowd or the app servers opens their settings next to them: turn the layers off one by one and watch the pages stop being served. |
+| Example | What it shows | Build |
+|---|---|---|
+| [`making-a-figure`](skills/dissect/examples/making-a-figure/making-a-figure.html) | **How Dissect makes a figure.** The skill's own workflow, as a figure: the agent writes the model, the kit builds and audits it in about a second, headless Chrome checks it in under a minute, and anything they find goes back to the agent. Open Build and Check for their steps. | `node skills/dissect/examples/making-a-figure/build.mjs` |
+| [`ci-pipeline`](skills/dissect/examples/ci-pipeline/ci-pipeline.html) | **From commit to production.** CI and Ship open into their own processes; red builds and requested changes go back to the author. A third of a change's time is waiting for the one reviewer on duty. | `node skills/dissect/examples/ci-pipeline/build.mjs` |
+| [`request-path`](skills/dissect/examples/request-path/request-path.html) | **One request, edge to database.** Requests travel with real latencies. The trip is almost all of the time, and a colder cache fills the API's workers until 504s start. | `node skills/dissect/examples/request-path/build.mjs` |
+| [`tcp-ip`](skills/dissect/examples/tcp-ip/tcp-ip.html) | **One segment through TCP/IP.** Down the sender's layers, through a router whose buffer overflows, up the receiver's. A loss costs a round trip, or a whole retransmission timer. | `node skills/dissect/examples/tcp-ip/build.mjs` |
+| [`pubsub`](skills/dissect/examples/pubsub/pubsub.html) | **One event, three subscribers.** A fan-out to email, inventory and analytics, each with its own queue, retries and dead letters. Take one down and the others do not notice. | `node skills/dissect/examples/pubsub/build.mjs` |
+| [`serverless`](skills/dissect/examples/serverless/serverless.html) | **A checkout on serverless.** Concurrency limits and cold starts on the synchronous path, a queue on the asynchronous one. A burst is refused by one and absorbed by the other. | `node skills/dissect/examples/serverless/build.mjs` |
+| [`auth-flows`](skills/dissect/examples/auth-flows/auth-flows.html) | **Sessions, JWTs and OAuth.** The check on every request, with a session store outage as the what-if, and an OAuth login with PKCE in three phases you can open. | `node skills/dissect/examples/auth-flows/build.mjs` |
+| [`llm-harness`](skills/dissect/examples/llm-harness/llm-harness.html) | **A message to an LLM, and its harness.** The model stays a closed box; the context, the tool loop and the output check are the figure. Every tool call is another full turn through the model. | `node skills/dissect/examples/llm-harness/build.mjs` |
+| [`aes`](skills/dissect/examples/aes/aes.html) | **AES, from the mode to the S-box.** CBC and CTR with GCM encrypt the same message side by side; open AES for its rounds, a round for its steps, SubBytes for the S-box. | `node skills/dissect/examples/aes/build.mjs` |
+| [`memory`](skills/dissect/examples/memory/memory.html) | **A load, from the core to the bits.** Five levels deep: L1 down to its SRAM array and output flip-flop, the miss path down to DRAM's row activation, where a bit is a capacitor. | `node skills/dissect/examples/memory/build.mjs` |
+| [`cuda`](skills/dissect/examples/cuda/cuda.html) | **A CUDA kernel, warp by warp.** 640 warps alternate between waiting for memory and computing. Halve the warps that can wait at once and the kernel takes twice as long. | `node skills/dissect/examples/cuda/build.mjs` |
+| [`neural-network`](skills/dissect/examples/neural-network/neural-network.html) | **Training a neural network.** A data loader feeds the GPU; the forward pass runs one way and the backward pass the other; a layer is 128 perceptrons. The GPU waits for data. | `node skills/dissect/examples/neural-network/build.mjs` |
+| [`etl`](skills/dissect/examples/etl/etl.html) | **A day of ETL, source to dashboard.** Three sources at their own rhythm, through extract, land, transform, load and checks. One step, the join, is most of the time to the dashboard. | `node skills/dissect/examples/etl/build.mjs` |
+| [`incident-response`](skills/dissect/examples/incident-response/incident-response.html) | **An alert, from page to resolved.** One on-call engineer, escalation after 15 minutes, a war room. Four alerts in five are noise, and real problems wait behind them. | `node skills/dissect/examples/incident-response/build.mjs` |
+| [`ddos`](skills/dissect/examples/ddos/ddos.html) | **A site under a DDoS attack.** An edge network in front of an origin that scales, under a botnet's flood. Every layer has a switch on it, and a click on the botnet, the crowd or the app servers opens their settings next to them: turn the layers off one by one and watch the pages stop being served. | `node skills/dissect/examples/ddos/build.mjs` |
 
 ## How it works
 

@@ -4,7 +4,7 @@ description: Build interactive figures that explain a process by running it, suc
 license: MIT
 compatibility: Written for Claude Code; also runs in Codex, OpenCode and Antigravity. Needs Node.js 20.10+ (built-in modules only) and Chrome or Chromium for the browser checks.
 metadata:
-  version: "0.2.0"
+  version: "0.2.1"
   author: "David Estévez"
   repository: "https://github.com/destbreso/dissect"
 ---
