@@ -4,6 +4,7 @@
     "name": "David Estévez",
     "url": "https://github.com/destbreso"
   },
+  "description": "Dissect, an Agent Skill that explains a process by running it: interactive, simulated figures of pipelines, architectures, network flows and human processes.",
   "plugins": [
     {
       "name": "dissect",
