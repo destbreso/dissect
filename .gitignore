@@ -1,0 +1,11 @@
+# built example pages in a fixed theme are local checks; the auto-theme page is the gallery
+*.log
+.DS_Store
+.scratch/
+/capture.png
+node_modules/
+shots/
+skills/dissect/examples/*/*-dark.html
+skills/dissect/examples/*/*-light.html
+skills/dissect/examples/*/*.fragment.html
+tmp/

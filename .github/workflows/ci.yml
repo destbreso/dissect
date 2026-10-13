@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Kit, examples and a browser drive
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Tests (the kit, the simulator against theory, every example's audit)
+        run: npm test
+
+      - name: Build, audit and check every example in headless Chrome
+        run: |
+          for build in skills/dissect/examples/*/build.mjs; do
+            node "$build" --audit --check
+          done
+
+      - name: Drive the CI pipeline in headless Chrome
+        run: |
+          node skills/dissect/scripts/drive.mjs skills/dissect/examples/ci-pipeline/ci-pipeline.html '[
+            ["call", "fig.setSpeed(16)"],
+            ["until", "fig.state().clock > 100", 30000],
+            ["part", "ci"],
+            ["wait", 800],
+            ["expect", "fig.state().view === \"ci\"", "clicking CI opens it"],
+            ["key", "Escape"],
+            ["wait", 800],
+            ["expect", "fig.state().view === \"\"", "Escape goes back up"],
+            ["call", "fig.inject({ part: \"review\", set: { servers: 0 } })"],
+            ["until", "fig.replay.st.get(\"review\").queue.length >= 2", 30000],
+            ["expect", "fig.state().changes === 1", "the what-if is in place"]
+          ]'

@@ -1,0 +1,53 @@
+{
+  "skill_name": "dissect",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Our PRs take forever to get merged and everyone blames CI. Can you make an interactive diagram of our pipeline for the team wiki? We push maybe 30 PRs a day, CI takes about 8 minutes, two of us review (most reviews are 15-20 minutes but some take an hour), and about 1 in 5 PRs gets changes requested. Single HTML file is fine.",
+      "expected_output": "A standalone HTML page with one figure built from a model.mjs: lanes for author, CI and review, CI as a station (possibly with an inside showing its jobs), review with servers matching the stated people and a logn work time with the stated median and p95, a rework loop back to the author through the same queue. The model is calibrated on several seeds (utilization at the bottleneck reported), the caption is generated from the run and states where the time actually goes with measured numbers, claims for every number in the prose, `--audit` passes, and the what-if the caption names (one more reviewer, or similar) is one click away and was checked in headless Chrome. No number in the caption or prose was typed by hand.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "I'm writing a blog post on why caches matter. Make me an interactive figure of a request going from the browser through a CDN, a load balancer, an app server, Redis and Postgres. I want readers to be able to see what happens when the cache hit rate drops.",
+      "expected_output": "A figure whose items travel with real latencies across the network lanes, with the app server as a station with an inside (Redis lookup, a hit-or-miss choice by chance, Postgres with limited capacity). The base run and the cold-cache what-if are both measured; the numbers are tuned so the what-if produces a visible effect (workers filling, a queue, timeouts) and the caption reports what was measured, not what was hoped for. The choice offers the 'miss twice as often' what-if. Audit passes; captures at 1280 and 390 px, light and dark, were read.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "explain how TCP retransmission works with something visual and interactive, I always forget the difference between fast retransmit and an RTO",
+      "expected_output": "An interactive figure in which items are segments: the sender's and receiver's stacks (optionally with their layers as lanes inside), a router with a finite buffer whose overflow drops segments (capacity, outcome rejected), and the two recovery paths after a drop as timers of the right lengths (about one round trip for three duplicate ACKs, 200 ms or more for the retransmission timer). Units in ms, a pace set so a round trip is visible, a caption generated from the run that contrasts what each path costs. The figure's simplifications (no congestion control, if left out) are stated in the model comment and the prose.",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "Necesito una visualización interactiva de cómo funciona una arquitectura pub/sub para una charla: un servicio de pedidos publica un evento y lo consumen email, inventario y analítica. Quiero mostrar que si email se cae los demás siguen funcionando.",
+      "expected_output": "A figure (labels and prose may be in Spanish or English as the user prefers; the skill's rules still apply) with a fan-out split (fanout: true) from the topic to one lane per subscriber, each with its own station (consumers as servers), queue and end; email with failures, a retry timer with a cap and a dead-letter end marked seldom. The outage what-if on the email consumer was driven in headless Chrome and the other subscribers' queues were checked to stay unaffected. Caption numbers generated per subscriber from the log.",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "We're moving our checkout to Lambda. Build a React component for our Next.js docs that shows a request through API Gateway into a Lambda with reserved concurrency 10, cold starts, and then an SQS queue feeding a fulfillment Lambda. I want to show why the queue matters during traffic spikes.",
+      "expected_output": "A model plus a Next.js integration: the figure HTML built at build time with buildFigure and the CSS from css(), and a small client component that calls boot() once mounted (as in references/kit.md), plus a standalone HTML preview. The model has a station with servers 10 and capacity 0 (refusing with 429), a cold-start branch by chance inside the function, a fan-out that answers the client and enqueues, and a fulfillment station with its own capacity and retries. The burst what-if was measured (refusals on the sync path, the queue growing and draining on the async path) and the caption reports it.",
+      "files": []
+    },
+    {
+      "id": 6,
+      "prompt": "Can you make something that shows how computer memory works, all the way from flip-flops and bits up to the full cache hierarchy and RAM? Interactive if possible, for a computer architecture class.",
+      "expected_output": "A deeply nested figure in nanoseconds: the top level a load through the load ports and L1 with a hit-or-miss choice, a miss path through L2, L3 and DRAM, and levels that open down to the circuit (an SRAM array read ending in a flip-flop latch, DRAM row activation where a bit is a capacitor). Per-level time scales so picosecond steps are visible when opened and nanosecond trips are watchable on top. Realistic timings and hit rates stated as assumptions. Caption generated from the run (the share of time spent on the rare DRAM trips).",
+      "files": []
+    },
+    {
+      "id": 7,
+      "prompt": "Our on-call rotation is burning people out. I'd like a figure for an internal post that shows how alerts flow from monitoring to the on-call engineer, escalation to the secondary after 15 minutes, and then to the owning team or an incident war room. Most of our alerts are noise.",
+      "expected_output": "A human-process figure in minutes: alerts with classes (noise and real) and their colors, one on-call station with patience 15 and an escalation route on timeout, class-based routes to false alarm and to the team, a war room as a station whose inside runs mitigation and the status page in parallel. Calibrated on a noisy shift with a representative seed; the 'Half the noise' what-if is available on the start, measured in the caption, and checked in the browser.",
+      "files": []
+    },
+    {
+      "id": 8,
+      "prompt": "make a simple animated flowchart of our support ticket process: ticket comes in, tier 1 handles it, if they can't solve it it goes to tier 2, then it's closed. nothing fancy, just for a slide",
+      "expected_output": "Even for a 'simple' request, a real model rather than a flowchart that moves: a Figure-sized level (start, tier 1 and tier 2 as stations with servers and logn work times, a choice or outcome routes for escalation, an end), plausible numbers stated as assumptions and offered for the user to replace, a generated caption with one measured lesson (where tickets wait), audit passing, a standalone page, built in well under an hour without asking for permission to start.",
+      "files": []
+    }
+  ]
+}

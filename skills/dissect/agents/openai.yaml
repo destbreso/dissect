@@ -1,0 +1,3 @@
+interface:
+  display_name: "Dissect"
+  short_description: "Explain a process as a living machine you can open"

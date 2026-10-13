@@ -1,0 +1,13 @@
+{
+  "name": "dissect",
+  "version": "0.1.0",
+  "description": "Explain a process by running it: interactive, simulated figures of pipelines, architectures, network flows and human processes, with steps you can open, items you can follow and what-ifs you can try.",
+  "author": {
+    "name": "David Estévez",
+    "url": "https://github.com/destbreso"
+  },
+  "homepage": "https://github.com/destbreso/dissect",
+  "repository": "https://github.com/destbreso/dissect",
+  "license": "MIT",
+  "keywords": ["skill", "visualization", "simulation", "process", "workflow", "bpmn", "queueing", "architecture", "explainer", "interactive"]
+}
