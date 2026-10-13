@@ -25,7 +25,7 @@ const HELP = `Check a built page in headless Chrome: layout measured in the brow
 
 // Runs in the page: measures the visible level of one figure.
 const MEASURE = `(() => {
-  const out = { errors: [], notes: [] };
+  const out = { errors: [], notes: [], cuts: [] };
   const rgb = (c) => { const m = String(c).match(/rgba?\\(([^)]+)\\)/); if (!m) return null; const v = m[1].split(/[ ,/]+/).filter(Boolean).map(Number); return { r: v[0], g: v[1], b: v[2], a: v.length > 3 ? v[3] : 1 }; };
   const lum = ({ r, g, b }) => { const f = (x) => { x /= 255; return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; }; return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b); };
   const mix = (top, under) => ({ r: top.r * top.a + under.r * (1 - top.a), g: top.g * top.a + under.g * (1 - top.a), b: top.b * top.a + under.b * (1 - top.a), a: 1 });
@@ -67,6 +67,8 @@ const MEASURE = `(() => {
     if (owner && owner.classList.contains("dx-station") && !t.classList.contains("dx-under")) {
       const plate = box(owner.querySelector(".dx-plate"));
       if (b.x0 < plate.x0 + 2 || b.x1 > plate.x1 - 2 || b.y0 < plate.y0 || b.y1 > plate.y1) out.errors.push(level + ": '" + words + "' runs out of the plate of " + name(t));
+      // and clear of what else is on the plate: its lamp, gauge, icon, bays and window
+      for (const f of owner.querySelectorAll(".dx-lamp, .dx-gauge-track, .dx-glyph, .dx-bay, .dx-window")) if (hit(b, box(f), 0.5)) { out.errors.push(level + ": '" + words + "' runs into the " + f.getAttribute("class").replace("dx-", "").replace("-track", "") + " of " + name(t)); break; }
     } else if (!inTag) {
       for (const p of parts) if (p.g !== owner && hit(b, p.body, 1)) out.errors.push(level + ": the words '" + words + "' of " + name(t) + " sit on " + p.path);
       for (const r of rails) if (r.x > b.x0 + 1 && r.x < b.x1 - 1 && r.y > b.y0 + 1 && r.y < b.y1 - 1) { out.errors.push(level + ": a rail (" + r.key + ") runs over '" + words + "'"); break; }
@@ -85,10 +87,23 @@ const MEASURE = `(() => {
       if (c < need) out.errors.push(level + ": '" + words + "' has a contrast of " + c.toFixed(2) + ":1 (needs " + need + ")");
     }
   }
+  // words the page had to cut to fit their room, in this font
+  for (const t of svg.querySelectorAll("text[data-fit]")) {
+    const shown = [...t.childNodes].filter((c) => c.nodeType === 3).map((c) => c.textContent).join("");
+    if (shown !== t.dataset.full) out.cuts.push(level + ": '" + t.dataset.full + "' is cut to '" + shown + "'");
+  }
   for (let i = 0; i < texts.length; i++) for (let j = i + 1; j < texts.length; j++) {
     const a = texts[i], b = texts[j];
     if (a.closest(".dx-tag") || b.closest(".dx-tag")) continue;
     if (hit(box(a), box(b), 1)) out.errors.push(level + ": '" + say(a) + "' and '" + say(b) + "' overlap");
+  }
+  // a tag's words stay inside its pill, and the pill sits on its own rail and no other
+  for (const g of svg.querySelectorAll(".dx-tag")) {
+    const r = box(g.querySelector("rect"));
+    const t = box(g.querySelector("text"));
+    if (t.x0 < r.x0 + 2 || t.x1 > r.x1 - 2) out.errors.push(level + ": the words of the tag '" + say(g.querySelector("text")) + "' run out of it");
+    const own = g.getAttribute("data-key");
+    for (const q of rails) if (q.key !== own && q.x > r.x0 + 1 && q.x < r.x1 - 1 && q.y > r.y0 + 1 && q.y < r.y1 - 1) { out.errors.push(level + ": the tag '" + say(g.querySelector("text")) + "' sits on another route's rail (" + q.key + ")"); break; }
   }
   for (let i = 0; i < tags.length; i++) {
     for (const p of parts) if (hit(tags[i].b, p.body, 1)) out.errors.push(level + ": the tag '" + tags[i].text + "' covers " + p.path);
@@ -122,25 +137,33 @@ async function main() {
   const errors = new Set();
   const notes = new Set();
   const shots = [];
+  // a wide font too: readers' fonts differ (Linux's are wider than macOS's), and every word must still fit
+  const WIDE = `(() => { const s = document.createElement("style"); s.textContent = '.dx svg text{font-family:Verdana,"DejaVu Sans","Bitstream Vera Sans",sans-serif!important}'; document.head.append(s); for (const f of document.querySelectorAll(".dx")) f.dissect && f.dissect.refit(); })()`;
   for (const [label, size] of [
     ["desktop", { width: 1280, height: 900 }],
+    ["wide-font", { width: 1280, height: 900 }],
     ["phone", { width: 390, height: 844 }],
   ]) {
     for (const theme of label === "desktop" ? ["light", "dark"] : ["light"]) {
       const page = await open(target, { ...size, scale: 1, theme, wait: 800 });
+      if (label === "wide-font") {
+        await page.evaluate(WIDE);
+        await sleep(200);
+      }
       const figs = await page.evaluate(`[...document.querySelectorAll(".dx")].map((f) => f.id)`);
       for (const id of figs) {
         const FIG = JSON.stringify(`#${id}`);
         const levels = await page.evaluate(`(() => { const s = document.querySelector('script[data-dissect="${id}"]'); return Object.keys(JSON.parse(s.textContent).options.metas); })()`);
         // a busy, representative moment, paused, so the pictures do not depend on timing
         await page.evaluate(`(() => { const f = document.querySelector(${FIG}).dissect; f.pause(); const h = JSON.parse(document.querySelector('script[data-dissect="${id}"]').textContent).model.horizon || 600; f.seek(h * 0.4); f.pause(); })()`);
-        const visit = label === "desktop" ? levels : [""];
+        const visit = label === "phone" ? [""] : levels;
         for (const lv of visit) {
           await page.evaluate(`document.querySelector(${FIG}).dissect.open(${JSON.stringify(lv)})`);
           await sleep(750);
           const r = await page.evaluate(MEASURE.replace("FIG", FIG));
           for (const e of r.errors) errors.add(`${id} (${label}, ${theme}) ${e}`);
           if (label === "desktop") for (const n of r.notes) notes.add(`${id} ${n}`);
+          for (const c of r.cuts) notes.add(`${id} (${label}) ${c}`);
           await page.scrollTo(`#${id} .dx-card`);
           const b = await page.boxOf(`#${id} .dx-card`);
           const file = join(outDir, `${id}-${(lv || "top").replace(/\//g, "-")}-${label}-${theme}.png`);

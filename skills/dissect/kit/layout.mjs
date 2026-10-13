@@ -13,6 +13,7 @@
 
 import { dedupe, roundedPath, lengthOf, segmentsOf, segHitsRect, overlapLength, crosses, rectOf, rectsOverlap } from "./geom.mjs";
 import { short } from "./dist.mjs";
+import { wideWidth } from "./metrics.mjs";
 
 export const DEFAULTS = {
   row: 100, // row pitch inside a lane
@@ -45,9 +46,16 @@ const BEND = 22;
 const HIT = 6000;
 const TEXT_HIT = 2500;
 
+// the smallest size the page sets a step's name in: it shrinks a long name down to this before it cuts it
+const NAME_MIN = 10.5;
+
 function sizeOf(p) {
   if (p.size) return p.size;
-  if (p.kind === "station" && p.inside) return SIZES.open;
+  if (p.kind === "station") {
+    const [w, h] = p.inside ? SIZES.open : SIZES.station;
+    // wide enough for its name in a wide font, clear of the icon (and of the lamp an open step carries)
+    return [Math.max(w, Math.ceil(wideWidth(p.label || p.id, NAME_MIN, true)) + (p.inside ? 56 : 46) + 2), h];
+  }
   return SIZES[p.kind] || [40, 40];
 }
 
@@ -196,6 +204,26 @@ export function layout(model, options = {}) {
   });
   placeLabels(routes, allBoxes, boxes, texts);
 
+  // a tag sits on its own rail and on no other: a route that runs under another's tag is routed again, round the tags
+  const stuck = new Set();
+  for (let pass = 0; pass < 8; pass++) {
+    const tags = routes.filter((rt) => rt.labelAt).map((rt) => ({ ...tagBox(rt.labelAt, 3), id: rt.id }));
+    const under = routes.find((rt) => !stuck.has(rt.id) && tags.some((t) => t.id !== rt.id && segmentsOf(rt.points).some((s) => segHitsRect(s, t))));
+    if (!under) break;
+    const r = model.routes.find((q) => q.id === under.id);
+    const avoid = tags.filter((t) => t.id !== under.id);
+    const before = result.get(under.id);
+    const best = routeOne(r, boxes[r.from], boxes[r.to], { boxes: allBoxes, texts: [...texts, ...avoid], routed: routed.filter((b) => b !== before), o, columns, lanes });
+    if (!best || segmentsOf(best.points).some((s) => avoid.some((t) => segHitsRect(s, t)))) {
+      stuck.add(under.id);
+      continue;
+    }
+    routed[routed.indexOf(before)] = best;
+    result.set(under.id, best);
+    Object.assign(under, { points: best.points, d: roundedPath(best.points, o.radius), length: lengthOf(best.points), exit: best.exit, entry: best.entry });
+    placeLabels(routes, allBoxes, boxes, texts);
+  }
+
   // a station's links to the stores it uses
   const uses = [];
   for (const p of parts.filter((q) => q.kind === "station" && q.uses)) {
@@ -300,8 +328,21 @@ function middles(a, b, A, B, ctx) {
       if (cx > lo - 40 && cx < hi + 40) xs.add(cx);
     }
   }
+  // and just past the words in the way, so a route can go round a label instead of through it
+  const ylo = Math.min(a[1], b[1]);
+  const yhi = Math.max(a[1], b[1]);
+  for (const t of ctx.texts) {
+    if (t.y1 < ylo - 40 || t.y0 > yhi + 40) continue;
+    if (t.x1 > lo - 60 && t.x1 < hi + 60) xs.add(t.x1 + 6);
+    if (t.x0 > lo - 60 && t.x0 < hi + 60) xs.add(t.x0 - 6);
+  }
   for (const x of xs) out.push([[x, a[1]], [x, b[1]]]);
   const ys = new Set([(a[1] + b[1]) / 2]);
+  for (const t of ctx.texts) {
+    if (t.x1 < lo - 40 || t.x0 > hi + 40) continue;
+    if (t.y1 > ylo - 60 && t.y1 < yhi + 60) ys.add(t.y1 + 6);
+    if (t.y0 > ylo - 60 && t.y0 < yhi + 60) ys.add(t.y0 - 6);
+  }
   const span = ctx.boxes.filter((q) => q.x + q.w / 2 > lo - 30 && q.x - q.w / 2 < hi + 30);
   const bottom = Math.max(A.y + A.h / 2, B.y + B.h / 2, ...span.filter((q) => Math.abs(q.y - A.y) < o.row * 1.6 || Math.abs(q.y - B.y) < o.row * 1.6).map((q) => q.y + q.h / 2));
   const top = Math.min(A.y - A.h / 2, B.y - B.h / 2, ...span.filter((q) => Math.abs(q.y - A.y) < o.row * 1.6 || Math.abs(q.y - B.y) < o.row * 1.6).map((q) => q.y - q.h / 2));
@@ -389,7 +430,8 @@ function scoreOf(pts, r, A, B, es, ns, ctx) {
 }
 
 // ---- labels on routes -------------------------------------------------------------------
-export const tagWidth = (text) => text.length * 5.7 + 14;
+// a tag's room in a wide font (bold, spaced .02em, 7 px either side); the page draws the pill to its words
+export const tagWidth = (text) => wideWidth(text, 9.5, true) + String(text).length * 0.19 + 14;
 
 function placeLabels(routes, allBoxes, boxes, texts) {
   const placed = [];
@@ -452,7 +494,8 @@ function placeLabels(routes, allBoxes, boxes, texts) {
 }
 
 // ---- words around small parts ---------------------------------------------------------
-export const textWidth = (text, size) => String(text).length * size * 0.58;
+// words are budgeted in a wide font (kit/metrics.mjs), so routes keep clear of them in any font the reader has
+export const textWidth = (text, size, bold = false) => wideWidth(text, size, bold);
 
 /** Where a part's words go: { text, x, y (baseline), anchor, strong, size }. */
 export function textsOf(box, model, routes) {
@@ -515,8 +558,10 @@ function gateLabel(box, model, boxes, texts) {
   return [t];
 }
 
+const tagBox = (at, pad = 0) => ({ x0: at.x - at.w / 2 - pad, y0: at.y - at.h / 2 - pad, x1: at.x + at.w / 2 + pad, y1: at.y + at.h / 2 + pad });
+
 export function textRect(t) {
-  const w = textWidth(t.text, t.size) * (t.strong ? 1.04 : 1);
+  const w = textWidth(t.text, t.size, t.strong);
   const x0 = t.anchor === "end" ? t.x - w : t.anchor === "start" ? t.x : t.x - w / 2;
   return { x0: x0 - 2, x1: x0 + w + 2, y0: t.y - t.size - 1, y1: t.y + 3 };
 }

@@ -72,7 +72,7 @@ export function auditLayout(lv, L) {
   for (const q of boxes) {
     const p = q.part;
     if (p.kind !== "station") continue;
-    const name = fitText(p.label, q.w - 46, 12.5);
+    const name = fitText(p.label, q.w - 46 - (p.inside ? 10 : 0), 12.5);
     if (name.cut) warnings.push(`${at}: the name "${p.label}" is cut to "${name.text}"; give it a shorter label`);
     const spec = fitText(specOf(p, lv.unit), q.w - 24 - (p.inside ? 30 : 0), 10, 9);
     if (spec.cut) notes.push(`${at}: the line under "${p.label}" is cut to "${spec.text}"; set a shorter spec`);

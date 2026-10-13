@@ -71,12 +71,37 @@ function portOf(chrome) {
 export const urlOf = (target) => (/^(https?|file):/.test(target) ? target : pathToFileURL(resolve(target)).href);
 export const sleep = (ms) => new Promise((done) => setTimeout(done, ms));
 
+// every Chrome this process started, with its profile; any still running when it exits is killed with it
+const running = new Map();
+process.on("exit", () => {
+  for (const [chrome, profile] of running) {
+    chrome.kill("SIGKILL");
+    try {
+      rmSync(profile, { recursive: true, force: true });
+    } catch {}
+  }
+});
+for (const signal of ["SIGINT", "SIGTERM"]) process.once(signal, () => process.exit(130));
+
 /**
  * Open a page in headless Chrome. Returns a session:
  *   send(method, params), evaluate(js), shot(path, clip?, scale?), boxOf(selector),
  *   click(x, y), key(key), problems (console errors and exceptions), close()
+ * A Chrome that does not come up, or does not answer its first commands (it
+ * happens on a busy machine), is put down and a fresh one started, up to three.
  */
-export async function open(target, { width = 1280, height = 900, scale = 2, reduced = false, theme = null, wait = 1200 } = {}) {
+export async function open(target, options = {}) {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await openOnce(target, options);
+    } catch (e) {
+      if (!e.retry || attempt === 3) throw e;
+      console.error(`chrome: ${e.message}; starting a fresh one`);
+    }
+  }
+}
+
+async function openOnce(target, { width = 1280, height = 900, scale = 2, reduced = false, theme = null, wait = 1200 } = {}) {
   const binary = chromePath();
   if (!binary) throw new Error("No Chrome found. Set CHROME_PATH to a Chrome or Chromium binary.");
   const profile = mkdtempSync(join(tmpdir(), "dissect-chrome-"));
@@ -91,49 +116,37 @@ export async function open(target, { width = 1280, height = 900, scale = 2, redu
     "--allow-file-access-from-files",
     "about:blank",
   ]);
-  const cleanup = () => {
-    chrome.kill("SIGKILL");
+  running.set(chrome, profile);
+  const exited = new Promise((done) => chrome.once("exit", done));
+  let socket = null;
+  // Chrome is asked to quit (its helpers go with it), then made to; the profile goes once nothing writes to it
+  const cleanup = async () => {
     try {
-      rmSync(profile, { recursive: true, force: true });
+      socket?.close();
+    } catch {}
+    chrome.kill("SIGTERM");
+    const quit = await Promise.race([exited.then(() => true), sleep(2000).then(() => false)]);
+    if (!quit) {
+      chrome.kill("SIGKILL");
+      await Promise.race([exited, sleep(2000)]);
+    }
+    running.delete(chrome);
+    try {
+      rmSync(profile, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
     } catch {}
   };
-  let port;
-  try {
-    port = await portOf(chrome);
-  } catch (e) {
-    cleanup();
-    throw e;
-  }
-  const tab = await (await fetch(`http://127.0.0.1:${port}/json/new?about:blank`, { method: "PUT" })).json();
-  const socket = new WebSocket(tab.webSocketDebuggerUrl);
   let id = 0;
   const pending = new Map();
   const problems = [];
   let loaded = () => {};
-  socket.onmessage = (message) => {
-    const data = JSON.parse(message.data);
-    if (data.method === "Page.loadEventFired") loaded();
-    if (data.id && pending.has(data.id)) {
-      pending.get(data.id)(data);
-      pending.delete(data.id);
-    } else if (data.method === "Runtime.consoleAPICalled" && (data.params.type === "error" || data.params.type === "warning")) {
-      problems.push(`console.${data.params.type}: ${data.params.args.map((a) => a.value ?? a.description ?? "").join(" ").slice(0, 500)}`);
-    } else if (data.method === "Runtime.exceptionThrown") {
-      const d = data.params.exceptionDetails;
-      problems.push(`exception: ${d.exception?.description ?? d.text}`.slice(0, 800));
-    }
-  };
-  await new Promise((done, fail) => {
-    socket.onopen = done;
-    socket.onerror = () => fail(new Error("could not talk to Chrome"));
-  });
-  const send = (method, params = {}) =>
+  const send = (method, params = {}, ms = 60000) =>
     new Promise((done, fail) => {
+      if (!socket || socket.readyState !== 1) return fail(new Error(`Chrome is not connected (${method})`));
       const call = ++id;
       const timer = setTimeout(() => {
         pending.delete(call);
-        fail(new Error(`Chrome did not answer ${method} within 60 s`));
-      }, 60000);
+        fail(new Error(`Chrome did not answer ${method} within ${ms / 1000} s`));
+      }, ms);
       pending.set(call, (data) => {
         clearTimeout(timer);
         if (data.error) fail(new Error(`${method}: ${data.error.message}`));
@@ -146,20 +159,56 @@ export async function open(target, { width = 1280, height = 900, scale = 2, redu
     if (r.exceptionDetails) throw new Error(`in the page: ${r.exceptionDetails.exception?.description ?? r.exceptionDetails.text}`);
     return r.result?.value;
   };
-  await send("Runtime.enable");
-  await send("Page.enable");
-  const features = [];
-  if (reduced) features.push({ name: "prefers-reduced-motion", value: "reduce" });
-  if (theme) features.push({ name: "prefers-color-scheme", value: theme });
-  if (features.length) await send("Emulation.setEmulatedMedia", { features });
-  await send("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor: scale, mobile: width < 600 });
+  // up to the page's load: anything that goes wrong here is Chrome's, and a fresh one is worth a try
   const load = new Promise((done) => {
     loaded = done;
-    setTimeout(done, 15000);
   });
-  const nav = await send("Page.navigate", { url: urlOf(target) });
-  if (nav.errorText) throw new Error(`could not open ${target}: ${nav.errorText}`);
-  await load;
+  let nav;
+  try {
+    const port = await portOf(chrome);
+    const tab = await (await fetch(`http://127.0.0.1:${port}/json/new?about:blank`, { method: "PUT", signal: AbortSignal.timeout(15000) })).json();
+    socket = new WebSocket(tab.webSocketDebuggerUrl);
+    socket.onmessage = (message) => {
+      const data = JSON.parse(message.data);
+      if (data.method === "Page.loadEventFired") loaded();
+      if (data.id && pending.has(data.id)) {
+        pending.get(data.id)(data);
+        pending.delete(data.id);
+      } else if (data.method === "Runtime.consoleAPICalled" && (data.params.type === "error" || data.params.type === "warning")) {
+        problems.push(`console.${data.params.type}: ${data.params.args.map((a) => a.value ?? a.description ?? "").join(" ").slice(0, 500)}`);
+      } else if (data.method === "Runtime.exceptionThrown") {
+        const d = data.params.exceptionDetails;
+        problems.push(`exception: ${d.exception?.description ?? d.text}`.slice(0, 800));
+      }
+    };
+    // a connection that drops fails every call still waiting, at once
+    socket.onclose = () => {
+      for (const answer of pending.values()) answer({ error: { message: "Chrome closed the connection" } });
+      pending.clear();
+    };
+    await new Promise((done, fail) => {
+      socket.onopen = done;
+      socket.onerror = () => fail(new Error("could not talk to Chrome"));
+      setTimeout(() => fail(new Error("Chrome did not take a connection within 15 s")), 15000);
+    });
+    await send("Runtime.enable", {}, 15000);
+    await send("Page.enable", {}, 15000);
+    const features = [];
+    if (reduced) features.push({ name: "prefers-reduced-motion", value: "reduce" });
+    if (theme) features.push({ name: "prefers-color-scheme", value: theme });
+    if (features.length) await send("Emulation.setEmulatedMedia", { features }, 15000);
+    await send("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor: scale, mobile: width < 600 }, 15000);
+    nav = await send("Page.navigate", { url: urlOf(target) }, 30000);
+  } catch (e) {
+    await cleanup();
+    e.retry = true;
+    throw e;
+  }
+  if (nav.errorText) {
+    await cleanup();
+    throw new Error(`could not open ${target}: ${nav.errorText}`);
+  }
+  await Promise.race([load, sleep(15000)]);
   await sleep(wait);
 
   const session = {
@@ -200,10 +249,7 @@ export async function open(target, { width = 1280, height = 900, scale = 2, redu
       await send("Input.dispatchKeyEvent", { type: "keyUp", key, code, windowsVirtualKeyCode: vk });
     },
     async close() {
-      try {
-        socket.close();
-      } catch {}
-      cleanup();
+      await cleanup();
     },
   };
   return session;

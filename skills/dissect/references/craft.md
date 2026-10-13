@@ -58,7 +58,7 @@ Watch for one trap: stats taken before the run has drained, or at a time the run
 
 ## 5. Words
 
-- **Names** are what the team says, about 14 characters at most: "Code review", "Redis GET", "On-call looks". A cut name is a warning.
+- **Names** are what the team says, about 14 characters at most: "Code review", "Redis GET", "On-call looks". A plate grows to hold its name in a wide font, so a long name widens its step and its column.
 - **`about`** says what happens there and what its numbers are, in one or two sentences, in plain words; it is what the inspector shows and what a screen reader hears.
 - **Tags** only where a route decides: "red", "approved", "miss", "15 min, no answer". A plain hand-off needs none (`label: ""`).
 - **The caption** says the lesson with the run's numbers, then names the click. It is generated (`figure.caption`) and its claims are in `claims`. Never write a number into it by hand, and never write a sentence whose truth depends on the run without checking the run: a caption that says "the queue explodes" when the what-if barely moves it is the worst thing a figure can do.

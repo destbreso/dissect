@@ -156,7 +156,7 @@ const vars = (t) => Object.entries(t).map(([k, v]) => `--dx-${k}:${v};`).join(""
 /** The figure's styles, scoped under .dx and themed by data-theme (light, dark or auto). */
 export function css() {
   return `
-.dx{${vars(THEMES.light)}color:var(--dx-ink);font:13px/1.45 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;font-variant-numeric:tabular-nums;max-width:1240px;margin:0 auto}
+.dx{${vars(THEMES.light)}color:var(--dx-ink);font:13px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Liberation Sans",system-ui,sans-serif;font-variant-numeric:tabular-nums;max-width:1240px;margin:0 auto}
 .dx[data-theme="dark"]{${vars(THEMES.dark)}}
 @media (prefers-color-scheme:dark){.dx[data-theme="auto"]{${vars(THEMES.dark)}}}
 .dx *{box-sizing:border-box}
@@ -337,6 +337,9 @@ export function specOf(part, unit) {
 }
 
 // ---- stations ---------------------------------------------------------------------
+// the room a station's bays take on its flow row, whatever their number
+const BAY_ROOM = 48;
+
 function station(box, part, model, meta, sheet) {
   const { x, y, w, h } = box;
   const L = x - w / 2;
@@ -344,17 +347,21 @@ function station(box, part, model, meta, sheet) {
   const servers = part.servers;
   const open = Boolean(part.inside);
   const finite = Number.isFinite(servers);
-  const name = fitText(part.label, w - 46, 12.5);
+  // the name's room ends short of the lamp, which an open step carries in its top corner
+  const nameRoom = w - 46 - (open ? 10 : 0);
+  const name = fitText(part.label, nameRoom, 12.5);
   const specFit = fitText(specOf(part, model.unit), w - 24 - (open ? 30 : 0), 10, 9);
   let s = halo(x, y, w, h, 9);
   s += `<rect class="dx-plate" x="${n(L)}" y="${n(T)}" width="${w}" height="${h}" rx="9"/>`;
   s += `<rect class="dx-bevel" x="${n(L + 1.6)}" y="${n(T + 1.6)}" width="${n(w - 3.2)}" height="${n(h - 3.2)}" rx="7.6"/>`;
   s += `<path class="dx-glyph" transform="translate(${n(L + 11)} ${n(T + 10)})" d="${GLYPHS[glyphOf(part)]}"/>`;
-  s += `<text class="dx-name" x="${n(L + 33)}" y="${n(T + 22.5)}"${sized(name, 12.5)}>${esc(name.text)}</text>`;
-  s += `<text class="dx-spec" x="${n(L + 12)}" y="${n(T + 38)}"${sized(specFit, 10)}>${esc(specFit.text)}</text>`;
+  // the page fits these again with the reader's own font (data-fit is the room, data-full the words)
+  s += `<text class="dx-name" x="${n(L + 33)}" y="${n(T + 22.5)}"${sized(name, 12.5)} data-fit="${nameRoom}" data-full="${esc(part.label)}" data-size="12.5" data-min="10.5">${esc(name.text)}</text>`;
+  s += `<text class="dx-spec" x="${n(L + 12)}" y="${n(T + 38)}"${sized(specFit, 10)} data-fit="${w - 24 - (open ? 30 : 0)}" data-full="${esc(specOf(part, model.unit))}" data-size="10" data-min="9">${esc(specFit.text)}</text>`;
   s += `<text class="dx-alt-text dx-alt-time" data-alt="time" x="${n(L + 12)}" y="${n(T + 38)}"></text>`;
   s += `<text class="dx-alt-text dx-alt-fail" data-alt="fail" x="${n(L + 12)}" y="${n(T + 38)}"></text>`;
-  const st = { open, bays: [], rack: null, x, y, w, h, altW: w - 24 };
+  // the time and failure layers' words take the spec's place, and its room
+  const st = { open, bays: [], rack: null, x, y, w, h, altW: w - 24 - (open ? 30 : 0) };
   if (open) {
     // a window into the machine: what it does inside, drawn small, framed by corners that say it opens
     const wx = L + 10;
@@ -366,27 +373,38 @@ function station(box, part, model, meta, sheet) {
     const c = 5;
     s += `<path class="dx-corner" d="M${n(wx - 2)} ${n(wy + c)}v${-c - 2}h${c + 2}M${n(wx + ww - c)} ${n(wy - 2)}h${c + 2}v${c + 2}M${n(wx + ww + 2)} ${n(wy + wh - c)}v${c + 2}h${-c - 2}M${n(wx + c)} ${n(wy + wh + 2)}h${-c - 2}v${-c - 2}"/>`;
     s += `<circle class="dx-lamp" data-lamp cx="${n(L + w - 15)}" cy="${n(T + 18)}" r="3.2"/>`;
-    s += `<text class="dx-count" data-count x="${n(L + w - 12)}" y="${n(T + 38)}" text-anchor="end"><tspan data-done>✓0</tspan><tspan class="dx-bad" data-fails></tspan></text>`;
+    // the counters share the spec's row, in the 30 px its room leaves them
+    s += `<text class="dx-count" data-count data-room="26" x="${n(L + w - 12)}" y="${n(T + 38)}" text-anchor="end"><tspan data-done>✓0</tspan><tspan class="dx-bad" data-fails></tspan></text>`;
   } else {
     s += `<line class="dx-seam" x1="${n(L + 8)}" y1="${n(T + 46)}" x2="${n(L + w - 8)}" y2="${n(T + 46)}"/>`;
     const rowY = T + 58;
     let row = "";
+    // the row's left holds the work (bays or a rack), its right the counters and the gauge
+    let used;
     if (finite && servers <= 8) {
-      const bw = servers === 1 ? 30 : servers === 2 ? 22 : servers <= 4 ? 15 : 9;
-      const gap = servers <= 4 ? 4 : 3;
+      // one bay per server, in a fixed room: one row of up to three, two rows from four
+      const rows = servers > 3 ? 2 : 1;
+      const k = Math.ceil(servers / rows);
+      const gap = k <= 2 ? 4 : 3;
+      const bw = Math.min(30, Math.floor((BAY_ROOM - (k - 1) * gap) / k));
+      const bh = rows === 2 ? 8 : 9;
       for (let i = 0; i < servers; i++) {
-        const bx = L + 12 + i * (bw + gap);
-        row += `<rect class="dx-bay" x="${n(bx)}" y="${n(rowY - 4.5)}" width="${bw}" height="9" rx="2"/>`;
-        row += `<rect class="dx-bay-fill" data-bay="${i}" x="${n(bx + 1.4)}" y="${n(rowY - 3.1)}" width="0" height="6.2" rx="1.2"/>`;
-        st.bays.push({ x0: bx + 1.4, y: rowY, w: bw - 2.8 });
+        const bx = L + 12 + (i % k) * (bw + gap);
+        const by = rows === 2 ? rowY + (i < k ? -4.8 : 4.8) : rowY;
+        row += `<rect class="dx-bay" x="${n(bx)}" y="${n(by - bh / 2)}" width="${bw}" height="${bh}" rx="2"/>`;
+        row += `<rect class="dx-bay-fill" data-bay="${i}" x="${n(bx + 1.4)}" y="${n(by - bh / 2 + 1.4)}" width="0" height="${n(bh - 2.8)}" rx="1.2"/>`;
+        st.bays.push({ x0: bx + 1.4, y: by, w: bw - 2.8 });
       }
+      used = k * (bw + gap) - gap;
     } else {
-      // no limit: items in work sit in a row; past five, a count (clear of the counters on the right)
+      // no limit: items in work sit in a row; past five, a count
       row += `<text class="dx-rack" data-rack x="${n(L + 12 + 5 * 9 + 1)}" y="${n(rowY + 3.4)}"></text>`;
       st.rack = { x: L + 16, y: rowY, step: 9, max: 5 };
+      used = 5 * 9 + 1 + 16;
     }
     const gx = L + w - 15;
-    row += `<text class="dx-count" data-count x="${n(gx - 11)}" y="${n(rowY + 3.4)}" text-anchor="end"><tspan data-done>✓0</tspan><tspan class="dx-bad" data-fails></tspan></text>`;
+    // the page sets the counters smaller when they outgrow the room the work leaves them
+    row += `<text class="dx-count" data-count data-room="${n(gx - 11 - (L + 12 + used + 6))}" x="${n(gx - 11)}" y="${n(rowY + 3.4)}" text-anchor="end"><tspan data-done>✓0</tspan><tspan class="dx-bad" data-fails></tspan></text>`;
     s += `<g class="dx-flowrow">${row}</g>`;
     if (finite) {
       s += `<circle class="dx-gauge-track" cx="${n(gx)}" cy="${n(rowY)}" r="6.2"/>`;
@@ -603,7 +621,7 @@ function routeSvg(rt, queueRoom) {
 function tagSvg(rt) {
   if (!rt.label || !rt.labelAt) return "";
   const { x, y, w } = rt.labelAt;
-  return `<g class="dx-tag"${failish(rt) ? ` data-fail="1"` : ""}><rect x="${n(x - w / 2)}" y="${n(y - 7.5)}" width="${n(w)}" height="15" rx="7.5"/><text x="${n(x)}" y="${n(y + 3.4)}" text-anchor="middle">${esc(rt.label)}</text></g>`;
+  return `<g class="dx-tag" data-key="${esc(rt.key)}"${failish(rt) ? ` data-fail="1"` : ""}><rect x="${n(x - w / 2)}" y="${n(y - 7.5)}" width="${n(w)}" height="15" rx="7.5"/><text x="${n(x)}" y="${n(y + 3.4)}" text-anchor="middle">${esc(rt.label)}</text></g>`;
 }
 
 export const QUEUE_SLOTS = 6;
@@ -676,7 +694,7 @@ export function sheetSvg(L, model, opts = {}) {
       const px = L.options.pad - 12;
       const pw = 26;
       s += `<rect class="dx-lane-plate" x="${n(px)}" y="${n(lane.y + 10)}" width="${pw}" height="${n(lane.h - 20)}" rx="6"/>`;
-      s += `<text class="dx-lane-label" transform="translate(${n(px + pw / 2 + 3.6)} ${n(lane.y + lane.h / 2)}) rotate(-90)" text-anchor="middle">${esc(fitText(lane.label, lane.h - 34, 10.5, 8.5).text)}</text>`;
+      s += `<text class="dx-lane-label" transform="translate(${n(px + pw / 2 + 3.6)} ${n(lane.y + lane.h / 2)}) rotate(-90)" text-anchor="middle" data-fit="${n(lane.h - 34)}" data-full="${esc(lane.label)}" data-size="10.5" data-min="8.5">${esc(fitText(lane.label, lane.h - 34, 10.5, 8.5).text)}</text>`;
     }
   });
   for (const u of L.uses) {

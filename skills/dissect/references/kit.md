@@ -1,6 +1,6 @@
 # The kit
 
-Plain ES modules, no dependencies, Node 20.10+ or any modern browser. The browser runtime is `rng`, `dist`, `geom`, `model`, `sim`, `replay` and `live`; `layout`, `render`, `page` and `audit` run at build time (and `page` reads the kit's own files, so it is Node only).
+Plain ES modules, no dependencies, Node 20.10+ or any modern browser. The browser runtime is `rng`, `dist`, `geom`, `model`, `sim`, `replay` and `live`; `metrics`, `layout`, `render`, `page` and `audit` run at build time (and `page` reads the kit's own files, so it is Node only).
 
 ## kit/model.mjs
 
@@ -23,10 +23,14 @@ Plain ES modules, no dependencies, Node 20.10+ or any modern browser. The browse
 - `stats()` → `{ t, born, done, inSystem, outcomes, throughput, wip, meanLead, p50Lead, p95Lead, p99Lead, steady, stations: { <path>: { arrivals, started, finished, failed, timedOut, rejected, busy, utilization, meanQueue, maxQueue, meanWait, p95Wait, meanWork } }, routes, choices }`. It describes the run up to the time it has reached.
 - The log, one record per event: `{ t, k, tok, at, ... }` with `k` one of `born move queue start finish renege reject decide split joinwait join wait enter exit done change`. `at` is a part path (`"ci/unit"`), `route` is `"<level path>::<route id>"`. The page and the audit read only the log.
 
+## kit/metrics.mjs
+
+- `wideWidth(text, size, bold?)`: a text's width in a wide font (the larger of Verdana's and DejaVu Sans's widths for each character). The floor plan gives words, tags and names this much room, so they fit in any font a reader has; the page fits them again in the reader's own.
+
 ## kit/layout.mjs
 
 - `layout(model, options?)` → `{ width, height, lanes, parts, routes, uses, columns, texts, options }` for one level. Options override `DEFAULTS` (`row`, `pad`, `laneHead`, `lanePad`, `gutter`, `queueRoom`, `after`, `emptyCol`, `loopGap`, `loopStep`, `radius`, `stub`). Sizes are in `SIZES`.
-- The router tries every pair of sides (and, for a station's top and bottom, three attachment points) with many orthogonal paths, and keeps the cheapest: length, bends, a part crossed (never), words crossed, another route run over (free when the two share a port), a lane boundary followed, a station's queue run too short, sides that read backwards.
+- The router tries every pair of sides (and, for a station's top and bottom, three attachment points) with many orthogonal paths, and keeps the cheapest: length, bends, a part crossed (never), words crossed (words are budgeted with `wideWidth`, and there are channels just past them), another route run over (free when the two share a port), a lane boundary followed, a station's queue run too short, sides that read backwards. A route that runs under another route's tag is routed again, round the tags, and a station is as wide as its name needs at the smallest size the page sets it.
 
 ## kit/render.mjs
 

@@ -66,7 +66,7 @@ Work in this order. Write the model and check its numbers before you look at the
 4. **Plan the floor.** Lanes are the actors, top to bottom; columns run left to right in time. Keep a level to 3 to 7 steps and at most 6 columns (about 1100 px); push detail into a station's `inside`. Put rework where it happens, for example a "Fix it" step in the author's lane above the step that rejects. `references/craft.md` has the patterns.
 5. **Write the model** as a module (`model.mjs`) that exports it. Give every step a reader will click an `about`, put every statement the prose makes about the numbers in `claims`, and export a `figure.caption` function that writes the caption from the run.
 6. **Calibrate.** Run several seeds (the audit does). Keep a visible queue at the step that matters (busy about 60% to 90% of the period: below that nothing waits, above it the queue never settles), make sure every route is taken (mark what-if paths `seldom`), and pick a seed whose run is close to the median of the seeds, not a lucky day.
-7. **Build, audit and check.** `node build.mjs --audit --check` must end with `audit passed` and `check passed`. The audit checks the model, the floor plan and the run on several seeds. The check measures the page in a real browser on every level, light and dark, desktop and phone: words inside their plates and clear of rails, parts and tags, WCAG contrast on everything, no sideways page scroll, and the figure plays, follows an item and takes a what-if. It writes a picture of every level to `shots/`. Errors stop the build; read every warning and either fix it or know why it stays.
+7. **Build, audit and check.** `node build.mjs --audit --check` must end with `audit passed` and `check passed`. The audit checks the model, the floor plan and the run on several seeds. The check measures the page in a real browser on every level, light and dark, in a wide font, desktop and phone: words inside their plates and clear of rails, parts and tags, WCAG contrast on everything, no sideways page scroll, and the figure plays, follows an item and takes a what-if. It writes a picture of every level to `shots/`. Errors stop the build; read every warning and either fix it or know why it stays.
 8. **Verify like a critic.** Capture the page on desktop and at 390 px wide, in light and dark, and with reduced motion. Drive it: open every window, follow an item to its end, run the what-if the caption promises and check the queue does what the caption says. Read every PNG you make. The checklist is in `references/verify.md`.
 
 ## Setup
@@ -79,13 +79,14 @@ The kit is plain JavaScript modules with no dependencies:
 | `kit/dist.mjs` | Durations (`"logn 12 30"`, `"exp 20"`, `"uni 2 5"`): `sampler`, `meanOf`, `describe`, `short`, `formatDuration`, `scaleSpec` |
 | `kit/sim.mjs` | The simulator: `createSim(def, { seed, changes })` with `runUntil(t)`, `runToEnd()` and `stats()`, and `simulate(def, opts)`. Deterministic, one random stream per part |
 | `kit/layout.mjs` | The floor plan: columns sized to their parts, a router that picks every orthogonal route by cost, words and tags placed off the routes |
+| `kit/metrics.mjs` | `wideWidth(text, size, bold)`: the room the floor plan gives words, from the widths of two wide fonts, so they fit in any font a reader has |
 | `kit/render.mjs` | The drawing as SVG strings, the card around it, the light and dark themes |
 | `kit/replay.mjs` | The state of every part at any moment, read from the simulator's log; the page and the checks share it |
 | `kit/live.mjs` | The browser runtime: playback, levels, following, layers, what-ifs, keyboard, screen readers, reduced motion |
 | `kit/page.mjs` | `buildFigure`, `writePage` and `embed`: a standalone page or a fragment, with the runtime inlined |
 | `kit/audit.mjs` | `audit(def)` and `auditOrExit(def)`: the drawing, the run and the claims |
 | `scripts/build.mjs` | Build any model file: `node scripts/build.mjs model.mjs [--audit] [--light] [--embed]` |
-| `scripts/check.mjs` | The visual check: the drawing measured in headless Chrome on every level, both themes, desktop and phone, with a picture of each (also `build.mjs --check`) |
+| `scripts/check.mjs` | The visual check: the drawing measured in headless Chrome on every level, both themes, a wide font, desktop and phone, with a picture of each (also `build.mjs --check`) |
 | `scripts/capture.mjs` | Headless Chrome screenshots, close-ups, console errors, sideways scroll |
 | `scripts/drive.mjs` | Headless Chrome sequences: click parts and dots, press keys, call the figure's handle, wait for conditions, assert |
 

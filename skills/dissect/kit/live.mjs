@@ -597,8 +597,12 @@ export function mount(root, def, options = {}) {
         const s = R.st.get(path);
         const okN = s.finished - s.failed;
         const bad = s.failed + s.timedOut + s.rejected;
-        if (per.done) per.done.textContent = `✓${okN}`;
-        if (per.fails) per.fails.textContent = bad ? `  ✗${bad}` : "";
+        if (per.count && per.count.__n !== `${okN}/${bad}`) {
+          per.count.__n = `${okN}/${bad}`;
+          if (per.done) per.done.textContent = `✓${okN}`;
+          if (per.fails) per.fails.textContent = bad ? `  ✗${bad}` : "";
+          fitCount(per.count);
+        }
         const rackMax = metas[view].stations[path]?.rack?.max ?? 5;
         if (per.rack) per.rack.textContent = s.busy > rackMax ? `+${s.busy - rackMax}` : "";
         if (per.lamp) per.lamp.setAttribute("data-state", s.servers === 0 ? "down" : s.queue.length ? "queued" : s.busy ? "busy" : "idle");
@@ -636,22 +640,59 @@ export function mount(root, def, options = {}) {
     refreshInspector();
   }
 
-  /** Put text in an SVG text element, shrinking it a little, then cutting it, to fit a width. */
-  function fitInto(el, text, width) {
-    if (el.__text === text) return;
+  /**
+   * Put text in an SVG text element, shrinking it a little, then cutting it,
+   * to fit a width, measured with the font the reader actually has. A cut
+   * text keeps its full words as a tooltip.
+   */
+  function fitInto(el, text, width, size = 10, min = 8.5, force = false) {
+    if (!force && el.__text === text) return;
     el.__text = text;
     el.textContent = text;
     el.style.fontSize = "";
     if (!el.getComputedTextLength) return;
-    let size = 10;
-    while (el.getComputedTextLength() > width && size > 8.5) {
-      size -= 0.5;
-      el.style.fontSize = `${size}px`;
+    let sz = size;
+    if (el.getComputedTextLength() > width) {
+      while (el.getComputedTextLength() > width && sz > min) {
+        sz -= 0.5;
+        el.style.fontSize = `${sz}px`;
+      }
     }
     let t = text;
     while (el.getComputedTextLength() > width && t.length > 2) {
       t = t.slice(0, -1);
       el.textContent = `${t.trimEnd()}…`;
+    }
+    if (t !== text) {
+      const tip = document.createElementNS(SVGNS, "title");
+      tip.textContent = text;
+      el.append(tip);
+    }
+  }
+
+  /** Set a station's counters smaller when they outgrow the room its work leaves them. */
+  function fitCount(el) {
+    const room = Number(el.dataset.room);
+    if (!room || !el.getComputedTextLength) return;
+    el.style.fontSize = "";
+    let sz = 9.5;
+    while (el.getComputedTextLength() > room && sz > 7) {
+      sz -= 0.5;
+      el.style.fontSize = `${sz}px`;
+    }
+  }
+
+  /** Fit every word that has a fixed room (names, specs, lane labels) to the reader's font, and draw every tag to its words. */
+  function fitWords() {
+    for (const el of root.querySelectorAll("svg text[data-fit]")) fitInto(el, el.dataset.full, Number(el.dataset.fit), Number(el.dataset.size), Number(el.dataset.min), true);
+    for (const g of root.querySelectorAll(".dx-tag")) {
+      const t = g.querySelector("text");
+      const r = g.querySelector("rect");
+      const len = t?.getComputedTextLength?.();
+      if (!len || !r) continue;
+      const w = len + 14;
+      r.setAttribute("width", w.toFixed(1));
+      r.setAttribute("x", (Number(t.getAttribute("x")) - w / 2).toFixed(1));
     }
   }
 
@@ -1192,6 +1233,8 @@ export function mount(root, def, options = {}) {
   renderCrumbs();
   renderControls();
   renderInspector();
+  fitWords();
+  if (document.fonts?.ready) document.fonts.ready.then(fitWords);
   draw();
   drawSlow();
   wake();
@@ -1220,6 +1263,8 @@ export function mount(root, def, options = {}) {
       draw();
       drawSlow();
     },
+    /** Fit the words again (after the page's fonts change). */
+    refit: fitWords,
     state: () => ({ clock, view, selected, followed, playing, speed, layer, done: R.done, alive: R.alive.size, changes: changes.length, pace, basePace, median: R.quantile(0.5) }),
     get replay() {
       return R;

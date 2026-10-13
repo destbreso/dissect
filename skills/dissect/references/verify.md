@@ -23,16 +23,17 @@ Fix warnings in the model or the floor plan; leave one only when you know why it
 node examples/<name>/build.mjs --audit --check      # or: node scripts/check.mjs page.html [--out shots/] [--strict]
 ```
 
-It must end `check passed`. Where the audit estimates text widths, the check measures them in headless Chrome, on every level of every figure on the page, in light and dark at 1280 px and on the top level at 390 px:
+It must end `check passed`. Where the audit estimates text widths, the check measures them in headless Chrome, on every level of every figure on the page: in light and dark at 1280 px, again in a wide font (Verdana, or DejaVu Sans where there is no Verdana), and on the top level at 390 px. Readers do not all have the same fonts, and a figure that only fits in the author's is not done:
 
-- every word on a plate stays inside it, and words never overlap each other, inside a part or out;
+- every word on a plate stays inside it and clear of the plate's lamp, gauge, icon, bays and window, and words never overlap each other, inside a part or out;
 - words outside a plate sit clear of every other part, every tag and every rail (the rails are sampled every few pixels);
-- tags do not cover parts or each other;
+- tags do not cover parts or each other, a tag's words stay inside its pill, and a tag sits on its own route's rail and on no other;
 - every word in the drawing and in the card has the contrast WCAG AA asks for against what is behind it;
 - the page never scrolls sideways (the drawing may, inside its card, and the check notes it);
+- it notes every name the page had to cut to fit its plate in the font it was measured in;
 - the figure plays, follows an item and takes a what-if, and the console stays clean.
 
-It writes a picture of every level it looked at (`<figure>-<level>-<desktop|phone>-<theme>.png`) next to the page in `shots/`. A passed check is not a review: read the pictures (step 8 of the workflow).
+It writes a picture of every level it looked at (`<figure>-<level>-<desktop|wide-font|phone>-<theme>.png`) next to the page in `shots/`. A passed check is not a review: read the pictures (step 8 of the workflow).
 
 ## Captures
 

@@ -103,7 +103,7 @@ export function standalonePage(def, opts = {}) {
   const figs = (opts.figures || [{ def, opts }]).map((f) => buildFigure(f.def, { ...opts, ...f.opts }));
   const intro = opts.intro ? `<main class="dx-page">${opts.intro}</main>` : "";
   const body = `${intro}${figs.map((f) => f.html).join('\n<div style="height:32px"></div>\n')}${opts.outro ? `<main class="dx-page">${opts.outro}</main>` : ""}`;
-  const head = `<style>.dx-page{max-width:760px;margin:0 auto 28px;font:16px/1.6 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#1d1c1a}.dx-page h1{font-size:28px;line-height:1.2;margin:8px 0 12px}@media (prefers-color-scheme:dark){.dx-page{color:#eceae4}}</style>${opts.head || ""}`;
+  const head = `<style>.dx-page{max-width:760px;margin:0 auto 28px;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Liberation Sans",system-ui,sans-serif;color:#1d1c1a}.dx-page h1{font-size:28px;line-height:1.2;margin:8px 0 12px}@media (prefers-color-scheme:dark){.dx-page{color:#eceae4}}</style>${opts.head || ""}`;
   return {
     html: pageHtml({ title: opts.pageTitle ?? opts.title ?? figs[0].model.title ?? "dissect", body, script: runtimeScript(), theme: opts.theme ?? "auto", lang: opts.lang ?? "en", head }),
     figures: figs,

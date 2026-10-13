@@ -23,10 +23,11 @@ None of them covers the drawing, and none scrolls away when the drawing scrolls 
 
 ## What the reader sees
 
-- Items are dots in the color of their kind (`classes`); red after they fail, until they are routed; orange when followed. In work they sit in a bay of their station, with the bay filling as the work is done; at a step with no limit they sit in a row. Waiting, they line up on the queue rail, one tick per place and "+n" past six. At a timer they ride its rim, as far round as their wait has gone. Inside an open step they are drawn small in its window.
-- Stations: a lamp (grey idle, green busy, orange work waiting, red down), a gauge (busy share so far), counters (✓ done, ✗ failed or timed out or turned away).
+- Items are dots in the color of their kind (`classes`); red after they fail, until they are routed; orange when followed. In work they sit in a bay of their station (one bay per server, in two rows from four servers), with the bay filling as the work is done; at a step with no limit they sit in a row. Waiting, they line up on the queue rail, one tick per place and "+n" past six. At a timer they ride its rim, as far round as their wait has gone. Inside an open step they are drawn small in its window.
+- Stations: a lamp (grey idle, green busy, orange work waiting, red down), a gauge (busy share so far), counters (✓ done, ✗ failed or timed out or turned away), set smaller when they outgrow their room.
 - Choices: the needle points at the way the last item took. Ends count what reached them.
 - A hop lights its rail for a moment (at most once a second per rail).
+- Words are fitted to the reader's font when the page loads: a name, a spec or a lane label that would not fit its room in a wider font is set a little smaller, and only then cut, with the whole words in its tooltip. Tags grow to hold their words.
 
 ## The inspector
 
