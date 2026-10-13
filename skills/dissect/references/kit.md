@@ -23,8 +23,9 @@ Plain ES modules, no dependencies, Node 20.10+ or any modern browser. The browse
 - `createSim(def, { seed, horizon, changes, warmup })` → a simulator: `runUntil(t)`, `runToEnd(limit?)`, `stats()`, `log`, `now`.
 - `simulate(def, opts)`: create and run (`until` or to the end).
 - `changes`: `[{ t, part: "<path>", set: { servers, work, fail, patience, wait, capacity, every, p, classes, bypass, take, paused, scale } }, { t, route: "<level>::<id>", set: { latency } }]`. A change applies from its moment on; the run before it is identical to the run without it, because every part draws from its own random stream. A change at `t <= 0` is where the run starts from (after the model's own switches and dials).
+- Exported too: `workSampler(spec)` (a work time, by kind when it is an object) and `meanWork(spec)`.
 - `stats()` → `{ t, born, done, inSystem, outcomes, throughput, wip, meanLead, p50Lead, p95Lead, p99Lead, steady, stations: { <path>: { arrivals, started, finished, failed, timedOut, rejected, busy, utilization, meanQueue, maxQueue, meanWait, p95Wait, meanWork } }, routes, choices, ends, kinds: { <kind>: { done, outcomes, ends, p50Lead, p95Lead } }, servers }`. It describes the run up to the time it has reached.
-- The log, one record per event: `{ t, k, tok, at, ... }` with `k` one of `born move queue start finish renege reject decide split joinwait join wait enter exit done change pass scale`. A station with no limit records no `queue` (its items start as they arrive); `pass` is an item going through a station that is switched off; `scale` is a station that scales, `{ servers, booting }` from then on. `at` is a part path (`"ci/unit"`), `route` is `"<level path>::<route id>"`. The page and the audit read only the log.
+- The log, one record per event: `{ t, k, tok, at, ... }` with `k` one of `born move queue start finish renege reject decide split joinwait join wait enter exit done change pass scale vus`. A station with no limit records no `queue` (its items start as they arrive); `pass` is an item going through a station that is switched off; `scale` is a station that scales, `{ servers, booting }` from then on; `vus` is a closed start's virtual users, `{ n }`; a `born` with `from` is an item a station or a choice emitted. `at` is a part path (`"ci/unit"`), `route` is `"<level path>::<route id>"`. The page and the audit read only the log.
 
 ## kit/metrics.mjs
 
@@ -43,7 +44,7 @@ Plain ES modules, no dependencies, Node 20.10+ or any modern browser. The browse
 
 ## kit/replay.mjs
 
-- `new Replay(log, { stations, ends })`: `advance(t)`, `next`, `drain()` (the events since the last call), `utilization(path, t)`, `quantile(q)`, `recent(window, t)` (the items that left lately: `{ t, cls, outcome, at, lead }`), and the state: `tokens`, `alive`, `st` (per station: queue, bays, counters, waits, `servers`, `booting`, `passed`), `timers`, `choices`, `ends`, `bornAt`.
+- `new Replay(log, { stations, ends })`: `advance(t)`, `next`, `drain()` (the events since the last call), `utilization(path, t)`, `quantile(q)`, `recent(window, t)` (the items that left lately: `{ t, cls, outcome, at, lead }`), `vus` (each closed start's virtual users now), and the state: `tokens`, `alive`, `st` (per station: queue, bays, counters, waits, `servers`, `booting`, `passed`), `timers`, `choices`, `ends`, `bornAt`.
 - `placeOf(replay, token, metas, view, t)`: where an item is drawn on a level's sheet at time t (on a route, in a queue slot, docked in a bay, on a timer's rim, small in a station's window).
 
 ## kit/live.mjs (browser)

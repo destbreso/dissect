@@ -8,7 +8,7 @@
 // Browser only. Build pages with page.mjs, which inlines this module.
 
 import { createSim } from "./sim.mjs";
-import { normalize, chanceOf, switchChanges, dialChanges } from "./model.mjs";
+import { normalize, chanceOf, switchChanges, dialChanges, kindsOf } from "./model.mjs";
 import { Replay, placeOf, levelOf } from "./replay.mjs";
 import { formatDuration, short, describe, scaleSpec, compact, rateWords, meanOf } from "./dist.mjs";
 import { along } from "./geom.mjs";
@@ -36,7 +36,8 @@ export function mount(root, def, options = {}) {
   const metas = options.metas || {};
   const unit = model.unit;
   const fmt = (v) => formatDuration(v, unit);
-  const reduced = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // the reader's own setting, or the page's (a site that keeps its own preference sets data-reduced-motion)
+  const reduced = (typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches) || (typeof document !== "undefined" && document.documentElement.hasAttribute("data-reduced-motion"));
 
   // ---- the model, indexed --------------------------------------------------
   const levels = new Map();
@@ -50,9 +51,9 @@ export function mount(root, def, options = {}) {
   })(model);
   const stationServers = new Map([...parts].filter(([, p]) => p.kind === "station").map(([path, p]) => [path, p.servers]));
   const endPaths = [...parts].filter(([, p]) => p.kind === "end").map(([path]) => path);
-  const classNames = [];
-  for (const p of model.parts) if (p.kind === "start") for (const c of Object.keys(p.classes || { item: 1 })) if (!classNames.includes(c)) classNames.push(c);
-  const classIndex = (c) => Math.max(0, classNames.indexOf(c)) % 5;
+  // every kind of item: the starts' and the dials', then the ones stations emit
+  const classNames = kindsOf(model);
+  const classIndex = (c) => Math.max(0, classNames.indexOf(c)) % 6;
   const noun = model.raw.item || "item";
   // one dot can stand for many real items (a hundred requests): counts the reader sees are real ones
   const perDot = model.per || 1;
@@ -61,6 +62,22 @@ export function mount(root, def, options = {}) {
   // the window the recent numbers are over (who got served lately, not since the start)
   const watch = options.watch || null;
   const recentSpan = watch?.window ?? model.horizon / 20;
+  const watched = watch ? new Set(watch.kinds || (watch.class ? [watch.class] : classNames)) : null;
+  const watchQ = watch?.quantile ?? 0.5;
+  // when the figure watches some kinds (requests, not the samples they send), its counts and times are theirs
+  const narrowed = watched && classNames.some((c) => !watched.has(c));
+  let tallyAt = -1;
+  let tally = null;
+  function counts() {
+    if (!narrowed) return { done: R.done, alive: R.alive.size, q: (p) => R.quantile(p) };
+    if (tally && tallyAt === R.i) return tally;
+    const leads = R.finished.filter((f) => watched.has(f.cls)).map((f) => f.lead).sort((a, b) => a - b);
+    let alive = 0;
+    for (const id of R.alive) if (watched.has(R.tokens.get(id)?.cls)) alive += 1;
+    tallyAt = R.i;
+    tally = { done: leads.length, alive, q: (p) => (leads.length ? leads[Math.min(leads.length - 1, Math.floor(leads.length * p))] : NaN) };
+    return tally;
+  }
 
   // ---- the DOM -----------------------------------------------------------------
   const $ = (sel, el = root) => el.querySelector(sel);
@@ -284,6 +301,12 @@ export function mount(root, def, options = {}) {
     const c = controlOf.get(key);
     if (!c || settings.get(key) === index) return;
     settings.set(key, index);
+    if (c.dial.restart) {
+      // a setting that only makes sense from the start (a test plan): the run starts again with it
+      restart(false);
+      announce(`${c.part.label}: ${c.dial.label}, ${c.dial.options[index].label}. The run starts again.`);
+      return;
+    }
     inject(dialChanges(c.level, c.part, c.dial, index), `${c.part.label}: ${c.dial.label}, ${c.dial.options[index].label}.`);
   }
 
@@ -726,7 +749,7 @@ export function mount(root, def, options = {}) {
         if (per.count) per.count.textContent = count(R.ends.get(path) || 0);
       } else if (p.kind === "start" && per.rate) {
         const now = startNow(path);
-        const words = now.paused ? "sends nothing" : rateWords(now.every, unit, perDot);
+        const words = p.vus ? `${now.users} virtual user${now.users === 1 ? "" : "s"}` : now.paused ? "sends nothing" : rateWords(now.every, unit, perDot);
         if (per.rate.textContent !== words) per.rate.textContent = words;
       } else if (p.kind === "choice" && per.needle) {
         const c = R.choices.get(path);
@@ -739,9 +762,10 @@ export function mount(root, def, options = {}) {
     const slow = zoom > 1.5 ? ` · time ×1/${Math.round(zoom)}` : "";
     if (watch) {
       // the one number the figure is about, over the last few moments, then the usual
-      const r = R.recent(recentSpan, clock).filter((f) => f.cls === watch.class);
+      const r = R.recent(recentSpan, clock).filter((f) => watched.has(f.cls));
       const lead = r.map((f) => f.lead).sort((a, b) => a - b);
-      readout.textContent = `${fmt(clock)} in · ${watch.label} ${r.length ? pct(r.filter((f) => f.outcome === "ok").length / r.length) : "-"}${lead.length ? ` · median ${fmt(lead[Math.floor(lead.length / 2)])}` : ""} · ${count(R.alive.size)} in flight${slow}`;
+      const qWord = watchQ === 0.5 ? "median" : `p${Math.round(watchQ * 100)}`;
+      readout.textContent = `${fmt(clock)} in · ${watch.label} ${r.length ? pct(r.filter((f) => f.outcome === "ok").length / r.length) : "-"}${lead.length ? ` · ${qWord} ${fmt(lead[Math.min(lead.length - 1, Math.floor(lead.length * watchQ))])}` : ""} · ${count(counts().alive)} in flight${slow}`;
     } else readout.textContent = `${fmt(clock)} in · ${count(R.done)} done · ${count(R.alive.size)} in flight${R.done ? ` · median ${fmt(p50)}` : ""}${slow}`;
     refreshInspector();
     refreshPanel();
@@ -853,26 +877,67 @@ export function mount(root, def, options = {}) {
     const p = parts.get(path);
     let every = p.every;
     let paused = false;
+    let vus = p.vus;
+    let think = p.think;
     for (const r of R.changes) {
       if (r.at !== path || !r.set) continue;
       if (r.set.every != null) every = r.set.every;
       if ("paused" in r.set) paused = Boolean(r.set.paused);
+      if (r.set.vus != null) vus = r.set.vus;
+      if (r.set.think != null) think = r.set.think;
     }
-    return { every, paused };
+    return { every, paused, vus, think, users: R.vus.get(path) ?? 0 };
+  }
+  /**
+   * A choice as it stands at the clock: the route a change set it to take (null: it decides
+   * itself), and its odds by route (null for a route decided by outcome).
+   */
+  function choiceNow(path) {
+    const p = parts.get(path);
+    const outs = levels.get(levelOf(path)).outs.get(p.id).filter((r) => !r.emit);
+    let take = null;
+    let set = null;
+    for (const r of R.changes) {
+      if (r.at !== path || !r.set) continue;
+      if ("take" in r.set) take = r.set.take ?? null;
+      if ("p" in r.set) set = r.set.p ?? null;
+    }
+    const total = set ? Object.values(set).reduce((a, b) => a + b, 0) : 1;
+    const odds = new Map(outs.map((r) => [r.id, r.p == null ? null : set ? (set[r.id] ?? 0) / total : r.p]));
+    // a way out at 100% leaves nothing to chance
+    const sure = outs.find((r) => typeof odds.get(r.id) === "number" && odds.get(r.id) >= 1 - 1e-9) || null;
+    return { outs, take: take != null ? outs.find((r) => r.id === take) || null : null, odds, sure };
+  }
+  /** A closed start's stages in words: "up to 20 in 30 s, 20 for 1 min, down to none in 20 s". */
+  function stagesWords(stages) {
+    let n = 0;
+    return (stages || [])
+      .map(([d, to]) => {
+        const w = to === n ? `${to} for ${fmt(d)}` : to > n ? `up to ${to} in ${fmt(d)}` : `down to ${to || "none"} in ${fmt(d)}`;
+        n = to;
+        return w;
+      })
+      .join(", ");
   }
 
   const bornAt = (path) => R.bornAt.get(path) || 0;
 
-  /** How one kind of item fared lately: where it ended, the commonest first. */
+  /**
+   * How one kind of item fared lately: where it ended, the commonest first. An item and its
+   * copies count once at each end they reached: a sample shown on two dashboards is 100% at
+   * each, not half at each.
+   */
   function fared(c) {
     const r = R.recent(recentSpan, clock).filter((f) => f.cls === c);
     if (!r.length) return "-";
+    const items = new Set(r.map((f) => f.root));
     const by = new Map();
-    for (const f of r) by.set(f.at, (by.get(f.at) || 0) + 1);
+    for (const f of r) by.set(f.at, (by.get(f.at) || new Set()).add(f.root));
     return [...by]
+      .map(([at, s]) => [at, s.size])
       .sort((a, b) => b[1] - a[1])
       .slice(0, 3)
-      .map(([at, n]) => `${pctFine(n / r.length)} ${parts.get(at)?.label ?? at}`)
+      .map(([at, n]) => `${pctFine(n / items.size)} ${parts.get(at)?.label ?? at}`)
       .join(", ");
   }
 
@@ -935,7 +1000,8 @@ export function mount(root, def, options = {}) {
       const pol = scaleNow(panelFor);
       h += `<div class="dx-panel-live"><span class="dx-cells" data-cells aria-hidden="true">${"<i></i>".repeat(p.scale.max)}</span>${live(() => serversWords(panelFor))}</div>`;
       h += pol ? `<p class="dx-panel-note">${esc(`Every ${fmt(meanOf(pol.every ?? model.horizon / 40))} it looks at the work that came in, and starts servers to keep them about ${pct(pol.target ?? 0.6)} busy, up to ${pol.max}; a new one takes ${pol.boot != null ? describe(pol.boot, unit) : "a while"} to start.`)}</p>` : `<p class="dx-panel-note">Autoscaling is off: the servers running stay, and no more start.</p>`;
-    } else if (p.kind === "start") h += `<div class="dx-panel-live">${live(() => (startNow(panelFor).paused ? "It sends nothing now." : `Now: ${rateWords(startNow(panelFor).every, unit, perDot)}`))}</div>`;
+    } else if (p.kind === "start" && p.vus) h += `<div class="dx-panel-live">${live(() => `Now: ${startNow(panelFor).users} virtual users`)}</div><p class="dx-panel-note">${esc(`Stages: ${stagesWords(startNow(panelFor).vus)}.`)}</p>`;
+    else if (p.kind === "start") h += `<div class="dx-panel-live">${live(() => (startNow(panelFor).paused ? "It sends nothing now." : `Now: ${rateWords(startNow(panelFor).every, unit, perDot)}`))}</div>`;
     else if (p.kind === "station") h += `<div class="dx-panel-live">${live(() => `busy ${pct(R.utilization(panelFor, clock))}, ${count(R.st.get(panelFor)?.queue.length ?? 0)} waiting`)}</div>`;
     h += controlsHtml(controls.filter((c) => c.path === panelFor), false);
     panel.innerHTML = h;
@@ -1075,6 +1141,12 @@ export function mount(root, def, options = {}) {
       acts.push(["Twice as fast", () => inject({ part: p.path, set: { work: scaleSpec(base.work, 0.5) } }, `${p.label} now takes half as long.`)]);
       if (p.fail) acts.push(["Never fails", () => inject({ part: p.path, set: { fail: 0 } }, `${p.label} no longer fails.`)]);
     }
+    if (p.kind === "start" && p.vus && !levelOf(p.path)) {
+      const now = startNow(p.path).vus;
+      const scaled = (k) => now.map(([d, n]) => [d, Math.max(0, Math.round(n * k))]);
+      acts.push(["Twice the virtual users", () => inject({ part: p.path, set: { vus: scaled(2) } }, "Twice the virtual users from now on.")]);
+      acts.push(["Half the virtual users", () => inject({ part: p.path, set: { vus: scaled(0.5) } }, "Half the virtual users from now on.")]);
+    }
     // a start that sends nothing has no rate to change: its dial lets it go first
     if (p.kind === "start" && p.every != null && !levelOf(p.path) && !startNow(p.path).paused) {
       // from the rate it has now (a dial or an earlier what-if may have set it)
@@ -1097,11 +1169,11 @@ export function mount(root, def, options = {}) {
     if (p.kind === "choice") {
       // decisions by chance: shift the odds of the rarer way
       const lv = levels.get(levelOf(p.path));
-      const outs = lv.outs.get(p.id);
-      if (outs.every((r) => typeof r.p === "number")) {
-        const last = [...changes].reverse().find((c) => c.part === p.path && c.set?.p);
-        const total = last ? Object.values(last.set.p).reduce((a, b) => a + b, 0) : 1;
-        const cur = new Map(outs.map((r) => [r.id, last ? (last.set.p[r.id] ?? 0) / total : r.p]));
+      const now = choiceNow(p.path);
+      const outs = now.outs;
+      // not where a setting picks the way, or one way is certain: its odds are not chance
+      if (!now.take && !now.sure && outs.every((r) => typeof r.p === "number")) {
+        const cur = now.odds;
         const rare = outs.slice().sort((a, b) => cur.get(a.id) - cur.get(b.id))[0];
         const name = rare.label || (rare.id.includes(">") ? lv.byId.get(rare.to).label : rare.id);
         const shift = (k) => {
@@ -1145,6 +1217,13 @@ export function mount(root, def, options = {}) {
       acts.push([followInside ? "Stay on this level" : "Go inside with it", () => ((followInside = !followInside), renderInspector())]);
     } else if (selected && parts.get(selected) && !(selected === view && view)) {
       const p = parts.get(selected);
+      const emits = () => {
+        const lv = levels.get(levelOf(selected));
+        return (lv.outs.get(p.id) || [])
+          .filter((r) => r.emit)
+          .map((r) => `<dt>${esc(`new ${r.emit} → ${lv.byId.get(r.to).label}`)}</dt>${val(() => `${count(R.passes.get(`${lv.path}::${r.id}`) || 0)} sent`)}`)
+          .join("");
+      };
       html += `<div class="dx-kind">${esc(kindName[p.kind] || p.kind)}</div><h3>${esc(p.label)}</h3>`;
       if (p.about) html += `<p>${esc(p.about)}</p>`;
       if (p.kind === "station") {
@@ -1169,26 +1248,33 @@ export function mount(root, def, options = {}) {
             const n = s.finished + s.timedOut + s.rejected;
             return n ? pct((s.failed + s.timedOut + s.rejected) / n) : "-";
           })}`;
-        html += `</dl>`;
+        html += `${emits()}</dl>`;
       } else if (p.kind === "choice") {
         const lv = levels.get(levelOf(selected));
-        const outs = lv.outs.get(p.id);
+        const now = choiceNow(selected);
+        const outs = now.outs;
+        const toOf = (r) => lv.byId.get(r.to).label;
         const byKind = outs.some((r) => r.p != null && typeof r.p === "object");
         const off = isOff(selected) && outs.find((r) => r.bypass);
-        html += `<p>${esc(off ? `Switched off: everything goes to ${lv.byId.get(off.to).label}.` : outs.some((r) => r.p != null) ? (byKind ? "Decides by chance, and the chance depends on the kind of item:" : "Decides by chance:") : "Decides by how the item did:")}</p><dl>`;
+        // set to one way (by a dial, or a change), or one way at 100%: nothing is decided here
+        const one = !off && (now.take || now.sure);
+        html += `<p>${esc(off ? `Switched off: everything goes to ${toOf(off)}.` : one ? `Sends everything to ${toOf(one)}.` : outs.some((r) => r.p != null) ? (byKind ? "Decides by chance, and the chance depends on the kind of item:" : "Decides by chance:") : "Decides by how the item did:")}</p><dl>`;
         for (const r of outs) {
           const key = `${lv.path}::${r.id}`;
-          const to = lv.byId.get(r.to);
-          const last = [...changes].reverse().find((c) => c.part === selected && c.set?.p);
-          const pNow = last ? (last.set.p[r.id] ?? 0) / Object.values(last.set.p).reduce((a, b) => a + b, 0) : r.p;
-          const rule = r.p != null ? (typeof pNow === "object" ? chanceWords(pNow) : `${Math.round(pNow * 100)}%`) : r.when === "else" || r.when == null ? "otherwise" : r.when.startsWith("class:") ? r.when.slice(6) : `if ${r.when}`;
-          html += `<dt>${esc(rule)}${r.max ? ` (at most ${r.max}×)` : ""} → ${esc(to.label)}</dt>${val(() => {
+          const pNow = now.odds.get(r.id);
+          const rule = off || one ? "" : r.p != null ? (typeof pNow === "object" ? chanceWords(pNow) : `${Math.round(pNow * 100)}%`) : r.when === "else" || r.when == null ? "otherwise" : r.when.startsWith("class:") ? r.when.slice(6) : r.when.startsWith("late:") ? `after ${fmt(Number(r.when.slice(5)))} or more` : `if ${r.when}`;
+          html += `<dt>${rule ? `${esc(rule)}${r.max ? ` (at most ${r.max}×)` : ""} ` : ""}→ ${esc(toOf(r))}</dt>${val(() => {
             const c = R.choices.get(selected);
             const total = c ? Object.values(c.counts).reduce((a, b) => a + b, 0) : 0;
             return total ? `${pct((c.counts[key] || 0) / total)} so far` : "-";
           })}`;
         }
-        html += `</dl>`;
+        html += `${emits()}</dl>`;
+        const by = p.switch && !off && outs.find((r) => r.bypass);
+        if (by) html += `<p>${esc(`Its switch turns it off: then everything goes to ${toOf(by)}.`)}</p>`;
+      } else if (p.kind === "start" && p.vus) {
+        const now = startNow(selected);
+        html += `<p>${esc(`A closed load: virtual users ${stagesWords(now.vus)}. Each one sends its ${noun}, waits for the answer, pauses ${now.think != null ? describe(now.think, unit) : "no time"}, and sends the next; a slower answer means fewer ${plural} a ${unit === "s" ? "second" : unit}.`)}</p><dl><dt>virtual users now</dt>${val(() => String(startNow(selected).users))}<dt>sent</dt>${val(() => count(bornAt(selected)))}</dl>`;
       } else if (p.kind === "start" && p.every != null) {
         const now = startNow(selected);
         const how = now.paused ? "It sends nothing now." : perDot > 1 ? `About ${compact(perDot / meanOf(now.every))} ${plural} arrive each ${unit === "s" ? "second" : unit}; each dot is ${perDot} of them.` : `New work arrives every ${describe(now.every, unit)}${p.count ? `, ${p.count} items in all` : ""}.`;
@@ -1216,12 +1302,14 @@ export function mount(root, def, options = {}) {
         if (Number.isFinite(holder.servers)) html += `<dt>waiting to get in</dt>${val(() => count(S().queue.length))}`;
         html += `</dl>`;
       } else {
-        html += `<dl><dt>done</dt>${val(() => count(R.done))}<dt>in flight</dt>${val(() => count(R.alive.size))}<dt>median time</dt>${val(() => (R.done ? fmt(R.quantile(0.5)) : "-"))}<dt>slowest 5%</dt>${val(() => (R.done >= 5 ? `over ${fmt(R.quantile(0.95))}` : "-"))}</dl>`;
-        // with several kinds of item: how each kind has fared lately, by where it ended
+        const done = narrowed ? `${plural} done` : "done";
+        html += `<dl><dt>${esc(done)}</dt>${val(() => count(counts().done))}<dt>in flight</dt>${val(() => count(counts().alive))}<dt>median time</dt>${val(() => (counts().done ? fmt(counts().q(0.5)) : "-"))}<dt>slowest 5%</dt>${val(() => (counts().done >= 5 ? `over ${fmt(counts().q(0.95))}` : "-"))}</dl>`;
+        // with several kinds of item: how each kind has fared lately, by where it ended; a kind
+        // shows once this run has made one (a dial can change which kinds there are)
         if (classNames.length > 1) {
-          html += `<div class="dx-kind">In the last ${esc(fmt(recentSpan))}</div><dl>`;
-          for (const c of classNames) html += `<dt>${esc(c)}</dt>${val(() => fared(c))}`;
-          html += `</dl>`;
+          html += `<div class="dx-fared" hidden><div class="dx-kind">In the last ${esc(fmt(recentSpan))}</div><dl>`;
+          for (const c of classNames) html += `<div data-kind="${esc(c)}" hidden><dt>${esc(c)}</dt>${val(() => fared(c))}</div>`;
+          html += `</dl></div>`;
         }
       }
       const words = () => bottleneckWords(view);
@@ -1295,6 +1383,11 @@ export function mount(root, def, options = {}) {
     for (const [k, fn] of refreshers) {
       const el = inspector.querySelector(`[data-k="${k}"]`);
       if (el) el.textContent = fn();
+    }
+    const kinds = inspector.querySelector(".dx-fared");
+    if (kinds) {
+      for (const row of kinds.querySelectorAll("[data-kind]")) row.hidden = !R.kindsBorn.has(row.getAttribute("data-kind"));
+      kinds.hidden = R.kindsBorn.size < 2;
     }
     const list = inspector.querySelector("[data-journey]");
     if (list && followed) {

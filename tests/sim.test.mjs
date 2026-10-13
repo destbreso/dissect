@@ -1,7 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createSim, simulate } from "../skills/dissect/kit/sim.mjs";
-import { validate } from "../skills/dissect/kit/model.mjs";
+import { validate, normalize } from "../skills/dissect/kit/model.mjs";
+import { Replay } from "../skills/dissect/kit/replay.mjs";
 import { sampler, meanOf, checkDuration, describe } from "../skills/dissect/kit/dist.mjs";
 import { splitmix32 } from "../skills/dissect/kit/rng.mjs";
 
@@ -401,4 +402,156 @@ test("validation: chances by kind, switches, dials and scales explain what is wr
   assert.match(msgs((d) => ((d.parts[5].dials = [{ label: "Speed", options: [{ label: "a" }, { label: "b", set: { wait: 2 } }] }]), d)), /sets wait on station "app"/);
   assert.match(msgs((d) => ((d.parts[5].scale = { min: 3, max: 8 }), d)), /starts with 2 servers, outside its scale/);
   assert.match(msgs((d) => ((d.parts[2].fail = { bots: 1.5 }), d)), /fail is a probability/);
+});
+
+// ---- closed starts, work by kind, emitting routes -------------------------------------------
+const run = (extra = {}) => ({
+  id: "run",
+  seed: 4,
+  horizon: 110,
+  unit: "s",
+  parts: [
+    { id: "vus", kind: "start", at: [0, 0], vus: [[30, 20], [60, 20], [20, 0]], think: "uni 0.5 2", classes: { fast: 3, slow: 2, cpu: 1 }, ...extra.vus },
+    { id: "loop", kind: "station", at: [1, 0], servers: 1, work: { cpu: "const 0.05", else: "const 0.001" }, ...extra.loop },
+    { id: "which", kind: "choice", at: [2, 0] },
+    { id: "timer", kind: "timer", at: [3, 1], wait: "uni 0.5 2.5", ...extra.timer },
+    { id: "check", kind: "choice", at: [4, 0] },
+    { id: "ok", kind: "end", at: [5, 0] },
+    { id: "bad", kind: "end", at: [5, 1], outcome: "fail" },
+    { id: "push", kind: "timer", at: [5, 2], wait: "uni 0 1" },
+    { id: "panel", kind: "end", at: [6, 2] },
+  ],
+  routes: [
+    { from: "vus", to: "loop" },
+    { from: "loop", to: "which" },
+    { from: "which", to: "timer", when: "class:slow" },
+    { from: "which", to: "check", when: "else" },
+    { from: "timer", to: "check" },
+    { from: "check", to: "ok", when: "ok" },
+    { from: "check", to: "bad", when: "fail" },
+    { from: "check", to: "push", emit: "sample" },
+    { from: "push", to: "panel" },
+  ],
+});
+
+test("a closed start ramps virtual users the way k6's stages do, each starting its next item after its pause", () => {
+  const sim = simulate(run());
+  const vus = sim.log.filter((r) => r.k === "vus");
+  assert.equal(Math.max(...vus.map((r) => r.n)), 20, "20 at the peak");
+  near(vus[0].t, 1.5, 1e-9, "the first one starts as the target reaches one");
+  assert.equal(vus.at(-1).n, 0, "none left at the end");
+  assert.ok(vus.at(-1).t > 90 && vus.at(-1).t <= 112, `they leave during the ramp down (${vus.at(-1).t})`);
+  const born = sim.log.filter((r) => r.k === "born" && r.at === "vus");
+  for (const r of vus) assert.ok(r.n >= 0 && r.n <= 20);
+  // in the steady minute, each user turns over once every pause plus answer
+  const steady = born.filter((r) => r.t > 35 && r.t < 85).length / 50;
+  const meanAnswer = (2 / 6) * 1.5 + 0.01;
+  near(steady, 20 / (1.25 + meanAnswer), 0.12, "items a second in the steady minute");
+  assert.equal(sim.stats().inSystem, 0, "every item ends");
+});
+
+test("a closed load answers slowness with fewer items a second, never a longer queue than its users", () => {
+  const fast = simulate(run()).stats();
+  const slowSim = simulate(run({ timer: { wait: "uni 3 5" } }));
+  const slow = slowSim.stats();
+  const items = (st) => Object.entries(st.kinds).filter(([k]) => k !== "sample").reduce((a, [, K]) => a + K.done, 0);
+  assert.ok(items(slow) < items(fast) * 0.8, `fewer items when the answers are slower (${items(slow)} vs ${items(fast)})`);
+  assert.ok(slow.stations.loop.maxQueue <= 20, "the queue never holds more than the users");
+});
+
+test("work by kind: one server, a slow kind holds it, and the others wait behind it", () => {
+  const busy = simulate(run({ vus: { vus: [[5, 60], [60, 60], [5, 0]], think: "const 0.05", classes: { fast: 1, cpu: 1 } }, loop: { work: { cpu: "const 0.05", else: "const 0.001" } } })).stats();
+  const calm = simulate(run({ vus: { vus: [[5, 60], [60, 60], [5, 0]], think: "const 0.05", classes: { fast: 1, cpu: 1 } }, loop: { work: { cpu: "const 0.001", else: "const 0.001" } } })).stats();
+  assert.ok(busy.stations.loop.meanWait > 20 * calm.stations.loop.meanWait + 0.005, `fast items wait behind cpu ones (${busy.stations.loop.meanWait} vs ${calm.stations.loop.meanWait})`);
+  near(busy.stations.loop.meanWork, (0.05 + 0.001) / 2, 0.15, "the work is each kind's own");
+});
+
+test("an emitting route sends a new item of its kind for every item that passes, and the item keeps its way", () => {
+  const sim = simulate(run());
+  const st = sim.stats();
+  const passed = sim.log.filter((r) => r.k === "decide" && r.at === "check").length;
+  assert.equal(st.kinds.sample.done, passed, "one sample per item checked");
+  const emitted = sim.log.filter((r) => r.k === "born" && r.from);
+  assert.equal(emitted.length, passed);
+  assert.ok(emitted.every((r) => r.cls === "sample" && r.at === "check"), "of the emitted kind, born where they were sent");
+  assert.equal(st.kinds.sample.ends.panel, passed, "and each reaches its own end");
+  assert.equal(st.ends.bad ?? 0, 0, "the item's own outcome decides its way (none failed here)");
+});
+
+/** A top-level model's run, replayed to its end. */
+const replayOf = (def) => {
+  const m = normalize(def);
+  const stations = new Map(m.parts.filter((p) => p.kind === "station").map((p) => [p.path, p.servers]));
+  return new Replay(simulate(def).log, { stations, ends: m.parts.filter((p) => p.kind === "end").map((p) => p.path) }).advance(Infinity);
+};
+
+test("an item and its copies of its own kind share one root, so a breakdown counts the item once at each end", () => {
+  // the samples go on to a dashboard server that also sends each one, as a sample, to a second end
+  const def = run();
+  def.parts = def.parts.filter((p) => p.id !== "panel").concat([
+    { id: "dash", kind: "station", at: [6, 2], servers: "inf", work: "const 0.01" },
+    { id: "lab", kind: "end", at: [7, 2] },
+    { id: "yours", kind: "end", at: [7, 3] },
+  ]);
+  def.routes = def.routes.filter((r) => r.to !== "panel").concat([
+    { from: "push", to: "dash" },
+    { from: "dash", to: "lab" },
+    { from: "dash", to: "yours", emit: "sample" },
+  ]);
+  const R = replayOf(def);
+  const samples = R.finished.filter((f) => f.cls === "sample");
+  const rootsAt = (end) => new Set(samples.filter((f) => f.at === end).map((f) => f.root));
+  const lab = rootsAt("lab");
+  assert.ok(lab.size > 100, `samples reach the lab's end (${lab.size})`);
+  assert.equal(samples.length, lab.size * 2, "every sample reaches both ends");
+  assert.deepEqual([...rootsAt("yours")].sort(), [...lab].sort(), "each copy has its sample's root");
+  // a new item of another kind starts a family of its own
+  const requests = new Set(R.finished.filter((f) => f.cls !== "sample").map((f) => f.root));
+  assert.ok([...lab].every((r) => !requests.has(r)), "a sample is not counted as its request");
+  // a fan-out's copies share the original's root
+  const F = replayOf({
+    id: "fan",
+    seed: 2,
+    horizon: 50,
+    parts: [
+      { id: "in", kind: "start", at: [0, 0], every: "exp 1" },
+      { id: "fan", kind: "split", at: [1, 0], fanout: true },
+      { id: "a", kind: "end", at: [2, 0] },
+      { id: "b", kind: "end", at: [2, 1] },
+    ],
+    routes: [
+      { from: "in", to: "fan" },
+      { from: "fan", to: "a" },
+      { from: "fan", to: "b" },
+    ],
+  });
+  assert.ok(F.finished.length > 20);
+  assert.equal(F.finished.length, new Set(F.finished.map((f) => f.root)).size * 2, "two copies per item, one root");
+});
+
+test("validation: closed starts, work by kind and emitting routes explain what is wrong", () => {
+  const msgs = (f) => validate(f(run())).errors.join("\n");
+  assert.match(msgs((d) => ((d.parts[0].every = 1), d)), /has both every and vus/);
+  assert.match(msgs((d) => ((d.parts[0].vus = [[30, 2.5]]), d)), /vus are stages/);
+  assert.match(msgs((d) => ((d.parts[1].work = { cpu: "logn 5" }), d)), /work:/);
+  assert.match(msgs((d) => ((d.routes[7].when = "ok"), d)), /emits, so it takes no when/);
+  assert.match(
+    msgs((d) => {
+      d.routes.push({ id: "x", from: "vus", to: "panel", emit: "s" });
+      return d;
+    }),
+    /only a station or a choice can send/,
+  );
+});
+
+test("late:<time> routes the items that have taken that long or more since they started", () => {
+  const def = run();
+  def.routes.splice(5, 0, { id: "late", from: "check", to: "bad", when: "late:2" });
+  const sim = simulate(def);
+  const born = new Map(sim.log.filter((r) => r.k === "born").map((r) => [r.tok, r.t]));
+  const late = sim.log.filter((r) => r.k === "decide" && r.route === "::late");
+  assert.ok(late.length > 0, "some slow ones are late");
+  for (const r of late) assert.ok(r.t - born.get(r.tok) >= 2 - 1e-9, "every one taken has taken 2 or more");
+  const onTime = sim.log.filter((r) => r.k === "decide" && r.route === "::check>ok");
+  for (const r of onTime) assert.ok(r.t - born.get(r.tok) < 2, "and none of the others has");
 });

@@ -10,7 +10,7 @@
       "name": "dissect",
       "source": "./",
       "description": "Explain a process by running it: interactive, simulated figures with steps you can open, items you can follow and what-ifs you can try.",
-      "version": "0.1.0"
+      "version": "0.2.0"
     }
   ]
 }

@@ -17,13 +17,17 @@
 //            subprocess that IS its work (open it to see it)
 //   choice   exclusive gateway (BPMN XOR): exactly one route out, picked by
 //            probability `p` or by `when` ("ok", "fail", "timeout", "rejected",
-//            "class:<name>", "else"), with `max` to cap how many times one item
-//            takes a route (a retry loop)
+//            "class:<name>", "late:<time>", "else"), with `max` to cap how many
+//            times one item takes a route (a retry loop)
 //
 // A chance (`p` on a route, `fail` on a station) can differ by kind of item:
 // { bots: 0.6, people: 0.002 }, with `else` for the kinds it does not name.
 // The reader can turn a station or a choice off (`switch`) and set a part's
 // `dials` (options that change its numbers from the moment they are chosen).
+// A start can be closed, the way k6 runs: `vus` stages ramp a number of virtual
+// users, each starting an item, pausing (`think`) when it ends, then the next.
+// A station's `work` can differ by kind of item, and a route out of a station
+// can `emit` a new item of another kind as each item leaves (a metric sample).
 //   split    parallel gateway (BPMN AND fork): one child item down every route;
 //            with `fanout: true` the copies go on alone to their own ends (a
 //            message to every subscriber) and no join follows
@@ -57,7 +61,7 @@ export const SCALE = { target: 0.6, every: (horizon) => horizon / 40, boot: (eve
 export const SETTABLE = {
   station: ["servers", "work", "fail", "patience", "capacity", "bypass", "scale"],
   choice: ["p", "take"],
-  start: ["every", "classes", "paused"],
+  start: ["every", "classes", "paused", "vus", "think"],
   timer: ["wait"],
 };
 
@@ -67,8 +71,11 @@ export function kindsOf(model) {
   const add = (c) => !out.includes(c) && out.push(c);
   for (const p of model.parts) {
     if (p.kind === "start") for (const c of Object.keys(p.classes || {})) add(c);
-    for (const d of p.dials || []) for (const o of d.options || []) for (const c of Object.keys(o.set?.classes || {})) add(c);
+    for (const d of p.dials || [])
+      for (const o of d.options || []) for (const s of [o.set, ...(o.changes || []).map((c) => c.set)]) for (const c of Object.keys(s?.classes || {})) add(c);
   }
+  // the kinds that stations emit come after the ones the starts make
+  for (const r of model.routes || []) if (r.emit) add(r.emit);
   return out;
 }
 
@@ -138,6 +145,9 @@ export function restoreOf(m, path, fields) {
 }
 
 const ID = /^[a-z0-9][a-z0-9_.-]*$/i;
+// a work time can be one duration, or one per kind of item ({ cpu: "logn 5 6", else: 0.2 })
+const byKind = (v) => v != null && typeof v === "object" && !Array.isArray(v);
+const durationError = (v) => (byKind(v) ? Object.values(v).map(checkDuration).find(Boolean) || (Object.keys(v).length ? null : "give at least one kind") : checkDuration(v));
 
 /** Fill defaults and build the indexes the simulator and layout use. Pure. */
 export function normalize(def, path = "") {
@@ -235,6 +245,12 @@ export function validate(def, opts = {}) {
       }
       if (r.p != null && !chanceOk(r.p)) errors.push(at(`route ${r.id} has p = ${JSON.stringify(r.p)}; a probability is between 0 and 1 (or one for each kind of item: { bots: 0.6, people: 0.002 })`));
       if (r.bypass && m.byId.get(r.from)?.kind !== "choice") errors.push(at(`route ${r.id} is a bypass, but only a route out of a choice can be (the way it sends everything when it is off)`));
+      if (r.emit != null) {
+        if (typeof r.emit !== "string" || !ID.test(r.emit)) errors.push(at(`route ${r.id} emits "${r.emit}": name the kind of item it sends, in letters and digits`));
+        if (!["station", "choice"].includes(m.byId.get(r.from)?.kind)) errors.push(at(`route ${r.id} emits, but only a station or a choice can send a new item as each one leaves it`));
+        if (inner) errors.push(at(`route ${r.id} emits inside a step's own process; emit on the level above, where the new item can reach an end of its own`));
+        if (r.when != null || r.p != null || r.max != null) errors.push(at(`route ${r.id} emits, so it takes no when, p or max: every item that leaves sends one`));
+      }
       if (r.max != null && !(Number.isInteger(r.max) && r.max >= 1)) errors.push(at(`route ${r.id} has max = ${r.max}; use a whole number from 1`));
     }
     if (errors.length) return;
@@ -254,12 +270,21 @@ export function validate(def, opts = {}) {
           if (nIn) errors.push(at(`${name} has routes coming in; a start only sends`));
           if (nOut !== 1) errors.push(at(`${name} needs exactly one route out (it has ${nOut})`));
           if (!inner) {
-            if (p.every == null) errors.push(at(`${name} needs every: how often work arrives`));
+            if (p.vus != null) {
+              // closed: virtual users in stages, each pausing between its items
+              if (p.every != null) errors.push(at(`${name} has both every and vus; work arrives at a rate (every) or from virtual users (vus), not both`));
+              if (!Array.isArray(p.vus) || !p.vus.length || !p.vus.every((s) => Array.isArray(s) && s.length === 2 && s[0] >= 0 && Number.isInteger(s[1]) && s[1] >= 0))
+                errors.push(at(`${name} vus are stages, [[duration, virtual users], ...]: [[30, 20], [60, 20], [20, 0]] is up to 20 in 30, 20 for 60, down to none in 20`));
+              if (p.think != null) {
+                const e = checkDuration(p.think);
+                if (e) errors.push(at(`${name} think: ${e}`));
+              }
+            } else if (p.every == null) errors.push(at(`${name} needs every (how often work arrives) or vus (virtual users in stages)`));
             else {
               const e = checkDuration(p.every);
               if (e) errors.push(at(`${name} every: ${e}`));
             }
-          } else if (p.every != null) errors.push(at(`${name} is a subprocess entry; it takes the item from its station, so drop every`));
+          } else if (p.every != null || p.vus != null) errors.push(at(`${name} is a subprocess entry; it takes the item from its station, so drop every and vus`));
           if (p.classes) {
             const sum = Object.values(p.classes).reduce((s, v) => s + v, 0);
             if (!(sum > 0)) errors.push(at(`${name} classes need positive weights`));
@@ -269,14 +294,16 @@ export function validate(def, opts = {}) {
           if (nOut) errors.push(at(`${name} has routes going out; an end only receives`));
           if (!nIn) errors.push(at(`${name} receives nothing`));
           break;
-        case "station":
+        case "station": {
+          // an emitting route sends a new item as each one leaves; the item itself takes the others
+          const own = m.outs.get(p.id).filter((r) => !r.emit);
           if (!nIn) errors.push(at(`${name} receives nothing`));
-          if (!nOut) errors.push(at(`${name} needs a route out`));
-          if (nOut > 1 && m.outs.get(p.id).some((r) => !r.when)) errors.push(at(`${name} has ${nOut} routes out; put a choice after it, or give every route a when`));
+          if (!own.length) errors.push(at(`${name} needs a route out${nOut ? " that does not emit" : ""}`));
+          if (own.length > 1 && own.some((r) => !r.when)) errors.push(at(`${name} has ${own.length} routes out; put a choice after it, or give every route a when`));
           if (!p.inside) {
             if (p.work == null) errors.push(at(`${name} needs work: how long one item takes`));
             else {
-              const e = checkDuration(p.work);
+              const e = durationError(p.work);
               if (e) errors.push(at(`${name} work: ${e}`));
             }
           } else if (p.work != null) warnings.push(at(`${name} has both work and inside; its time comes from inside, work is ignored`));
@@ -306,8 +333,10 @@ export function validate(def, opts = {}) {
             if (!st || st.kind !== "store") errors.push(at(`${name} uses "${s}", which is not a store`));
           }
           break;
+        }
         case "choice": {
-          const rs = m.outs.get(p.id);
+          // an emitting route sends a new item as each one passes; the item itself takes one of the others
+          const rs = m.outs.get(p.id).filter((r) => !r.emit);
           if (!nIn) errors.push(at(`${name} receives nothing`));
           if (rs.length < 2) errors.push(at(`${name} needs at least two routes out`));
           const byP = rs.filter((r) => r.p != null);
@@ -327,11 +356,11 @@ export function validate(def, opts = {}) {
             const elses = rs.filter((r) => r.when === "else" || r.when == null);
             if (elses.length > 1) errors.push(at(`${name} has more than one else route`));
             for (const r of rs) {
-              if (r.when && r.when !== "else" && !OUTCOMES.includes(r.when) && !/^class:.+/.test(r.when)) errors.push(at(`route ${r.id}: when "${r.when}" is not an outcome (${OUTCOMES.join(", ")}), class:<name> or else`));
+              if (r.when && r.when !== "else" && !OUTCOMES.includes(r.when) && !/^class:.+/.test(r.when) && !/^late:\d+(\.\d+)?$/.test(r.when)) errors.push(at(`route ${r.id}: when "${r.when}" is not an outcome (${OUTCOMES.join(", ")}), class:<name>, late:<time> or else`));
             }
             const covered = new Set(rs.map((r) => r.when));
             const capped = rs.filter((r) => r.max != null);
-            if (!covered.has("else") && !rs.some((r) => r.when == null) && !covered.has("ok") && !rs.some((r) => /^class:/.test(r.when || ""))) warnings.push(at(`${name} has no route for "ok" and no else; an item that succeeded has nowhere to go`));
+            if (!covered.has("else") && !rs.some((r) => r.when == null) && !covered.has("ok") && !rs.some((r) => /^(class|late):/.test(r.when || ""))) warnings.push(at(`${name} has no route for "ok" and no else; an item that succeeded has nowhere to go`));
             for (const r of capped) {
               const sameWhen = rs.filter((x) => x.when === r.when && x !== r);
               if (!sameWhen.length && !covered.has("else")) errors.push(at(`route ${r.id} has max ${r.max}; add a second route with when "${r.when}" (or an else) for when the cap is used up`));
@@ -372,6 +401,7 @@ export function validate(def, opts = {}) {
         if (!d.label) errors.push(at(`${name}: a dial needs a label`));
         const v = d.value ?? 0;
         if (!(Number.isInteger(v) && v >= 0 && v < d.options.length)) errors.push(at(`${dial} starts on option ${v}, which it does not have`));
+        if (d.restart != null && typeof d.restart !== "boolean") errors.push(at(`${dial}: restart is true (choosing an option runs the process again from the start) or false`));
         for (const o of d.options) {
           if (!o.label) errors.push(at(`${dial}: every option needs a label`));
           for (const c of [{ part: p.id, set: o.set }, ...(o.changes || [])]) {
@@ -384,13 +414,14 @@ export function validate(def, opts = {}) {
             const can = SETTABLE[q.kind] || [];
             for (const [k, val] of Object.entries(c.set)) {
               if (!can.includes(k)) errors.push(at(`${dial} sets ${k} on ${q.kind} "${q.id}", which can only have ${can.join(", ") || "nothing"} changed`));
-              else if (["work", "every", "patience", "wait"].includes(k) && val != null) {
-                const e = checkDuration(val);
+              else if (["work", "every", "patience", "wait", "think"].includes(k) && val != null) {
+                const e = k === "work" ? durationError(val) : checkDuration(val);
                 if (e) errors.push(at(`${dial}, option "${o.label}", ${k}: ${e}`));
               } else if (k === "fail" && !chanceOk(val)) errors.push(at(`${dial}, option "${o.label}": fail is a probability, or one for each kind of item`));
               else if (k === "take" && val != null && !m.outs.get(q.id).some((r) => r.id === val)) errors.push(at(`${dial}, option "${o.label}": "${q.id}" has no route "${val}" to take`));
               else if (k === "servers" && !(val === Infinity || (Number.isInteger(val) && val >= 0))) errors.push(at(`${dial}, option "${o.label}": servers is a whole number`));
               else if (k === "scale" && val !== false && (typeof val !== "object" || !q.scale)) errors.push(at(`${dial}, option "${o.label}": scale is false (no autoscaling) or changes to the scale "${q.id}" has`));
+              else if (k === "vus" && (!q.vus || !Array.isArray(val))) errors.push(at(`${dial}, option "${o.label}": vus are stages for a start that has virtual users`));
             }
           }
         }

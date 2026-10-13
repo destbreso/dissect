@@ -49,6 +49,14 @@ const TEXT_HIT = 2500;
 // the smallest size the page sets a step's name in: it shrinks a long name down to this before it cuts it
 const NAME_MIN = 10.5;
 
+/** A route's tag: its own label, else the kind of item it emits, what decides it, or its odds. */
+export function tagOf(r) {
+  if (r.label != null) return r.label || null;
+  if (r.emit) return r.emit;
+  if (r.when && r.when !== "else") return r.when;
+  return typeof r.p === "number" ? `${Math.round(r.p * 100)}%` : null;
+}
+
 // a switch takes this much of the name's row (its track and a gap), and so does a settings badge
 export const SWITCH_ROOM = 26;
 export const SETTINGS_ROOM = 22;
@@ -124,7 +132,7 @@ export function layout(model, options = {}) {
     // room for a queue only where one can form: limited capacity, and a queue allowed
     const queued = (p) => p.kind === "station" && p.servers !== "inf" && Number.isFinite(p.servers) && p.capacity !== 0;
     // a tagged route that ends in this column needs room for its tag on the way in
-    const tagRoom = Math.max(0, ...model.routes.filter((r) => inCol.some((p) => p.id === r.to) && colOf.get(r.from) < c && (r.label ?? (r.when && r.when !== "else" ? r.when : r.p != null ? "00%" : ""))).map((r) => tagWidth(String(r.label ?? (r.when && r.when !== "else" ? r.when : `${Math.round((r.p ?? 0) * 100)}%`))) + 30));
+    const tagRoom = Math.max(0, ...model.routes.filter((r) => inCol.some((p) => p.id === r.to) && colOf.get(r.from) < c && tagOf(r)).map((r) => tagWidth(tagOf(r)) + 30));
     const left = Math.max(tagRoom, ...inCol.map((p) => (queued(p) && !flips.get(p.id) ? o.queueRoom : o.gutter)));
     const right = Math.max(...inCol.map((p) => (queued(p) && flips.get(p.id) ? o.queueRoom : o.after)));
     const center = x + left + maxW / 2;
@@ -212,7 +220,7 @@ export function layout(model, options = {}) {
   const routes = model.routes.map((r) => {
     const best = result.get(r.id);
     const pts = best.points;
-    const label = r.label ?? (r.when && r.when !== "else" ? r.when : r.p != null ? `${Math.round(r.p * 100)}%` : null);
+    const label = tagOf(r);
     // a cap reads "retry ≤2" on a default tag; a tag the author wrote says what it means already
     const text = label && r.max && r.label == null ? `${label} ≤${r.max}` : label;
     return {
@@ -230,6 +238,7 @@ export function layout(model, options = {}) {
       exit: best.exit,
       entry: best.entry,
       back: colOf.get(r.to) < colOf.get(r.from),
+      emit: r.emit ?? null,
     };
   });
   placeLabels(routes, allBoxes, boxes, texts);
@@ -540,6 +549,8 @@ export function textsOf(box, model, routes) {
       add(p.label || p.id, x, y - r - 8, "middle", true);
       // the page keeps this up to date when the reader changes the rate
       if (p.every != null) add(rateWords(p.every, model.unit, model.per), x, y + r + 14, "middle", false, 10, "rate");
+      // a closed start says how many virtual users it runs at most (the page says how many now)
+      else if (p.vus) add(`${Math.max(0, ...p.vus.map((s) => s[1]))} virtual users`, x, y + r + 14, "middle", false, 10, "rate");
       break;
     case "end":
       add(named || p.named ? p.label : p.outcome || p.id, x, y + r + 14, "middle", true);

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.0
+
+- The notation: closed starts, virtual users in stages the way k6 runs them (`vus` and `think`: each user sends its next item when its answer comes back and a pause has passed, so a slower answer means fewer items, not a longer queue); work times by kind (`work: { cpu: "logn 5 6", else: 0.2 }`); routes that `emit` a new item of a kind as each item leaves a station or a choice (a metric sample, an event), drawn dashed; `late:<time>` routes for the items that have taken that long or more (a check's deadline, an SLA); dials that start the run again with their option (`restart`); colors for up to six kinds of item.
+- The page: the readout's number over several kinds (`watch.kinds`) and at any quantile (`watch.quantile`); an inspector that says what decides each choice (its switch, a setting that sends everything one way, chance, or how the item did), with odds what-ifs only where chance decides, and lists the new items a part sends down its emit routes; how each kind fared lately, over the kinds the run has made, with an item and its copies (a fan-out's, an emit's of its own kind) counted once at each end they reached; what-ifs for virtual users; `embedHeight` (in an iframe, the page posts its height to the page around it), `head` (more for the page's head, such as a site's own styles) and `pageTitle`.
+- A recipe and an eval for a load test.
+
 ## 0.1.0
 
 The first release.

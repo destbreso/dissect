@@ -124,8 +124,16 @@ function downUnit(values, unit) {
   return { k, unit: u };
 }
 
-/** A short human description, e.g. "median 4, p95 9" or "about 6 on average". */
+// a time per kind of item, kinds first and the rest ("else") last
+const perKind = (spec, fn, sep) =>
+  Object.entries(spec)
+    .sort(([a], [b]) => (a === "else") - (b === "else"))
+    .map(([k, v]) => `${k === "else" ? "others" : k} ${fn(v)}`)
+    .join(sep);
+
+/** A short human description, e.g. "median 4, p95 9" or "about 6 on average"; per kind, "cpu median 5 ms; others 0.2 ms". */
 export function describe(spec, unit = "") {
+  if (spec != null && typeof spec === "object") return perKind(spec, (v) => describe(v, unit), "; ");
   const p0 = parse(spec);
   const d = downUnit(p0.args, unit);
   const p = { ...p0, args: p0.args.map((v) => v * d.k) };
@@ -163,6 +171,7 @@ const one = (v, unit) => (v === 1 && unit && !LADDERS[unit] && /[^s]s$/.test(uni
 
 /** A label short enough for a plate: "4 min, p95 9", "2-6 min", "~4 min". */
 export function short(spec, unit = "") {
+  if (spec != null && typeof spec === "object") return perKind(spec, (v) => short(v, unit), ", ");
   const p = parse(spec);
   const d = downUnit(p.args, unit);
   unit = d.unit;
@@ -230,8 +239,9 @@ export function formatDuration(v, unit = "") {
   return `${whole} ${name} ${rest} ${lower}`;
 }
 
-/** The same distribution stretched by k (k = 2: everything takes twice as long). */
+/** The same distribution stretched by k (k = 2: everything takes twice as long); a time per kind stretches each. */
 export function scaleSpec(spec, k) {
+  if (spec != null && typeof spec === "object") return Object.fromEntries(Object.entries(spec).map(([c, v]) => [c, scaleSpec(v, k)]));
   const p = parse(spec);
   const a = p.args.map((v) => Math.round(v * k * 1e6) / 1e6);
   if (p.kind === "const") return a[0];

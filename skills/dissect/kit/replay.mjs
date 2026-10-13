@@ -28,6 +28,10 @@ export class Replay {
     this.passes = new Map();
     this.born = 0;
     this.bornAt = new Map();
+    // the kinds of item born so far in this run
+    this.kindsBorn = new Set();
+    // a closed start's virtual users right now
+    this.vus = new Map();
     this.done = 0;
     this.leads = [];
     this.leadSum = 0;
@@ -39,7 +43,11 @@ export class Replay {
     this.recentFrom = 0;
   }
 
-  /** The items that left in the last `window` before t: [{ t, cls, outcome, at }]. */
+  /**
+   * The items that left in the last `window` before t: [{ t, cls, outcome, at, lead, root }].
+   * Copies of one item (a fan-out's, or an emit's of the item's own kind) share its root,
+   * so a count of items can count them once.
+   */
   recent(window, t = this.t) {
     const f = this.finished;
     while (this.recentFrom < f.length && f[this.recentFrom].t <= t - window) this.recentFrom += 1;
@@ -83,7 +91,7 @@ export class Replay {
     let tok = this.tokens.get(id);
     if (!tok) {
       const parent = from ? this.tokens.get(from) : null;
-      tok = { id, cls: parent?.cls ?? "item", born: parent?.born ?? this.t, mode: "new", at: null, outcome: "ok", stack: parent ? parent.stack.slice() : [], parent: from || null, visits: 0 };
+      tok = { id, cls: parent?.cls ?? "item", born: parent?.born ?? this.t, mode: "new", at: null, outcome: "ok", stack: parent ? parent.stack.slice() : [], parent: from || null, root: parent ? (parent.root ?? parent.id) : id, visits: 0 };
       this.tokens.set(id, tok);
       this.alive.add(id);
     }
@@ -97,10 +105,16 @@ export class Replay {
         const t = this.token(r.tok);
         t.cls = r.cls;
         t.born = r.t;
+        // a copy an emit made of an item of its own kind belongs to that item's family
+        if (r.from) {
+          const src = this.tokens.get(r.from);
+          if (src && src.cls === r.cls) t.root = src.root ?? src.id;
+        }
         t.mode = "at";
         t.at = r.at;
         this.born += 1;
         this.bornAt.set(r.at, (this.bornAt.get(r.at) || 0) + 1);
+        this.kindsBorn.add(r.cls);
         break;
       }
       case "move": {
@@ -271,7 +285,7 @@ export class Replay {
         tok.doneAt = r.t;
         this.alive.delete(tok.id);
         this.ends.set(r.at, (this.ends.get(r.at) || 0) + 1);
-        this.finished.push({ t: r.t, cls: tok.cls, outcome: r.outcome, at: r.at, lead: r.t - tok.born });
+        this.finished.push({ t: r.t, cls: tok.cls, outcome: r.outcome, at: r.at, lead: r.t - tok.born, root: tok.root ?? tok.id });
         this.done += 1;
         this.outcomes[r.outcome] = (this.outcomes[r.outcome] || 0) + 1;
         const lead = r.t - tok.born;
@@ -295,6 +309,11 @@ export class Replay {
         tok.mode = "at";
         tok.at = r.at;
         this.events.push({ k: "pass", tok: tok.id, at: r.at });
+        break;
+      }
+      case "vus": {
+        this.vus.set(r.at, r.n);
+        this.events.push({ k: "vus", at: r.at, n: r.n });
         break;
       }
       case "scale": {

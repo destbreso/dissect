@@ -4,7 +4,7 @@ description: Build interactive figures that explain a process by running it, suc
 license: MIT
 compatibility: Written for Claude Code; also runs in Codex, OpenCode and Antigravity. Needs Node.js 20.10+ (built-in modules only) and Chrome or Chromium for the browser checks.
 metadata:
-  version: "0.1.0"
+  version: "0.2.0"
   author: "David Estévez"
   repository: "https://github.com/destbreso/dissect"
 ---
@@ -49,6 +49,8 @@ Complete examples ship with the skill. Open the closest one before you start. Ea
 | A part the reader can turn off (a firewall, a cache, a check) | A switch on its plate; off, the part lets everything straight through |
 | A setting the reader can choose (the size of an attack, a policy's limit) | A dial in the part's settings panel, which opens on the figure next to the part (a badge on it says it has one); its options change the model from the moment one is chosen |
 | Servers that follow the load (autoscaling) | A bay for every server the step can have: running, starting, not there |
+| A load generator's virtual users (k6) | A closed start: users in stages, each pausing between its items, so a slower answer means fewer items a second |
+| A sample, an event or a log a step sends as it works | An emitting route, dashed, with a new item of its own kind |
 
 Two ways this fails, both common:
 
@@ -122,7 +124,7 @@ export default {
 };
 ```
 
-The kinds are `start`, `end`, `station` (servers, work, fail, patience, capacity, inside, uses, scale), `choice` (its routes take `p`, or `when`: ok, fail, timeout, rejected, class:<name> or else, with `max` to cap a loop), `split`, `join`, `timer` (wait) and `store`. A chance can differ by kind of item (`fail: { bots: 0.6, people: 0.002 }`). A station or a choice can have a `switch`, and any part `dials`. Every part sits at `at: [column, row]` in its lane. `references/model.md` has every field, recipes (retry with backoff, rework, timeout, overflow, escalation, fan-out) and how BPMN, flowcharts, swimlanes and value stream maps translate.
+The kinds are `start` (every, or closed: vus stages and think), `end`, `station` (servers, work, fail, patience, capacity, inside, uses, scale), `choice` (its routes take `p`, or `when`: ok, fail, timeout, rejected, class:<name> or else, with `max` to cap a loop), `split`, `join`, `timer` (wait) and `store`. A chance or a work time can differ by kind of item (`fail: { bots: 0.6, people: 0.002 }`), and a route can `emit` a new item of another kind as each one leaves. A station or a choice can have a `switch`, and any part `dials`. Every part sits at `at: [column, row]` in its lane. `references/model.md` has every field, recipes (retry with backoff, rework, timeout, overflow, escalation, fan-out) and how BPMN, flowcharts, swimlanes and value stream maps translate.
 
 ## Craft rules (short form)
 

@@ -10,6 +10,7 @@
 // slots, bays, needles, pins, mini-maps.
 
 import { short } from "./dist.mjs";
+import { chanceMax } from "./model.mjs";
 import { SWITCH_ROOM, SETTINGS_ROOM, hasSettings } from "./layout.mjs";
 import { along, roundedPath } from "./geom.mjs";
 
@@ -113,12 +114,13 @@ export const THEMES = {
     warn: "#b35c00",
     bad: "#c92a2a",
     tag: "#ffffff",
-    // kinds of items, in the order they appear; green comes last, since green is also "busy" and "on"
+    // six kinds of items, in the order they appear: green near the end, since green is also "busy" and "on", then a slate grey
     c0: "#1d1c1a",
     c1: "#1864ab",
     c2: "#862e9c",
     c3: "#0b7285",
     c4: "#2b8a3e",
+    c5: "#5f6670",
   },
   dark: {
     paper: "#121211",
@@ -149,6 +151,7 @@ export const THEMES = {
     c2: "#e599f7",
     c3: "#66d9e8",
     c4: "#8ce99a",
+    c5: "#a7aeb8",
   },
 };
 export const CLASS_COLORS = 5;
@@ -223,6 +226,8 @@ export function css() {
 .dx-inspector .dx-kind{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--dx-ink3);margin-bottom:2px}
 .dx-inspector p{margin:8px 0;max-width:68ch}
 .dx-inspector dl{display:grid;grid-template-columns:auto auto;justify-content:start;gap:3px 18px;margin:10px 0}
+.dx-inspector dl>div{display:contents}
+.dx-inspector dl>div[hidden],.dx-fared[hidden]{display:none}
 .dx-inspector dt{color:var(--dx-ink3)}
 .dx-inspector dd{margin:0;color:var(--dx-ink)}
 .dx-inspector .dx-acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
@@ -261,6 +266,7 @@ export function css() {
 .dx-name{fill:var(--dx-ink);font-size:12.5px;font-weight:620}
 .dx-spec{fill:var(--dx-ink3);font-size:10px}
 .dx-alt-text{fill:var(--dx-ink2);font-size:10px;font-weight:600;opacity:0}
+.dx-route.dx-emit .dx-rail{stroke-dasharray:5 4}
 .dx-bay{fill:var(--dx-bay);stroke:var(--dx-seam);stroke-width:.8}
 .dx-bay.dx-bay-off{fill:none;stroke-dasharray:1.5 1.5;opacity:.6}
 .dx-bay.dx-bay-boot{fill:none;stroke:var(--dx-warn);stroke-dasharray:2 1.4;animation:dx-boot 1.2s ease-in-out infinite}
@@ -621,6 +627,18 @@ function wordsOf(box) {
   return (box.texts || []).map((t) => `<text class="dx-under${t.strong ? " dx-strong" : ""}"${t.role ? ` data-${t.role}` : ""} x="${n(t.x)}" y="${n(t.y)}" text-anchor="${t.anchor}">${esc(t.text)}</text>`).join("");
 }
 
+/** A station's failures in words, for its label: ", 12% blocked", or by kind ", blocked: 60% of bots, 0.2% of people". */
+function failWords(part) {
+  const f = part.fail;
+  const label = part.failLabel;
+  if (typeof f === "number") return label ? `, ${Math.round(f * 100)}% ${label}` : `, fails ${Math.round(f * 100)}% of the time`;
+  const by = Object.entries(f)
+    .sort(([a], [b]) => (a === "else") - (b === "else"))
+    .map(([k, v]) => `${+(v * 100).toFixed(1)}% of ${k === "else" ? "the rest" : k}`)
+    .join(", ");
+  return `, ${label || "fails"}: ${by}`;
+}
+
 /** What a screen reader hears for a part. */
 export function ariaOf(part, model) {
   const u = model.unit;
@@ -629,9 +647,9 @@ export function ariaOf(part, model) {
     case "station":
       return part.inside
         ? `${part.label}: a step with its own process inside (${stepsInside(part.inside)} steps). Press Enter to open it.${about}`
-        : `${part.label}: ${Number.isFinite(part.servers) ? (part.servers === 1 ? "one at a time" : `${part.servers} at a time`) : "no limit on how many at once"}, ${short(part.work, u)} each${part.fail ? (part.failLabel ? `, ${Math.round(part.fail * 100)}% ${part.failLabel}` : `, fails ${Math.round(part.fail * 100)}% of the time`) : ""}.${about}`;
+        : `${part.label}: ${Number.isFinite(part.servers) ? (part.servers === 1 ? "one at a time" : `${part.servers} at a time`) : "no limit on how many at once"}, ${short(part.work, u)} each${chanceMax(part.fail) ? failWords(part) : ""}.${about}`;
     case "start":
-      return `${part.label}: new work arrives${part.every != null ? ` every ${short(part.every, u)}` : " from the step that holds this process"}.${about}`;
+      return `${part.label}: ${part.vus ? `up to ${Math.max(0, ...part.vus.map((s) => s[1]))} virtual users, each sending work, waiting for it and pausing before the next` : `new work arrives${part.every != null ? ` every ${short(part.every, u)}` : " from the step that holds this process"}`}.${about}`;
     case "end":
       return `${part.label}: where work leaves${part.outcome ? ` as ${part.outcome}` : ""}.${about}`;
     case "choice":
@@ -690,7 +708,7 @@ function routeSvg(rt, queueRoom) {
   const si = Math.sin(a);
   const q = (dx, dy) => `${n(ex + dx * c - dy * si)} ${n(ey + dx * si + dy * c)}`;
   s += `<path class="dx-nib" d="M${q(-3.2, 0)}L${q(-9.5, -3.4)}L${q(-9.5, 3.4)}Z"/>`;
-  return `<g class="dx-route${rt.back ? " dx-back" : ""}" data-key="${esc(rt.key)}"${failish(rt) ? ` data-fail="1"` : ""}>${s}</g>`;
+  return `<g class="dx-route${rt.back ? " dx-back" : ""}${rt.emit ? " dx-emit" : ""}" data-key="${esc(rt.key)}"${failish(rt) ? ` data-fail="1"` : ""}>${s}</g>`;
 }
 
 /** A route's tag, drawn above the items so a busy route keeps its words readable. */

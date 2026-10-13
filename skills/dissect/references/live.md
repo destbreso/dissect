@@ -33,7 +33,7 @@ None of them covers the drawing, and none scrolls away when the drawing scrolls 
 
 ## The inspector
 
-Beside the drawing on a wide card, under it on a narrow one. With nothing selected: the process, its numbers so far (done, in flight, median and p95 time), how each kind of item fared lately when there are several ("pages: 97% served, 2% served at the edge, 1% blocked", over the last twentieth of the horizon, or the watch's window) and where the waiting is ("Most of the waiting is for Code review: 72% of it, 15 min per item on average, busy 81% of the time"). It describes and counts; a part's settings are on the figure, with the part. Click or focus a part: what it is (`about`), its rule in words, its live numbers, and its what-ifs. Inside an open level: that level's own numbers.
+Beside the drawing on a wide card, under it on a narrow one. With nothing selected: the process, its numbers so far (done, in flight, median and p95 time), how each kind of item fared lately when there are several ("pages: 97% served, 2% served at the edge, 1% blocked", over the last twentieth of the horizon, or the watch's window; an item and the copies of it that a fan-out or an emit of its own kind made count once at each end they reached, so a sample shown on two dashboards reads "100% lab dashboards, 100% your dashboards") and where the waiting is ("Most of the waiting is for Code review: 72% of it, 15 min per item on average, busy 81% of the time"). It describes and counts; a part's settings are on the figure, with the part. Click or focus a part: what it is (`about`), its rule in words, its live numbers, and its what-ifs. A choice says what decides: its switch when off, a setting or a way at 100% that sends everything one way ("Sends everything to Toy API"), chance, or how the item did; odds what-ifs appear only where chance decides. A part with an emit route lists the new items it sends down it, with how many so far. Inside an open level: that level's own numbers.
 
 ## Switches and settings
 
@@ -49,6 +49,7 @@ A what-if re-runs the model with a change from the current moment on. Everything
 |---|---|
 | Station with limited capacity | One more at a time, one fewer, an outage (`figure.outage` long; an eighth of the horizon by default). A station that scales has only the outage: its dials set the rest |
 | Station with a work time | Twice as slow, twice as fast; never fails (when it can fail) |
+| Closed start (virtual users) | Twice the virtual users, half of them (from now on; a `restart` dial sets them for a whole run) |
 | Start | 50% more work, half the work, a burst (three times the work for `burst`, a tenth of the horizon by default), and half of each kind when there are several (`Half the noise`) |
 | Choice by chance | The rarer way twice as often, half as often (not where the odds differ by kind) |
 | Timer | Wait twice as long, half as long |
@@ -74,6 +75,8 @@ Click a dot to follow it: it turns orange with a halo, its trail is drawn, and t
 
 ## Reduced motion
 
+A page that keeps its own motion preference can ask for the same by putting `data-reduced-motion` on `<html>` before the figure mounts.
+
 With `prefers-reduced-motion: reduce` the figure opens paused on a moment about a third into the run, with no glides and no transitions. Step and Play still work: the reader decides when anything moves.
 
 ## Events
@@ -90,4 +93,4 @@ The figure tells the page what the reader does, as DOM events that bubble from i
 
 ## Options
 
-`figure` (or `buildFigure` options): `pace`, `speed` (initial), `autoplay` (default on), `idle` (the self-following tour, default on), `outage`, `burst`, `levelPace`, `watch` (`{ class, label, window }`: the readout's one number), `hint` (the line at the bottom left), `theme` (`auto`, `light` or `dark`), `fig`, `title`, `caption`.
+`figure` (or `buildFigure` options): `pace`, `speed` (initial), `autoplay` (default on), `idle` (the self-following tour, default on), `outage`, `burst`, `levelPace`, `watch` (`{ class | kinds, label, window, quantile }`: the readout's one number), `embedHeight` (post the page's height to an iframe's parent), `head` (more for the page's head), `hint` (the line at the bottom left), `theme` (`auto`, `light` or `dark`), `fig`, `title`, `caption`.

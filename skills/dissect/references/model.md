@@ -32,9 +32,9 @@ Every part has an `id` (letters, digits, dots, dashes, underscores; unique on it
 
 | kind | What it is | Fields |
 |---|---|---|
-| `start` | Where items come from | `every` (time between arrivals), `first` (time of the first, default 0), `count` (stop after n), `classes` (`{ feature: 0.8, hotfix: 0.2 }`: kinds of items, by weight). Inside a station's process the start takes the item from the station and has no `every` |
+| `start` | Where items come from | `every` (time between arrivals), `first` (time of the first, default 0), `count` (stop after n), `classes` (`{ feature: 0.8, hotfix: 0.2 }`: kinds of items, by weight). Or, closed, `vus` and `think`: virtual users in stages (below). Inside a station's process the start takes the item from the station and has neither |
 | `end` | Where items leave | `outcome` (a label for what ending here means; `"fail"` marks it as failed work) |
-| `station` | Where work is done | `servers` (how many at once: a number, or `"inf"` for no limit; default 1, or no limit with `inside`), `work` (how long one item takes), `fail` (chance it comes out failed; it can differ by kind), `failLabel` (how the inspector names a failure: "changes requested"), `patience` (the longest an item waits in its queue before giving up: outcome `timeout`), `capacity` (room in its queue; arrivals beyond it are turned away: outcome `rejected`; `0` means no queue at all), `inside` (a whole process that is its work), `uses` (ids of stores it reads), `scale` (servers that follow the load: autoscaling, below), `switch` (the reader can turn it off) |
+| `station` | Where work is done | `servers` (how many at once: a number, or `"inf"` for no limit; default 1, or no limit with `inside`), `work` (how long one item takes; it can differ by kind, `{ cpu: "logn 5 6", else: 0.2 }`), `fail` (chance it comes out failed; it can differ by kind), `failLabel` (how the inspector names a failure: "changes requested"), `patience` (the longest an item waits in its queue before giving up: outcome `timeout`), `capacity` (room in its queue; arrivals beyond it are turned away: outcome `rejected`; `0` means no queue at all), `inside` (a whole process that is its work), `uses` (ids of stores it reads), `scale` (servers that follow the load: autoscaling, below), `switch` (the reader can turn it off) |
 | `choice` | An exclusive decision (BPMN XOR): one way out | its routes carry `p` (by chance, which can differ by kind) or `when` (by how the item did); `switch` (the reader can turn it off: everything then takes the route marked `bypass: true`) |
 | `split` | Parallel work (BPMN AND): one copy down every route | `fanout: true`: the copies go on alone to their own ends (a message to every subscriber); without it, a `join` must bring them back |
 | `join` | Waits for every branch of its split, then goes on as one | the joined item's outcome is the worst of its branches (fail over timeout over rejected over ok) |
@@ -67,12 +67,21 @@ The plates print them short ("12 min, p95 30", "2-6 ms", "~20 min"); the inspect
 
 - `from`, `to`: part ids on the same level. `id` defaults to `from>to`; give one when two routes join the same pair, or when a claim or a caption names the route.
 - `p`: a probability, on every route out of a choice that decides by chance; they must add up to 1.
-- `when`: on routes out of a choice, or out of a station that sorts its own outcomes. One of `ok`, `fail`, `timeout`, `rejected`, `class:<name>` (by the item's kind) or `else`. Routes are tried in order; the first that matches wins.
+- `when`: on routes out of a choice, or out of a station that sorts its own outcomes. One of `ok`, `fail`, `timeout`, `rejected`, `class:<name>` (by the item's kind), `late:<time>` (an item that has taken that long or more since it started: a check's deadline, an SLA) or `else`. Routes are tried in order; the first that matches wins.
 - `max`: how many times one item may take this route (a retry cap). When it is used up, the next matching route is taken, so a capped route needs a second route for the same `when` (or an `else`).
 - `latency`: time on the route itself (the network, a hand-off, a trip down the corridor). The item visibly travels.
 - `label`: the tag on the route. Defaults to the `when`, or the `p` as a percentage; `""` for none.
 - `seldom: true`: a route the base run rarely or never takes, by design (a timeout path that a what-if exercises). The audit then notes it instead of warning.
 - `bypass: true`: on one route out of a choice that has a switch, the way everything goes while the choice is off (a cache turned off sends every request on to the origin).
+- `emit: "<kind>"`: on a route out of a station or a choice, a new item of that kind goes down it as each item leaves, while the item itself takes its own way; the new item ends on its own (a metric sample a load generator sends as each answer comes back, an event a service publishes as it works). Its tag says the kind, and its rail is dashed.
+
+## Closed starts: virtual users
+
+```js
+{ id: "vus", kind: "start", vus: [[30, 20], [60, 20], [20, 0]], think: "uni 0.5 2", classes: { fast: 3, slow: 2, error: 2, cpu: 1 } }
+```
+
+A closed start is a load model the way k6 runs one: `vus` are stages, each `[duration, virtual users]`, ramped in a straight line from the one before (up to 20 in 30, 20 for 60, down to none in 20). A virtual user starts an item at once; when that item ends, it pauses `think` and starts the next. When the stages want fewer users than are running, the next one to finish stops. So a slower answer means fewer items a second, not a longer queue: each item is one iteration, its time is the request's, and a station never holds more of them than there are users. An open start (`every`) is the other model, the way Artillery's arrival rate runs: work arrives whether or not the last answer came back.
 
 ## Kinds of items
 
@@ -101,7 +110,7 @@ dials: [{ label: "Attack", value: 2, options: [
 ] }]
 ```
 
-An option's `set` changes its own part (`changes: [{ part, set }]` changes others on the level). Choosing an option first puts back, as written in the model, every field any of the dial's options sets, then applies its own: so the option without a `set` is the model as written, and `value` is the option a run starts from. What each kind of part can have set: a station `servers`, `work`, `fail`, `patience`, `capacity`, `bypass`, `scale`; a choice `p`, `take` (a route everything takes); a start `every`, `classes`, `paused`; a timer `wait`.
+An option's `set` changes its own part (`changes: [{ part, set }]` changes others on the level). `restart: true` on a dial makes choosing an option start the run again with it, for settings that only make sense from the beginning, like the number of virtual users in a test plan. Choosing an option first puts back, as written in the model, every field any of the dial's options sets, then applies its own: so the option without a `set` is the model as written, and `value` is the option a run starts from. What each kind of part can have set: a station `servers`, `work`, `fail`, `patience`, `capacity`, `bypass`, `scale`; a choice `p`, `take` (a route everything takes); a start `every`, `classes`, `paused`, `vus`, `think`; a timer `wait`.
 
 Both apply from the moment the reader moves them, like what-ifs, and the run before stays as it was. A new run starts with them where the reader left them; "Undo what-ifs" puts them all back.
 
@@ -157,6 +166,9 @@ export const figure = {
   burst: 48,           // how long "A burst" lasts; default: a tenth of the horizon
   levelPace: { ci: 2 },  // a level's own pace; default: its typical time inside, over eight
   watch: { class: "pages", label: "pages served", window: 20 },  // the readout's one number: the share of a kind served lately
+  // or over several kinds, with another quantile: { kinds: ["fast", "slow"], label: "requests ok", quantile: 0.95 }
+  embedHeight: true,   // in an iframe, the page posts its height to the page around it ({ type: "dissect:height", height })
+  head: "<link ...>",  // more for the page's <head>: a site's own styles for the figure, a script
   caption: ({ run, day, sim, variant, fmt, model }) => `...`,
 };
 ```
@@ -209,6 +221,8 @@ export const figure = {
 **A layer the reader can turn off.** `switch: true` on the station (a firewall, a check) or on the choice (a cache, with `bypass: true` on the route that skips it). Start from the configuration that works, and let the reader take it apart.
 
 **A load the reader can size.** `dials` on the start with a few rates (`every`) and `{ paused: true }` for none; `first` for when it begins.
+
+**A load test.** A closed start for the virtual users (`vus` stages and `think`), the kinds of request as its `classes`, the service's single thread as one station with `work` by kind, a choice for the generator's checks (`when` ok or fail, to two ends), and an `emit` route from that choice for the samples it sends to the metrics store.
 
 **Servers that follow the load.** `scale` on the station, and a dial for its limits; give a database or anything that does not scale its own fixed `servers`, so the reader sees where the wall moves.
 

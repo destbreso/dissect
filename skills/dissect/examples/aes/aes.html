@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AES, from the mode to the S-box</title>
 <style>html,body{margin:0;background:#f4f3ee}@media (prefers-color-scheme:dark){html,body{background:#121211}}body{padding:28px 16px}
-.dx{--dx-paper:#f4f3ee;--dx-sheet:#fbfaf6;--dx-dot:#dcd9cf;--dx-ink:#1d1c1a;--dx-ink2:#55534d;--dx-ink3:#6c6a64;--dx-edge:#2a2926;--dx-plate:#ffffff;--dx-plate2:#f3f2ec;--dx-bevel:#ffffff;--dx-seam:#e4e1d8;--dx-shade:rgba(29, 28, 26, 0.13);--dx-rail:#3b3a35;--dx-bed:#e9e6dd;--dx-laneA:rgba(255, 255, 255, 0);--dx-laneB:rgba(29, 28, 26, 0.024);--dx-rule:#dedbd1;--dx-bay:#eeece5;--dx-accent:#c2410c;--dx-ok:#2b8a3e;--dx-warn:#b35c00;--dx-bad:#c92a2a;--dx-tag:#ffffff;--dx-c0:#1d1c1a;--dx-c1:#1864ab;--dx-c2:#862e9c;--dx-c3:#0b7285;--dx-c4:#2b8a3e;color:var(--dx-ink);font:13px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Liberation Sans",system-ui,sans-serif;font-variant-numeric:tabular-nums;max-width:1240px;margin:0 auto}
-.dx[data-theme="dark"]{--dx-paper:#121211;--dx-sheet:#171715;--dx-dot:#2c2b28;--dx-ink:#eceae4;--dx-ink2:#b3b1aa;--dx-ink3:#8f8d85;--dx-edge:#d8d6cf;--dx-plate:#1f1f1c;--dx-plate2:#262622;--dx-bevel:#3a3934;--dx-seam:#34332f;--dx-shade:rgba(0, 0, 0, 0.5);--dx-rail:#cfcdc6;--dx-bed:#262623;--dx-laneA:rgba(255, 255, 255, 0);--dx-laneB:rgba(255, 255, 255, 0.026);--dx-rule:#2e2d2a;--dx-bay:#2b2b27;--dx-accent:#ff8a4c;--dx-ok:#69db7c;--dx-warn:#ffa94d;--dx-bad:#ff6b6b;--dx-tag:#1f1f1c;--dx-c0:#eceae4;--dx-c1:#74c0fc;--dx-c2:#e599f7;--dx-c3:#66d9e8;--dx-c4:#8ce99a;}
-@media (prefers-color-scheme:dark){.dx[data-theme="auto"]{--dx-paper:#121211;--dx-sheet:#171715;--dx-dot:#2c2b28;--dx-ink:#eceae4;--dx-ink2:#b3b1aa;--dx-ink3:#8f8d85;--dx-edge:#d8d6cf;--dx-plate:#1f1f1c;--dx-plate2:#262622;--dx-bevel:#3a3934;--dx-seam:#34332f;--dx-shade:rgba(0, 0, 0, 0.5);--dx-rail:#cfcdc6;--dx-bed:#262623;--dx-laneA:rgba(255, 255, 255, 0);--dx-laneB:rgba(255, 255, 255, 0.026);--dx-rule:#2e2d2a;--dx-bay:#2b2b27;--dx-accent:#ff8a4c;--dx-ok:#69db7c;--dx-warn:#ffa94d;--dx-bad:#ff6b6b;--dx-tag:#1f1f1c;--dx-c0:#eceae4;--dx-c1:#74c0fc;--dx-c2:#e599f7;--dx-c3:#66d9e8;--dx-c4:#8ce99a;}}
+.dx{--dx-paper:#f4f3ee;--dx-sheet:#fbfaf6;--dx-dot:#dcd9cf;--dx-ink:#1d1c1a;--dx-ink2:#55534d;--dx-ink3:#6c6a64;--dx-edge:#2a2926;--dx-plate:#ffffff;--dx-plate2:#f3f2ec;--dx-bevel:#ffffff;--dx-seam:#e4e1d8;--dx-shade:rgba(29, 28, 26, 0.13);--dx-rail:#3b3a35;--dx-bed:#e9e6dd;--dx-laneA:rgba(255, 255, 255, 0);--dx-laneB:rgba(29, 28, 26, 0.024);--dx-rule:#dedbd1;--dx-bay:#eeece5;--dx-accent:#c2410c;--dx-ok:#2b8a3e;--dx-warn:#b35c00;--dx-bad:#c92a2a;--dx-tag:#ffffff;--dx-c0:#1d1c1a;--dx-c1:#1864ab;--dx-c2:#862e9c;--dx-c3:#0b7285;--dx-c4:#2b8a3e;--dx-c5:#5f6670;color:var(--dx-ink);font:13px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Liberation Sans",system-ui,sans-serif;font-variant-numeric:tabular-nums;max-width:1240px;margin:0 auto}
+.dx[data-theme="dark"]{--dx-paper:#121211;--dx-sheet:#171715;--dx-dot:#2c2b28;--dx-ink:#eceae4;--dx-ink2:#b3b1aa;--dx-ink3:#8f8d85;--dx-edge:#d8d6cf;--dx-plate:#1f1f1c;--dx-plate2:#262622;--dx-bevel:#3a3934;--dx-seam:#34332f;--dx-shade:rgba(0, 0, 0, 0.5);--dx-rail:#cfcdc6;--dx-bed:#262623;--dx-laneA:rgba(255, 255, 255, 0);--dx-laneB:rgba(255, 255, 255, 0.026);--dx-rule:#2e2d2a;--dx-bay:#2b2b27;--dx-accent:#ff8a4c;--dx-ok:#69db7c;--dx-warn:#ffa94d;--dx-bad:#ff6b6b;--dx-tag:#1f1f1c;--dx-c0:#eceae4;--dx-c1:#74c0fc;--dx-c2:#e599f7;--dx-c3:#66d9e8;--dx-c4:#8ce99a;--dx-c5:#a7aeb8;}
+@media (prefers-color-scheme:dark){.dx[data-theme="auto"]{--dx-paper:#121211;--dx-sheet:#171715;--dx-dot:#2c2b28;--dx-ink:#eceae4;--dx-ink2:#b3b1aa;--dx-ink3:#8f8d85;--dx-edge:#d8d6cf;--dx-plate:#1f1f1c;--dx-plate2:#262622;--dx-bevel:#3a3934;--dx-seam:#34332f;--dx-shade:rgba(0, 0, 0, 0.5);--dx-rail:#cfcdc6;--dx-bed:#262623;--dx-laneA:rgba(255, 255, 255, 0);--dx-laneB:rgba(255, 255, 255, 0.026);--dx-rule:#2e2d2a;--dx-bay:#2b2b27;--dx-accent:#ff8a4c;--dx-ok:#69db7c;--dx-warn:#ffa94d;--dx-bad:#ff6b6b;--dx-tag:#1f1f1c;--dx-c0:#eceae4;--dx-c1:#74c0fc;--dx-c2:#e599f7;--dx-c3:#66d9e8;--dx-c4:#8ce99a;--dx-c5:#a7aeb8;}}
 .dx *{box-sizing:border-box}
 .dx-card{position:relative;container-type:inline-size;background:var(--dx-paper);border:1px solid var(--dx-rule);border-radius:14px;box-shadow:0 1px 0 var(--dx-bevel) inset,0 22px 50px -32px var(--dx-shade);overflow:hidden}
 .dx-head,.dx-foot{display:flex;align-items:center;gap:12px;padding:10px 16px;font-size:12px;color:var(--dx-ink2);min-width:0}
@@ -70,6 +70,8 @@
 .dx-inspector .dx-kind{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--dx-ink3);margin-bottom:2px}
 .dx-inspector p{margin:8px 0;max-width:68ch}
 .dx-inspector dl{display:grid;grid-template-columns:auto auto;justify-content:start;gap:3px 18px;margin:10px 0}
+.dx-inspector dl>div{display:contents}
+.dx-inspector dl>div[hidden],.dx-fared[hidden]{display:none}
 .dx-inspector dt{color:var(--dx-ink3)}
 .dx-inspector dd{margin:0;color:var(--dx-ink)}
 .dx-inspector .dx-acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
@@ -108,6 +110,7 @@
 .dx-name{fill:var(--dx-ink);font-size:12.5px;font-weight:620}
 .dx-spec{fill:var(--dx-ink3);font-size:10px}
 .dx-alt-text{fill:var(--dx-ink2);font-size:10px;font-weight:600;opacity:0}
+.dx-route.dx-emit .dx-rail{stroke-dasharray:5 4}
 .dx-bay{fill:var(--dx-bay);stroke:var(--dx-seam);stroke-width:.8}
 .dx-bay.dx-bay-off{fill:none;stroke-dasharray:1.5 1.5;opacity:.6}
 .dx-bay.dx-bay-boot{fill:none;stroke:var(--dx-warn);stroke-dasharray:2 1.4;animation:dx-boot 1.2s ease-in-out infinite}
@@ -382,8 +385,16 @@ function downUnit(values, unit) {
   return { k, unit: u };
 }
 
-/** A short human description, e.g. "median 4, p95 9" or "about 6 on average". */
+// a time per kind of item, kinds first and the rest ("else") last
+const perKind = (spec, fn, sep) =>
+  Object.entries(spec)
+    .sort(([a], [b]) => (a === "else") - (b === "else"))
+    .map(([k, v]) => `${k === "else" ? "others" : k} ${fn(v)}`)
+    .join(sep);
+
+/** A short human description, e.g. "median 4, p95 9" or "about 6 on average"; per kind, "cpu median 5 ms; others 0.2 ms". */
 function describe(spec, unit = "") {
+  if (spec != null && typeof spec === "object") return perKind(spec, (v) => describe(v, unit), "; ");
   const p0 = parse(spec);
   const d = downUnit(p0.args, unit);
   const p = { ...p0, args: p0.args.map((v) => v * d.k) };
@@ -421,6 +432,7 @@ const one = (v, unit) => (v === 1 && unit && !LADDERS[unit] && /[^s]s$/.test(uni
 
 /** A label short enough for a plate: "4 min, p95 9", "2-6 min", "~4 min". */
 function short(spec, unit = "") {
+  if (spec != null && typeof spec === "object") return perKind(spec, (v) => short(v, unit), ", ");
   const p = parse(spec);
   const d = downUnit(p.args, unit);
   unit = d.unit;
@@ -488,8 +500,9 @@ function formatDuration(v, unit = "") {
   return `${whole} ${name} ${rest} ${lower}`;
 }
 
-/** The same distribution stretched by k (k = 2: everything takes twice as long). */
+/** The same distribution stretched by k (k = 2: everything takes twice as long); a time per kind stretches each. */
 function scaleSpec(spec, k) {
+  if (spec != null && typeof spec === "object") return Object.fromEntries(Object.entries(spec).map(([c, v]) => [c, scaleSpec(v, k)]));
   const p = parse(spec);
   const a = p.args.map((v) => Math.round(v * k * 1e6) / 1e6);
   if (p.kind === "const") return a[0];
@@ -689,13 +702,17 @@ __dx["model"]=(()=>{// The process model: what a figure says its process IS. Eve
 //            subprocess that IS its work (open it to see it)
 //   choice   exclusive gateway (BPMN XOR): exactly one route out, picked by
 //            probability `p` or by `when` ("ok", "fail", "timeout", "rejected",
-//            "class:<name>", "else"), with `max` to cap how many times one item
-//            takes a route (a retry loop)
+//            "class:<name>", "late:<time>", "else"), with `max` to cap how many
+//            times one item takes a route (a retry loop)
 //
 // A chance (`p` on a route, `fail` on a station) can differ by kind of item:
 // { bots: 0.6, people: 0.002 }, with `else` for the kinds it does not name.
 // The reader can turn a station or a choice off (`switch`) and set a part's
 // `dials` (options that change its numbers from the moment they are chosen).
+// A start can be closed, the way k6 runs: `vus` stages ramp a number of virtual
+// users, each starting an item, pausing (`think`) when it ends, then the next.
+// A station's `work` can differ by kind of item, and a route out of a station
+// can `emit` a new item of another kind as each item leaves (a metric sample).
 //   split    parallel gateway (BPMN AND fork): one child item down every route;
 //            with `fanout: true` the copies go on alone to their own ends (a
 //            message to every subscriber) and no join follows
@@ -729,7 +746,7 @@ const SCALE = { target: 0.6, every: (horizon) => horizon / 40, boot: (every) => 
 const SETTABLE = {
   station: ["servers", "work", "fail", "patience", "capacity", "bypass", "scale"],
   choice: ["p", "take"],
-  start: ["every", "classes", "paused"],
+  start: ["every", "classes", "paused", "vus", "think"],
   timer: ["wait"],
 };
 
@@ -739,8 +756,11 @@ function kindsOf(model) {
   const add = (c) => !out.includes(c) && out.push(c);
   for (const p of model.parts) {
     if (p.kind === "start") for (const c of Object.keys(p.classes || {})) add(c);
-    for (const d of p.dials || []) for (const o of d.options || []) for (const c of Object.keys(o.set?.classes || {})) add(c);
+    for (const d of p.dials || [])
+      for (const o of d.options || []) for (const s of [o.set, ...(o.changes || []).map((c) => c.set)]) for (const c of Object.keys(s?.classes || {})) add(c);
   }
+  // the kinds that stations emit come after the ones the starts make
+  for (const r of model.routes || []) if (r.emit) add(r.emit);
   return out;
 }
 
@@ -810,6 +830,9 @@ function restoreOf(m, path, fields) {
 }
 
 const ID = /^[a-z0-9][a-z0-9_.-]*$/i;
+// a work time can be one duration, or one per kind of item ({ cpu: "logn 5 6", else: 0.2 })
+const byKind = (v) => v != null && typeof v === "object" && !Array.isArray(v);
+const durationError = (v) => (byKind(v) ? Object.values(v).map(checkDuration).find(Boolean) || (Object.keys(v).length ? null : "give at least one kind") : checkDuration(v));
 
 /** Fill defaults and build the indexes the simulator and layout use. Pure. */
 function normalize(def, path = "") {
@@ -907,6 +930,12 @@ function validate(def, opts = {}) {
       }
       if (r.p != null && !chanceOk(r.p)) errors.push(at(`route ${r.id} has p = ${JSON.stringify(r.p)}; a probability is between 0 and 1 (or one for each kind of item: { bots: 0.6, people: 0.002 })`));
       if (r.bypass && m.byId.get(r.from)?.kind !== "choice") errors.push(at(`route ${r.id} is a bypass, but only a route out of a choice can be (the way it sends everything when it is off)`));
+      if (r.emit != null) {
+        if (typeof r.emit !== "string" || !ID.test(r.emit)) errors.push(at(`route ${r.id} emits "${r.emit}": name the kind of item it sends, in letters and digits`));
+        if (!["station", "choice"].includes(m.byId.get(r.from)?.kind)) errors.push(at(`route ${r.id} emits, but only a station or a choice can send a new item as each one leaves it`));
+        if (inner) errors.push(at(`route ${r.id} emits inside a step's own process; emit on the level above, where the new item can reach an end of its own`));
+        if (r.when != null || r.p != null || r.max != null) errors.push(at(`route ${r.id} emits, so it takes no when, p or max: every item that leaves sends one`));
+      }
       if (r.max != null && !(Number.isInteger(r.max) && r.max >= 1)) errors.push(at(`route ${r.id} has max = ${r.max}; use a whole number from 1`));
     }
     if (errors.length) return;
@@ -926,12 +955,21 @@ function validate(def, opts = {}) {
           if (nIn) errors.push(at(`${name} has routes coming in; a start only sends`));
           if (nOut !== 1) errors.push(at(`${name} needs exactly one route out (it has ${nOut})`));
           if (!inner) {
-            if (p.every == null) errors.push(at(`${name} needs every: how often work arrives`));
+            if (p.vus != null) {
+              // closed: virtual users in stages, each pausing between its items
+              if (p.every != null) errors.push(at(`${name} has both every and vus; work arrives at a rate (every) or from virtual users (vus), not both`));
+              if (!Array.isArray(p.vus) || !p.vus.length || !p.vus.every((s) => Array.isArray(s) && s.length === 2 && s[0] >= 0 && Number.isInteger(s[1]) && s[1] >= 0))
+                errors.push(at(`${name} vus are stages, [[duration, virtual users], ...]: [[30, 20], [60, 20], [20, 0]] is up to 20 in 30, 20 for 60, down to none in 20`));
+              if (p.think != null) {
+                const e = checkDuration(p.think);
+                if (e) errors.push(at(`${name} think: ${e}`));
+              }
+            } else if (p.every == null) errors.push(at(`${name} needs every (how often work arrives) or vus (virtual users in stages)`));
             else {
               const e = checkDuration(p.every);
               if (e) errors.push(at(`${name} every: ${e}`));
             }
-          } else if (p.every != null) errors.push(at(`${name} is a subprocess entry; it takes the item from its station, so drop every`));
+          } else if (p.every != null || p.vus != null) errors.push(at(`${name} is a subprocess entry; it takes the item from its station, so drop every and vus`));
           if (p.classes) {
             const sum = Object.values(p.classes).reduce((s, v) => s + v, 0);
             if (!(sum > 0)) errors.push(at(`${name} classes need positive weights`));
@@ -941,14 +979,16 @@ function validate(def, opts = {}) {
           if (nOut) errors.push(at(`${name} has routes going out; an end only receives`));
           if (!nIn) errors.push(at(`${name} receives nothing`));
           break;
-        case "station":
+        case "station": {
+          // an emitting route sends a new item as each one leaves; the item itself takes the others
+          const own = m.outs.get(p.id).filter((r) => !r.emit);
           if (!nIn) errors.push(at(`${name} receives nothing`));
-          if (!nOut) errors.push(at(`${name} needs a route out`));
-          if (nOut > 1 && m.outs.get(p.id).some((r) => !r.when)) errors.push(at(`${name} has ${nOut} routes out; put a choice after it, or give every route a when`));
+          if (!own.length) errors.push(at(`${name} needs a route out${nOut ? " that does not emit" : ""}`));
+          if (own.length > 1 && own.some((r) => !r.when)) errors.push(at(`${name} has ${own.length} routes out; put a choice after it, or give every route a when`));
           if (!p.inside) {
             if (p.work == null) errors.push(at(`${name} needs work: how long one item takes`));
             else {
-              const e = checkDuration(p.work);
+              const e = durationError(p.work);
               if (e) errors.push(at(`${name} work: ${e}`));
             }
           } else if (p.work != null) warnings.push(at(`${name} has both work and inside; its time comes from inside, work is ignored`));
@@ -978,8 +1018,10 @@ function validate(def, opts = {}) {
             if (!st || st.kind !== "store") errors.push(at(`${name} uses "${s}", which is not a store`));
           }
           break;
+        }
         case "choice": {
-          const rs = m.outs.get(p.id);
+          // an emitting route sends a new item as each one passes; the item itself takes one of the others
+          const rs = m.outs.get(p.id).filter((r) => !r.emit);
           if (!nIn) errors.push(at(`${name} receives nothing`));
           if (rs.length < 2) errors.push(at(`${name} needs at least two routes out`));
           const byP = rs.filter((r) => r.p != null);
@@ -999,11 +1041,11 @@ function validate(def, opts = {}) {
             const elses = rs.filter((r) => r.when === "else" || r.when == null);
             if (elses.length > 1) errors.push(at(`${name} has more than one else route`));
             for (const r of rs) {
-              if (r.when && r.when !== "else" && !OUTCOMES.includes(r.when) && !/^class:.+/.test(r.when)) errors.push(at(`route ${r.id}: when "${r.when}" is not an outcome (${OUTCOMES.join(", ")}), class:<name> or else`));
+              if (r.when && r.when !== "else" && !OUTCOMES.includes(r.when) && !/^class:.+/.test(r.when) && !/^late:\d+(\.\d+)?$/.test(r.when)) errors.push(at(`route ${r.id}: when "${r.when}" is not an outcome (${OUTCOMES.join(", ")}), class:<name>, late:<time> or else`));
             }
             const covered = new Set(rs.map((r) => r.when));
             const capped = rs.filter((r) => r.max != null);
-            if (!covered.has("else") && !rs.some((r) => r.when == null) && !covered.has("ok") && !rs.some((r) => /^class:/.test(r.when || ""))) warnings.push(at(`${name} has no route for "ok" and no else; an item that succeeded has nowhere to go`));
+            if (!covered.has("else") && !rs.some((r) => r.when == null) && !covered.has("ok") && !rs.some((r) => /^(class|late):/.test(r.when || ""))) warnings.push(at(`${name} has no route for "ok" and no else; an item that succeeded has nowhere to go`));
             for (const r of capped) {
               const sameWhen = rs.filter((x) => x.when === r.when && x !== r);
               if (!sameWhen.length && !covered.has("else")) errors.push(at(`route ${r.id} has max ${r.max}; add a second route with when "${r.when}" (or an else) for when the cap is used up`));
@@ -1044,6 +1086,7 @@ function validate(def, opts = {}) {
         if (!d.label) errors.push(at(`${name}: a dial needs a label`));
         const v = d.value ?? 0;
         if (!(Number.isInteger(v) && v >= 0 && v < d.options.length)) errors.push(at(`${dial} starts on option ${v}, which it does not have`));
+        if (d.restart != null && typeof d.restart !== "boolean") errors.push(at(`${dial}: restart is true (choosing an option runs the process again from the start) or false`));
         for (const o of d.options) {
           if (!o.label) errors.push(at(`${dial}: every option needs a label`));
           for (const c of [{ part: p.id, set: o.set }, ...(o.changes || [])]) {
@@ -1056,13 +1099,14 @@ function validate(def, opts = {}) {
             const can = SETTABLE[q.kind] || [];
             for (const [k, val] of Object.entries(c.set)) {
               if (!can.includes(k)) errors.push(at(`${dial} sets ${k} on ${q.kind} "${q.id}", which can only have ${can.join(", ") || "nothing"} changed`));
-              else if (["work", "every", "patience", "wait"].includes(k) && val != null) {
-                const e = checkDuration(val);
+              else if (["work", "every", "patience", "wait", "think"].includes(k) && val != null) {
+                const e = k === "work" ? durationError(val) : checkDuration(val);
                 if (e) errors.push(at(`${dial}, option "${o.label}", ${k}: ${e}`));
               } else if (k === "fail" && !chanceOk(val)) errors.push(at(`${dial}, option "${o.label}": fail is a probability, or one for each kind of item`));
               else if (k === "take" && val != null && !m.outs.get(q.id).some((r) => r.id === val)) errors.push(at(`${dial}, option "${o.label}": "${q.id}" has no route "${val}" to take`));
               else if (k === "servers" && !(val === Infinity || (Number.isInteger(val) && val >= 0))) errors.push(at(`${dial}, option "${o.label}": servers is a whole number`));
               else if (k === "scale" && val !== false && (typeof val !== "object" || !q.scale)) errors.push(at(`${dial}, option "${o.label}": scale is false (no autoscaling) or changes to the scale "${q.id}" has`));
+              else if (k === "vus" && (!q.vus || !Array.isArray(val))) errors.push(at(`${dial}, option "${o.label}": vus are stages for a start that has virtual users`));
             }
           }
         }
@@ -1156,14 +1200,34 @@ __dx["sim"]=(()=>{// The simulator: a discrete-event model of the process. It is
 // The log is the contract with the renderer. Each record is
 //   { t, k, tok, at, ... }  with k one of
 //   born  move  queue  start  finish  renege  reject  decide  split  joinwait
-//   join  wait  enter  exit  done  change  pass  scale
+//   join  wait  enter  exit  done  change  pass  scale  vus
 // `at` is a part path ("deploy", "test/unit"); `route` is "<level path>::<route id>".
 // A station with no limit records no `queue`: its items start the moment they arrive.
 // `pass` is an item going straight through a station that is switched off;
-// `scale` is a station that scales: { servers, booting } from that moment.
+// `scale` is a station that scales: { servers, booting } from that moment;
+// `vus` is a closed start's number of virtual users from that moment ({ n }).
+// A `born` record with `from` is an item a station emitted as another left it.
 
 const { normalize, validate, OUTCOMES, SCALE, chanceOf, initialChanges } = __dx["model"];
 const { sampler, meanOf } = __dx["dist"];
+
+/** A station's work: one duration for every item, or one per kind of item ({ cpu: "logn 5 6", else: 0.2 }). */
+function workSampler(spec) {
+  if (spec != null && typeof spec === "object") {
+    const by = Object.fromEntries(Object.entries(spec).map(([k, v]) => [k, sampler(v)]));
+    return (cls, rng) => (by[cls] ?? by.else ?? (() => 0))(rng);
+  }
+  const s = sampler(spec);
+  return (cls, rng) => s(rng);
+}
+/** The mean time of a work spec, over its kinds when it has several. */
+function meanWork(spec) {
+  if (spec != null && typeof spec === "object") {
+    const v = Object.values(spec).map(meanOf);
+    return v.reduce((a, b) => a + b, 0) / Math.max(1, v.length);
+  }
+  return meanOf(spec);
+}
 const { streams } = __dx["rng"];
 
 class Heap {
@@ -1262,7 +1326,7 @@ function createSim(def, opts = {}) {
   for (const [path, { part }] of parts) {
     params.set(path, {
       servers: part.servers,
-      work: part.work != null ? sampler(part.work) : null,
+      work: part.work != null ? workSampler(part.work) : null,
       fail: part.fail ?? 0,
       patience: part.patience != null ? sampler(part.patience) : null,
       every: part.every != null ? sampler(part.every) : null,
@@ -1275,6 +1339,8 @@ function createSim(def, opts = {}) {
       take: null, // a choice switched off: everything takes this route
       paused: false, // a start that sends nothing
       scale: null, // a station's autoscaling policy, while it has one
+      vus: part.vus ?? null, // a closed start's stages: [[duration, virtual users], ...]
+      think: part.think != null ? sampler(part.think) : () => 0, // a virtual user's pause between iterations
     });
   }
   const routeParams = new Map();
@@ -1350,8 +1416,10 @@ function createSim(def, opts = {}) {
   const startPaths = [...parts].filter(([, v]) => v.part.kind === "start" && !v.level.path).map(([p]) => p);
   for (const path of startPaths) {
     arrivalVersion.set(path, 0);
-    // the first item arrives at `first` (default 0): a figure opens with work already moving
     const { part } = parts.get(path);
+    // a closed start (virtual users) is set going once the run's starting point is known
+    if (part.vus) continue;
+    // the first item arrives at `first` (default 0): a figure opens with work already moving
     schedule(Number(part.first ?? 0), "arrival", { at: path, v: 0 });
   }
 
@@ -1380,15 +1448,30 @@ function createSim(def, opts = {}) {
 
   function leaveVia(tok, path, t) {
     const { part, level } = parts.get(path);
-    const outs = level.outs.get(part.id);
-    if (outs.length === 1) return depart(tok, level, outs[0], t);
+    const all = level.outs.get(part.id);
+    const outs = all.filter((r) => !r.emit);
+    if (outs.length === 1) depart(tok, level, outs[0], t);
     // a station with several routes out, each with a when: an implicit choice
-    return choose(tok, path, t, true);
+    else choose(tok, path, t, true);
+    emitAll(tok, path, t);
+  }
+  /** What a station or a choice sends as each item leaves it: a new item of another kind down each emitting route. */
+  function emitAll(tok, path, t) {
+    const { part, level } = parts.get(path);
+    for (const r of level.outs.get(part.id)) if (r.emit) emit(tok, path, level, r, t);
+  }
+  function emit(from, path, level, route, t) {
+    const tok = makeToken(route.emit, t, t);
+    touchWip(t);
+    st.inSystem += 1;
+    st.born += 1;
+    record({ t, k: "born", tok: tok.id, at: path, cls: tok.cls, from: from.id });
+    depart(tok, level, route, t);
   }
 
   function choose(tok, path, t, implicit = false) {
     const { part, level } = parts.get(path);
-    const outs = level.outs.get(part.id);
+    const outs = level.outs.get(part.id).filter((r) => !r.emit);
     let route = null;
     // a choice switched off sends everything one way
     const take = params.get(path)?.take;
@@ -1407,7 +1490,8 @@ function createSim(def, opts = {}) {
     } else if (!route) {
       for (const r of outs) {
         const w = r.when;
-        const matches = w == null || w === "else" || w === tok.outcome || (w.startsWith("class:") && w.slice(6) === tok.cls);
+        // late:<time> is an item that has taken that long or more since it started (a deadline it missed)
+        const matches = w == null || w === "else" || w === tok.outcome || (w.startsWith("class:") && w.slice(6) === tok.cls) || (w.startsWith("late:") && t - tok.born >= Number(w.slice(5)));
         if (!matches) continue;
         const used = tok.attempts.get(`${level.path}::${r.id}`) || 0;
         if (r.max != null && used >= r.max) continue;
@@ -1450,7 +1534,7 @@ function createSim(def, opts = {}) {
         record({ t, k: "start", tok: tokId, at: path, server: slot });
         enterInside(tok, part, t, slot);
       } else {
-        const d = prm.work(stream(`work:${path}`));
+        const d = prm.work(tok.cls, stream(`work:${path}`));
         s.works.push(d);
         record({ t, k: "start", tok: tokId, at: path, server: slot, t1: t + d });
         schedule(t + d, "finish", { tok: tokId, at: path, slot });
@@ -1518,7 +1602,8 @@ function createSim(def, opts = {}) {
         return;
       }
       case "choice":
-        return choose(tok, path, t);
+        choose(tok, path, t);
+        return emitAll(tok, path, t);
       case "split": {
         const { level } = parts.get(path);
         const outs = level.outs.get(part.id);
@@ -1603,6 +1688,7 @@ function createSim(def, opts = {}) {
         tok.done = t;
         tok.outcome = outcome;
         record({ t, k: "done", tok: tok.id, at: path, outcome });
+        if (tok.vuOf) iterationDone(tok.vuOf, t);
         return;
       }
       default:
@@ -1637,7 +1723,7 @@ function createSim(def, opts = {}) {
         prm.servers = set.servers;
       }
       if (set.work != null) {
-        prm.work = sampler(set.work);
+        prm.work = workSampler(set.work);
         prm.workSpec = set.work;
       }
       if (set.fail != null) prm.fail = set.fail;
@@ -1659,6 +1745,11 @@ function createSim(def, opts = {}) {
       if ("scale" in set) setScale(c.part, set.scale, t);
       if (set.every != null) prm.every = sampler(set.every);
       if ("paused" in set) prm.paused = Boolean(set.paused);
+      if (set.think != null) prm.think = sampler(set.think);
+      if (set.vus != null) {
+        prm.vus = set.vus;
+        if (!initial && crowds.has(c.part)) rampFrom(c.part, t);
+      }
       if (!initial && (set.every != null || "paused" in set)) restartArrivals(c.part, t);
       record({ t, k: "change", at: c.part, set: c.set });
       if (scaling.has(c.part) && set.servers != null) noteScale(c.part, t);
@@ -1729,7 +1820,7 @@ function createSim(def, opts = {}) {
     S.t0 = t;
     const pol = prm.scale;
     if (pol && span > 0 && prm.workSpec != null) {
-      const need = (arrived * meanOf(prm.workSpec)) / span;
+      const need = (arrived * meanWork(prm.workSpec)) / span;
       const want = Math.min(pol.max, Math.max(pol.min, Math.ceil(need / pol.target - 1e-9)));
       const have = prm.servers + S.booting;
       if (want > have) {
@@ -1747,9 +1838,77 @@ function createSim(def, opts = {}) {
     if (t + every <= horizon) schedule(t + every, "scale", { at: path });
   }
 
+  // ---- closed starts: virtual users -------------------------------------------------
+  // A start with `vus` is a closed model, the way k6 runs: its stages ramp the
+  // number of virtual users ([[30, 20], [60, 20], [20, 0]] is up to 20 in 30 s,
+  // 20 for a minute, down to none in 20 s). A virtual user starts an iteration
+  // (one item) at once, and when that item ends it pauses (`think`) and starts the
+  // next; when the stages want fewer users than are running, the next one to end
+  // its iteration stops. Nothing new starts after the horizon.
+  const crowds = new Map();
+  const targetAt = (stages, t) => {
+    let at = 0;
+    let n = 0;
+    for (const [d, to] of stages) {
+      if (t <= at + d) return d > 0 ? n + ((to - n) * (t - at)) / d : to;
+      at += d;
+      n = to;
+    }
+    return n;
+  };
+  const wanted = (path, t) => Math.floor(targetAt(params.get(path).vus || [], t) + 1e-9);
+  function noteVus(path, t) {
+    record({ t, k: "vus", at: path, n: crowds.get(path).active });
+  }
+  function beginIteration(path, t) {
+    const { part, level } = parts.get(path);
+    const tok = makeToken(pickClass(part, path), t, t);
+    tok.vuOf = path;
+    touchWip(t);
+    st.inSystem += 1;
+    st.born += 1;
+    record({ t, k: "born", tok: tok.id, at: path, cls: tok.cls });
+    depart(tok, level, level.outs.get(part.id)[0], t);
+  }
+  // the moments the stages want one more user than now, from t on
+  function rampFrom(path, t) {
+    const C = crowds.get(path);
+    C.v += 1;
+    while (C.active < wanted(path, t) && t <= horizon) {
+      C.active += 1;
+      noteVus(path, t);
+      beginIteration(path, t);
+    }
+    let at = 0;
+    let n = 0;
+    for (const [d, to] of params.get(path).vus || []) {
+      if (to > n)
+        for (let k = Math.floor(n) + 1; k <= to; k++) {
+          const tk = at + (d * (k - n)) / (to - n);
+          if (tk > t && tk <= horizon) schedule(tk, "vu", { at: path, v: C.v });
+        }
+      at += d;
+      n = to;
+    }
+  }
+  function iterationDone(path, t) {
+    const C = crowds.get(path);
+    if (t > horizon || C.active > wanted(path, t)) {
+      C.active -= 1;
+      noteVus(path, t);
+      return;
+    }
+    schedule(t + params.get(path).think(stream(`think:${path}`)), "iterate", { at: path });
+  }
+
   // where the run starts from: the model's own switches and dials, then the changes at t <= 0
   for (const c of initialChanges(model)) applyChange(c, 0, true);
   for (const c of opts.changes || []) if (c.t <= 0) applyChange(c, 0, true);
+  for (const path of startPaths) {
+    if (!params.get(path).vus) continue;
+    crowds.set(path, { active: 0, v: 0 });
+    rampFrom(path, 0);
+  }
   const madeByStart = new Map();
   for (const c of opts.changes || []) if (c.t > 0) schedule(c.t, "change", { change: c });
 
@@ -1804,6 +1963,23 @@ function createSim(def, opts = {}) {
         return applyChange(e.change, e.t);
       case "scale":
         return look(e.at, e.t);
+      case "vu": {
+        // the stages want one more virtual user now
+        const C = crowds.get(e.at);
+        if (e.v !== C.v || C.active >= wanted(e.at, e.t)) return;
+        C.active += 1;
+        noteVus(e.at, e.t);
+        return beginIteration(e.at, e.t);
+      }
+      case "iterate": {
+        // after its pause: the stages may have come down in the meantime
+        const C = crowds.get(e.at);
+        if (e.t > horizon || C.active > wanted(e.at, e.t)) {
+          C.active -= 1;
+          return noteVus(e.at, e.t);
+        }
+        return beginIteration(e.at, e.t);
+      }
       case "ready": {
         const S = scaling.get(e.at);
         // a policy changed since this server was asked for: it never comes
@@ -1923,7 +2099,7 @@ function simulate(def, opts = {}) {
   return sim;
 }
 
-return {quantile,createSim,simulate};})();
+return {workSampler,meanWork,quantile,createSim,simulate};})();
 __dx["replay"]=(()=>{// Replay: reads the simulator's log in time order and keeps the state a figure
 // draws at any moment: where every item is, who waits in which queue, which bay
 // is busy and how far along, what each gateway decided last, what each counter
@@ -1954,6 +2130,10 @@ class Replay {
     this.passes = new Map();
     this.born = 0;
     this.bornAt = new Map();
+    // the kinds of item born so far in this run
+    this.kindsBorn = new Set();
+    // a closed start's virtual users right now
+    this.vus = new Map();
     this.done = 0;
     this.leads = [];
     this.leadSum = 0;
@@ -1965,7 +2145,11 @@ class Replay {
     this.recentFrom = 0;
   }
 
-  /** The items that left in the last `window` before t: [{ t, cls, outcome, at }]. */
+  /**
+   * The items that left in the last `window` before t: [{ t, cls, outcome, at, lead, root }].
+   * Copies of one item (a fan-out's, or an emit's of the item's own kind) share its root,
+   * so a count of items can count them once.
+   */
   recent(window, t = this.t) {
     const f = this.finished;
     while (this.recentFrom < f.length && f[this.recentFrom].t <= t - window) this.recentFrom += 1;
@@ -2009,7 +2193,7 @@ class Replay {
     let tok = this.tokens.get(id);
     if (!tok) {
       const parent = from ? this.tokens.get(from) : null;
-      tok = { id, cls: parent?.cls ?? "item", born: parent?.born ?? this.t, mode: "new", at: null, outcome: "ok", stack: parent ? parent.stack.slice() : [], parent: from || null, visits: 0 };
+      tok = { id, cls: parent?.cls ?? "item", born: parent?.born ?? this.t, mode: "new", at: null, outcome: "ok", stack: parent ? parent.stack.slice() : [], parent: from || null, root: parent ? (parent.root ?? parent.id) : id, visits: 0 };
       this.tokens.set(id, tok);
       this.alive.add(id);
     }
@@ -2023,10 +2207,16 @@ class Replay {
         const t = this.token(r.tok);
         t.cls = r.cls;
         t.born = r.t;
+        // a copy an emit made of an item of its own kind belongs to that item's family
+        if (r.from) {
+          const src = this.tokens.get(r.from);
+          if (src && src.cls === r.cls) t.root = src.root ?? src.id;
+        }
         t.mode = "at";
         t.at = r.at;
         this.born += 1;
         this.bornAt.set(r.at, (this.bornAt.get(r.at) || 0) + 1);
+        this.kindsBorn.add(r.cls);
         break;
       }
       case "move": {
@@ -2197,7 +2387,7 @@ class Replay {
         tok.doneAt = r.t;
         this.alive.delete(tok.id);
         this.ends.set(r.at, (this.ends.get(r.at) || 0) + 1);
-        this.finished.push({ t: r.t, cls: tok.cls, outcome: r.outcome, at: r.at, lead: r.t - tok.born });
+        this.finished.push({ t: r.t, cls: tok.cls, outcome: r.outcome, at: r.at, lead: r.t - tok.born, root: tok.root ?? tok.id });
         this.done += 1;
         this.outcomes[r.outcome] = (this.outcomes[r.outcome] || 0) + 1;
         const lead = r.t - tok.born;
@@ -2221,6 +2411,11 @@ class Replay {
         tok.mode = "at";
         tok.at = r.at;
         this.events.push({ k: "pass", tok: tok.id, at: r.at });
+        break;
+      }
+      case "vus": {
+        this.vus.set(r.at, r.n);
+        this.events.push({ k: "vus", at: r.at, n: r.n });
         break;
       }
       case "scale": {
@@ -2398,7 +2593,7 @@ __dx["live"]=(()=>{// The live figure. The simulator runs a few seconds ahead of
 // Browser only. Build pages with page.mjs, which inlines this module.
 
 const { createSim } = __dx["sim"];
-const { normalize, chanceOf, switchChanges, dialChanges } = __dx["model"];
+const { normalize, chanceOf, switchChanges, dialChanges, kindsOf } = __dx["model"];
 const { Replay, placeOf, levelOf } = __dx["replay"];
 const { formatDuration, short, describe, scaleSpec, compact, rateWords, meanOf } = __dx["dist"];
 const { along } = __dx["geom"];
@@ -2426,7 +2621,8 @@ function mount(root, def, options = {}) {
   const metas = options.metas || {};
   const unit = model.unit;
   const fmt = (v) => formatDuration(v, unit);
-  const reduced = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // the reader's own setting, or the page's (a site that keeps its own preference sets data-reduced-motion)
+  const reduced = (typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches) || (typeof document !== "undefined" && document.documentElement.hasAttribute("data-reduced-motion"));
 
   // ---- the model, indexed --------------------------------------------------
   const levels = new Map();
@@ -2440,9 +2636,9 @@ function mount(root, def, options = {}) {
   })(model);
   const stationServers = new Map([...parts].filter(([, p]) => p.kind === "station").map(([path, p]) => [path, p.servers]));
   const endPaths = [...parts].filter(([, p]) => p.kind === "end").map(([path]) => path);
-  const classNames = [];
-  for (const p of model.parts) if (p.kind === "start") for (const c of Object.keys(p.classes || { item: 1 })) if (!classNames.includes(c)) classNames.push(c);
-  const classIndex = (c) => Math.max(0, classNames.indexOf(c)) % 5;
+  // every kind of item: the starts' and the dials', then the ones stations emit
+  const classNames = kindsOf(model);
+  const classIndex = (c) => Math.max(0, classNames.indexOf(c)) % 6;
   const noun = model.raw.item || "item";
   // one dot can stand for many real items (a hundred requests): counts the reader sees are real ones
   const perDot = model.per || 1;
@@ -2451,6 +2647,22 @@ function mount(root, def, options = {}) {
   // the window the recent numbers are over (who got served lately, not since the start)
   const watch = options.watch || null;
   const recentSpan = watch?.window ?? model.horizon / 20;
+  const watched = watch ? new Set(watch.kinds || (watch.class ? [watch.class] : classNames)) : null;
+  const watchQ = watch?.quantile ?? 0.5;
+  // when the figure watches some kinds (requests, not the samples they send), its counts and times are theirs
+  const narrowed = watched && classNames.some((c) => !watched.has(c));
+  let tallyAt = -1;
+  let tally = null;
+  function counts() {
+    if (!narrowed) return { done: R.done, alive: R.alive.size, q: (p) => R.quantile(p) };
+    if (tally && tallyAt === R.i) return tally;
+    const leads = R.finished.filter((f) => watched.has(f.cls)).map((f) => f.lead).sort((a, b) => a - b);
+    let alive = 0;
+    for (const id of R.alive) if (watched.has(R.tokens.get(id)?.cls)) alive += 1;
+    tallyAt = R.i;
+    tally = { done: leads.length, alive, q: (p) => (leads.length ? leads[Math.min(leads.length - 1, Math.floor(leads.length * p))] : NaN) };
+    return tally;
+  }
 
   // ---- the DOM -----------------------------------------------------------------
   const $ = (sel, el = root) => el.querySelector(sel);
@@ -2674,6 +2886,12 @@ function mount(root, def, options = {}) {
     const c = controlOf.get(key);
     if (!c || settings.get(key) === index) return;
     settings.set(key, index);
+    if (c.dial.restart) {
+      // a setting that only makes sense from the start (a test plan): the run starts again with it
+      restart(false);
+      announce(`${c.part.label}: ${c.dial.label}, ${c.dial.options[index].label}. The run starts again.`);
+      return;
+    }
     inject(dialChanges(c.level, c.part, c.dial, index), `${c.part.label}: ${c.dial.label}, ${c.dial.options[index].label}.`);
   }
 
@@ -3116,7 +3334,7 @@ function mount(root, def, options = {}) {
         if (per.count) per.count.textContent = count(R.ends.get(path) || 0);
       } else if (p.kind === "start" && per.rate) {
         const now = startNow(path);
-        const words = now.paused ? "sends nothing" : rateWords(now.every, unit, perDot);
+        const words = p.vus ? `${now.users} virtual user${now.users === 1 ? "" : "s"}` : now.paused ? "sends nothing" : rateWords(now.every, unit, perDot);
         if (per.rate.textContent !== words) per.rate.textContent = words;
       } else if (p.kind === "choice" && per.needle) {
         const c = R.choices.get(path);
@@ -3129,9 +3347,10 @@ function mount(root, def, options = {}) {
     const slow = zoom > 1.5 ? ` · time ×1/${Math.round(zoom)}` : "";
     if (watch) {
       // the one number the figure is about, over the last few moments, then the usual
-      const r = R.recent(recentSpan, clock).filter((f) => f.cls === watch.class);
+      const r = R.recent(recentSpan, clock).filter((f) => watched.has(f.cls));
       const lead = r.map((f) => f.lead).sort((a, b) => a - b);
-      readout.textContent = `${fmt(clock)} in · ${watch.label} ${r.length ? pct(r.filter((f) => f.outcome === "ok").length / r.length) : "-"}${lead.length ? ` · median ${fmt(lead[Math.floor(lead.length / 2)])}` : ""} · ${count(R.alive.size)} in flight${slow}`;
+      const qWord = watchQ === 0.5 ? "median" : `p${Math.round(watchQ * 100)}`;
+      readout.textContent = `${fmt(clock)} in · ${watch.label} ${r.length ? pct(r.filter((f) => f.outcome === "ok").length / r.length) : "-"}${lead.length ? ` · ${qWord} ${fmt(lead[Math.min(lead.length - 1, Math.floor(lead.length * watchQ))])}` : ""} · ${count(counts().alive)} in flight${slow}`;
     } else readout.textContent = `${fmt(clock)} in · ${count(R.done)} done · ${count(R.alive.size)} in flight${R.done ? ` · median ${fmt(p50)}` : ""}${slow}`;
     refreshInspector();
     refreshPanel();
@@ -3243,26 +3462,67 @@ function mount(root, def, options = {}) {
     const p = parts.get(path);
     let every = p.every;
     let paused = false;
+    let vus = p.vus;
+    let think = p.think;
     for (const r of R.changes) {
       if (r.at !== path || !r.set) continue;
       if (r.set.every != null) every = r.set.every;
       if ("paused" in r.set) paused = Boolean(r.set.paused);
+      if (r.set.vus != null) vus = r.set.vus;
+      if (r.set.think != null) think = r.set.think;
     }
-    return { every, paused };
+    return { every, paused, vus, think, users: R.vus.get(path) ?? 0 };
+  }
+  /**
+   * A choice as it stands at the clock: the route a change set it to take (null: it decides
+   * itself), and its odds by route (null for a route decided by outcome).
+   */
+  function choiceNow(path) {
+    const p = parts.get(path);
+    const outs = levels.get(levelOf(path)).outs.get(p.id).filter((r) => !r.emit);
+    let take = null;
+    let set = null;
+    for (const r of R.changes) {
+      if (r.at !== path || !r.set) continue;
+      if ("take" in r.set) take = r.set.take ?? null;
+      if ("p" in r.set) set = r.set.p ?? null;
+    }
+    const total = set ? Object.values(set).reduce((a, b) => a + b, 0) : 1;
+    const odds = new Map(outs.map((r) => [r.id, r.p == null ? null : set ? (set[r.id] ?? 0) / total : r.p]));
+    // a way out at 100% leaves nothing to chance
+    const sure = outs.find((r) => typeof odds.get(r.id) === "number" && odds.get(r.id) >= 1 - 1e-9) || null;
+    return { outs, take: take != null ? outs.find((r) => r.id === take) || null : null, odds, sure };
+  }
+  /** A closed start's stages in words: "up to 20 in 30 s, 20 for 1 min, down to none in 20 s". */
+  function stagesWords(stages) {
+    let n = 0;
+    return (stages || [])
+      .map(([d, to]) => {
+        const w = to === n ? `${to} for ${fmt(d)}` : to > n ? `up to ${to} in ${fmt(d)}` : `down to ${to || "none"} in ${fmt(d)}`;
+        n = to;
+        return w;
+      })
+      .join(", ");
   }
 
   const bornAt = (path) => R.bornAt.get(path) || 0;
 
-  /** How one kind of item fared lately: where it ended, the commonest first. */
+  /**
+   * How one kind of item fared lately: where it ended, the commonest first. An item and its
+   * copies count once at each end they reached: a sample shown on two dashboards is 100% at
+   * each, not half at each.
+   */
   function fared(c) {
     const r = R.recent(recentSpan, clock).filter((f) => f.cls === c);
     if (!r.length) return "-";
+    const items = new Set(r.map((f) => f.root));
     const by = new Map();
-    for (const f of r) by.set(f.at, (by.get(f.at) || 0) + 1);
+    for (const f of r) by.set(f.at, (by.get(f.at) || new Set()).add(f.root));
     return [...by]
+      .map(([at, s]) => [at, s.size])
       .sort((a, b) => b[1] - a[1])
       .slice(0, 3)
-      .map(([at, n]) => `${pctFine(n / r.length)} ${parts.get(at)?.label ?? at}`)
+      .map(([at, n]) => `${pctFine(n / items.size)} ${parts.get(at)?.label ?? at}`)
       .join(", ");
   }
 
@@ -3325,7 +3585,8 @@ function mount(root, def, options = {}) {
       const pol = scaleNow(panelFor);
       h += `<div class="dx-panel-live"><span class="dx-cells" data-cells aria-hidden="true">${"<i></i>".repeat(p.scale.max)}</span>${live(() => serversWords(panelFor))}</div>`;
       h += pol ? `<p class="dx-panel-note">${esc(`Every ${fmt(meanOf(pol.every ?? model.horizon / 40))} it looks at the work that came in, and starts servers to keep them about ${pct(pol.target ?? 0.6)} busy, up to ${pol.max}; a new one takes ${pol.boot != null ? describe(pol.boot, unit) : "a while"} to start.`)}</p>` : `<p class="dx-panel-note">Autoscaling is off: the servers running stay, and no more start.</p>`;
-    } else if (p.kind === "start") h += `<div class="dx-panel-live">${live(() => (startNow(panelFor).paused ? "It sends nothing now." : `Now: ${rateWords(startNow(panelFor).every, unit, perDot)}`))}</div>`;
+    } else if (p.kind === "start" && p.vus) h += `<div class="dx-panel-live">${live(() => `Now: ${startNow(panelFor).users} virtual users`)}</div><p class="dx-panel-note">${esc(`Stages: ${stagesWords(startNow(panelFor).vus)}.`)}</p>`;
+    else if (p.kind === "start") h += `<div class="dx-panel-live">${live(() => (startNow(panelFor).paused ? "It sends nothing now." : `Now: ${rateWords(startNow(panelFor).every, unit, perDot)}`))}</div>`;
     else if (p.kind === "station") h += `<div class="dx-panel-live">${live(() => `busy ${pct(R.utilization(panelFor, clock))}, ${count(R.st.get(panelFor)?.queue.length ?? 0)} waiting`)}</div>`;
     h += controlsHtml(controls.filter((c) => c.path === panelFor), false);
     panel.innerHTML = h;
@@ -3465,6 +3726,12 @@ function mount(root, def, options = {}) {
       acts.push(["Twice as fast", () => inject({ part: p.path, set: { work: scaleSpec(base.work, 0.5) } }, `${p.label} now takes half as long.`)]);
       if (p.fail) acts.push(["Never fails", () => inject({ part: p.path, set: { fail: 0 } }, `${p.label} no longer fails.`)]);
     }
+    if (p.kind === "start" && p.vus && !levelOf(p.path)) {
+      const now = startNow(p.path).vus;
+      const scaled = (k) => now.map(([d, n]) => [d, Math.max(0, Math.round(n * k))]);
+      acts.push(["Twice the virtual users", () => inject({ part: p.path, set: { vus: scaled(2) } }, "Twice the virtual users from now on.")]);
+      acts.push(["Half the virtual users", () => inject({ part: p.path, set: { vus: scaled(0.5) } }, "Half the virtual users from now on.")]);
+    }
     // a start that sends nothing has no rate to change: its dial lets it go first
     if (p.kind === "start" && p.every != null && !levelOf(p.path) && !startNow(p.path).paused) {
       // from the rate it has now (a dial or an earlier what-if may have set it)
@@ -3487,11 +3754,11 @@ function mount(root, def, options = {}) {
     if (p.kind === "choice") {
       // decisions by chance: shift the odds of the rarer way
       const lv = levels.get(levelOf(p.path));
-      const outs = lv.outs.get(p.id);
-      if (outs.every((r) => typeof r.p === "number")) {
-        const last = [...changes].reverse().find((c) => c.part === p.path && c.set?.p);
-        const total = last ? Object.values(last.set.p).reduce((a, b) => a + b, 0) : 1;
-        const cur = new Map(outs.map((r) => [r.id, last ? (last.set.p[r.id] ?? 0) / total : r.p]));
+      const now = choiceNow(p.path);
+      const outs = now.outs;
+      // not where a setting picks the way, or one way is certain: its odds are not chance
+      if (!now.take && !now.sure && outs.every((r) => typeof r.p === "number")) {
+        const cur = now.odds;
         const rare = outs.slice().sort((a, b) => cur.get(a.id) - cur.get(b.id))[0];
         const name = rare.label || (rare.id.includes(">") ? lv.byId.get(rare.to).label : rare.id);
         const shift = (k) => {
@@ -3535,6 +3802,13 @@ function mount(root, def, options = {}) {
       acts.push([followInside ? "Stay on this level" : "Go inside with it", () => ((followInside = !followInside), renderInspector())]);
     } else if (selected && parts.get(selected) && !(selected === view && view)) {
       const p = parts.get(selected);
+      const emits = () => {
+        const lv = levels.get(levelOf(selected));
+        return (lv.outs.get(p.id) || [])
+          .filter((r) => r.emit)
+          .map((r) => `<dt>${esc(`new ${r.emit} → ${lv.byId.get(r.to).label}`)}</dt>${val(() => `${count(R.passes.get(`${lv.path}::${r.id}`) || 0)} sent`)}`)
+          .join("");
+      };
       html += `<div class="dx-kind">${esc(kindName[p.kind] || p.kind)}</div><h3>${esc(p.label)}</h3>`;
       if (p.about) html += `<p>${esc(p.about)}</p>`;
       if (p.kind === "station") {
@@ -3559,26 +3833,33 @@ function mount(root, def, options = {}) {
             const n = s.finished + s.timedOut + s.rejected;
             return n ? pct((s.failed + s.timedOut + s.rejected) / n) : "-";
           })}`;
-        html += `</dl>`;
+        html += `${emits()}</dl>`;
       } else if (p.kind === "choice") {
         const lv = levels.get(levelOf(selected));
-        const outs = lv.outs.get(p.id);
+        const now = choiceNow(selected);
+        const outs = now.outs;
+        const toOf = (r) => lv.byId.get(r.to).label;
         const byKind = outs.some((r) => r.p != null && typeof r.p === "object");
         const off = isOff(selected) && outs.find((r) => r.bypass);
-        html += `<p>${esc(off ? `Switched off: everything goes to ${lv.byId.get(off.to).label}.` : outs.some((r) => r.p != null) ? (byKind ? "Decides by chance, and the chance depends on the kind of item:" : "Decides by chance:") : "Decides by how the item did:")}</p><dl>`;
+        // set to one way (by a dial, or a change), or one way at 100%: nothing is decided here
+        const one = !off && (now.take || now.sure);
+        html += `<p>${esc(off ? `Switched off: everything goes to ${toOf(off)}.` : one ? `Sends everything to ${toOf(one)}.` : outs.some((r) => r.p != null) ? (byKind ? "Decides by chance, and the chance depends on the kind of item:" : "Decides by chance:") : "Decides by how the item did:")}</p><dl>`;
         for (const r of outs) {
           const key = `${lv.path}::${r.id}`;
-          const to = lv.byId.get(r.to);
-          const last = [...changes].reverse().find((c) => c.part === selected && c.set?.p);
-          const pNow = last ? (last.set.p[r.id] ?? 0) / Object.values(last.set.p).reduce((a, b) => a + b, 0) : r.p;
-          const rule = r.p != null ? (typeof pNow === "object" ? chanceWords(pNow) : `${Math.round(pNow * 100)}%`) : r.when === "else" || r.when == null ? "otherwise" : r.when.startsWith("class:") ? r.when.slice(6) : `if ${r.when}`;
-          html += `<dt>${esc(rule)}${r.max ? ` (at most ${r.max}×)` : ""} → ${esc(to.label)}</dt>${val(() => {
+          const pNow = now.odds.get(r.id);
+          const rule = off || one ? "" : r.p != null ? (typeof pNow === "object" ? chanceWords(pNow) : `${Math.round(pNow * 100)}%`) : r.when === "else" || r.when == null ? "otherwise" : r.when.startsWith("class:") ? r.when.slice(6) : r.when.startsWith("late:") ? `after ${fmt(Number(r.when.slice(5)))} or more` : `if ${r.when}`;
+          html += `<dt>${rule ? `${esc(rule)}${r.max ? ` (at most ${r.max}×)` : ""} ` : ""}→ ${esc(toOf(r))}</dt>${val(() => {
             const c = R.choices.get(selected);
             const total = c ? Object.values(c.counts).reduce((a, b) => a + b, 0) : 0;
             return total ? `${pct((c.counts[key] || 0) / total)} so far` : "-";
           })}`;
         }
-        html += `</dl>`;
+        html += `${emits()}</dl>`;
+        const by = p.switch && !off && outs.find((r) => r.bypass);
+        if (by) html += `<p>${esc(`Its switch turns it off: then everything goes to ${toOf(by)}.`)}</p>`;
+      } else if (p.kind === "start" && p.vus) {
+        const now = startNow(selected);
+        html += `<p>${esc(`A closed load: virtual users ${stagesWords(now.vus)}. Each one sends its ${noun}, waits for the answer, pauses ${now.think != null ? describe(now.think, unit) : "no time"}, and sends the next; a slower answer means fewer ${plural} a ${unit === "s" ? "second" : unit}.`)}</p><dl><dt>virtual users now</dt>${val(() => String(startNow(selected).users))}<dt>sent</dt>${val(() => count(bornAt(selected)))}</dl>`;
       } else if (p.kind === "start" && p.every != null) {
         const now = startNow(selected);
         const how = now.paused ? "It sends nothing now." : perDot > 1 ? `About ${compact(perDot / meanOf(now.every))} ${plural} arrive each ${unit === "s" ? "second" : unit}; each dot is ${perDot} of them.` : `New work arrives every ${describe(now.every, unit)}${p.count ? `, ${p.count} items in all` : ""}.`;
@@ -3606,12 +3887,14 @@ function mount(root, def, options = {}) {
         if (Number.isFinite(holder.servers)) html += `<dt>waiting to get in</dt>${val(() => count(S().queue.length))}`;
         html += `</dl>`;
       } else {
-        html += `<dl><dt>done</dt>${val(() => count(R.done))}<dt>in flight</dt>${val(() => count(R.alive.size))}<dt>median time</dt>${val(() => (R.done ? fmt(R.quantile(0.5)) : "-"))}<dt>slowest 5%</dt>${val(() => (R.done >= 5 ? `over ${fmt(R.quantile(0.95))}` : "-"))}</dl>`;
-        // with several kinds of item: how each kind has fared lately, by where it ended
+        const done = narrowed ? `${plural} done` : "done";
+        html += `<dl><dt>${esc(done)}</dt>${val(() => count(counts().done))}<dt>in flight</dt>${val(() => count(counts().alive))}<dt>median time</dt>${val(() => (counts().done ? fmt(counts().q(0.5)) : "-"))}<dt>slowest 5%</dt>${val(() => (counts().done >= 5 ? `over ${fmt(counts().q(0.95))}` : "-"))}</dl>`;
+        // with several kinds of item: how each kind has fared lately, by where it ended; a kind
+        // shows once this run has made one (a dial can change which kinds there are)
         if (classNames.length > 1) {
-          html += `<div class="dx-kind">In the last ${esc(fmt(recentSpan))}</div><dl>`;
-          for (const c of classNames) html += `<dt>${esc(c)}</dt>${val(() => fared(c))}`;
-          html += `</dl>`;
+          html += `<div class="dx-fared" hidden><div class="dx-kind">In the last ${esc(fmt(recentSpan))}</div><dl>`;
+          for (const c of classNames) html += `<div data-kind="${esc(c)}" hidden><dt>${esc(c)}</dt>${val(() => fared(c))}</div>`;
+          html += `</dl></div>`;
         }
       }
       const words = () => bottleneckWords(view);
@@ -3685,6 +3968,11 @@ function mount(root, def, options = {}) {
     for (const [k, fn] of refreshers) {
       const el = inspector.querySelector(`[data-k="${k}"]`);
       if (el) el.textContent = fn();
+    }
+    const kinds = inspector.querySelector(".dx-fared");
+    if (kinds) {
+      for (const row of kinds.querySelectorAll("[data-kind]")) row.hidden = !R.kindsBorn.has(row.getAttribute("data-kind"));
+      kinds.hidden = R.kindsBorn.size < 2;
     }
     const list = inspector.querySelector("[data-journey]");
     if (list && followed) {

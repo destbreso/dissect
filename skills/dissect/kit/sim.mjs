@@ -10,14 +10,34 @@
 // The log is the contract with the renderer. Each record is
 //   { t, k, tok, at, ... }  with k one of
 //   born  move  queue  start  finish  renege  reject  decide  split  joinwait
-//   join  wait  enter  exit  done  change  pass  scale
+//   join  wait  enter  exit  done  change  pass  scale  vus
 // `at` is a part path ("deploy", "test/unit"); `route` is "<level path>::<route id>".
 // A station with no limit records no `queue`: its items start the moment they arrive.
 // `pass` is an item going straight through a station that is switched off;
-// `scale` is a station that scales: { servers, booting } from that moment.
+// `scale` is a station that scales: { servers, booting } from that moment;
+// `vus` is a closed start's number of virtual users from that moment ({ n }).
+// A `born` record with `from` is an item a station emitted as another left it.
 
 import { normalize, validate, OUTCOMES, SCALE, chanceOf, initialChanges } from "./model.mjs";
 import { sampler, meanOf } from "./dist.mjs";
+
+/** A station's work: one duration for every item, or one per kind of item ({ cpu: "logn 5 6", else: 0.2 }). */
+export function workSampler(spec) {
+  if (spec != null && typeof spec === "object") {
+    const by = Object.fromEntries(Object.entries(spec).map(([k, v]) => [k, sampler(v)]));
+    return (cls, rng) => (by[cls] ?? by.else ?? (() => 0))(rng);
+  }
+  const s = sampler(spec);
+  return (cls, rng) => s(rng);
+}
+/** The mean time of a work spec, over its kinds when it has several. */
+export function meanWork(spec) {
+  if (spec != null && typeof spec === "object") {
+    const v = Object.values(spec).map(meanOf);
+    return v.reduce((a, b) => a + b, 0) / Math.max(1, v.length);
+  }
+  return meanOf(spec);
+}
 import { streams } from "./rng.mjs";
 
 class Heap {
@@ -116,7 +136,7 @@ export function createSim(def, opts = {}) {
   for (const [path, { part }] of parts) {
     params.set(path, {
       servers: part.servers,
-      work: part.work != null ? sampler(part.work) : null,
+      work: part.work != null ? workSampler(part.work) : null,
       fail: part.fail ?? 0,
       patience: part.patience != null ? sampler(part.patience) : null,
       every: part.every != null ? sampler(part.every) : null,
@@ -129,6 +149,8 @@ export function createSim(def, opts = {}) {
       take: null, // a choice switched off: everything takes this route
       paused: false, // a start that sends nothing
       scale: null, // a station's autoscaling policy, while it has one
+      vus: part.vus ?? null, // a closed start's stages: [[duration, virtual users], ...]
+      think: part.think != null ? sampler(part.think) : () => 0, // a virtual user's pause between iterations
     });
   }
   const routeParams = new Map();
@@ -204,8 +226,10 @@ export function createSim(def, opts = {}) {
   const startPaths = [...parts].filter(([, v]) => v.part.kind === "start" && !v.level.path).map(([p]) => p);
   for (const path of startPaths) {
     arrivalVersion.set(path, 0);
-    // the first item arrives at `first` (default 0): a figure opens with work already moving
     const { part } = parts.get(path);
+    // a closed start (virtual users) is set going once the run's starting point is known
+    if (part.vus) continue;
+    // the first item arrives at `first` (default 0): a figure opens with work already moving
     schedule(Number(part.first ?? 0), "arrival", { at: path, v: 0 });
   }
 
@@ -234,15 +258,30 @@ export function createSim(def, opts = {}) {
 
   function leaveVia(tok, path, t) {
     const { part, level } = parts.get(path);
-    const outs = level.outs.get(part.id);
-    if (outs.length === 1) return depart(tok, level, outs[0], t);
+    const all = level.outs.get(part.id);
+    const outs = all.filter((r) => !r.emit);
+    if (outs.length === 1) depart(tok, level, outs[0], t);
     // a station with several routes out, each with a when: an implicit choice
-    return choose(tok, path, t, true);
+    else choose(tok, path, t, true);
+    emitAll(tok, path, t);
+  }
+  /** What a station or a choice sends as each item leaves it: a new item of another kind down each emitting route. */
+  function emitAll(tok, path, t) {
+    const { part, level } = parts.get(path);
+    for (const r of level.outs.get(part.id)) if (r.emit) emit(tok, path, level, r, t);
+  }
+  function emit(from, path, level, route, t) {
+    const tok = makeToken(route.emit, t, t);
+    touchWip(t);
+    st.inSystem += 1;
+    st.born += 1;
+    record({ t, k: "born", tok: tok.id, at: path, cls: tok.cls, from: from.id });
+    depart(tok, level, route, t);
   }
 
   function choose(tok, path, t, implicit = false) {
     const { part, level } = parts.get(path);
-    const outs = level.outs.get(part.id);
+    const outs = level.outs.get(part.id).filter((r) => !r.emit);
     let route = null;
     // a choice switched off sends everything one way
     const take = params.get(path)?.take;
@@ -261,7 +300,8 @@ export function createSim(def, opts = {}) {
     } else if (!route) {
       for (const r of outs) {
         const w = r.when;
-        const matches = w == null || w === "else" || w === tok.outcome || (w.startsWith("class:") && w.slice(6) === tok.cls);
+        // late:<time> is an item that has taken that long or more since it started (a deadline it missed)
+        const matches = w == null || w === "else" || w === tok.outcome || (w.startsWith("class:") && w.slice(6) === tok.cls) || (w.startsWith("late:") && t - tok.born >= Number(w.slice(5)));
         if (!matches) continue;
         const used = tok.attempts.get(`${level.path}::${r.id}`) || 0;
         if (r.max != null && used >= r.max) continue;
@@ -304,7 +344,7 @@ export function createSim(def, opts = {}) {
         record({ t, k: "start", tok: tokId, at: path, server: slot });
         enterInside(tok, part, t, slot);
       } else {
-        const d = prm.work(stream(`work:${path}`));
+        const d = prm.work(tok.cls, stream(`work:${path}`));
         s.works.push(d);
         record({ t, k: "start", tok: tokId, at: path, server: slot, t1: t + d });
         schedule(t + d, "finish", { tok: tokId, at: path, slot });
@@ -372,7 +412,8 @@ export function createSim(def, opts = {}) {
         return;
       }
       case "choice":
-        return choose(tok, path, t);
+        choose(tok, path, t);
+        return emitAll(tok, path, t);
       case "split": {
         const { level } = parts.get(path);
         const outs = level.outs.get(part.id);
@@ -457,6 +498,7 @@ export function createSim(def, opts = {}) {
         tok.done = t;
         tok.outcome = outcome;
         record({ t, k: "done", tok: tok.id, at: path, outcome });
+        if (tok.vuOf) iterationDone(tok.vuOf, t);
         return;
       }
       default:
@@ -491,7 +533,7 @@ export function createSim(def, opts = {}) {
         prm.servers = set.servers;
       }
       if (set.work != null) {
-        prm.work = sampler(set.work);
+        prm.work = workSampler(set.work);
         prm.workSpec = set.work;
       }
       if (set.fail != null) prm.fail = set.fail;
@@ -513,6 +555,11 @@ export function createSim(def, opts = {}) {
       if ("scale" in set) setScale(c.part, set.scale, t);
       if (set.every != null) prm.every = sampler(set.every);
       if ("paused" in set) prm.paused = Boolean(set.paused);
+      if (set.think != null) prm.think = sampler(set.think);
+      if (set.vus != null) {
+        prm.vus = set.vus;
+        if (!initial && crowds.has(c.part)) rampFrom(c.part, t);
+      }
       if (!initial && (set.every != null || "paused" in set)) restartArrivals(c.part, t);
       record({ t, k: "change", at: c.part, set: c.set });
       if (scaling.has(c.part) && set.servers != null) noteScale(c.part, t);
@@ -583,7 +630,7 @@ export function createSim(def, opts = {}) {
     S.t0 = t;
     const pol = prm.scale;
     if (pol && span > 0 && prm.workSpec != null) {
-      const need = (arrived * meanOf(prm.workSpec)) / span;
+      const need = (arrived * meanWork(prm.workSpec)) / span;
       const want = Math.min(pol.max, Math.max(pol.min, Math.ceil(need / pol.target - 1e-9)));
       const have = prm.servers + S.booting;
       if (want > have) {
@@ -601,9 +648,77 @@ export function createSim(def, opts = {}) {
     if (t + every <= horizon) schedule(t + every, "scale", { at: path });
   }
 
+  // ---- closed starts: virtual users -------------------------------------------------
+  // A start with `vus` is a closed model, the way k6 runs: its stages ramp the
+  // number of virtual users ([[30, 20], [60, 20], [20, 0]] is up to 20 in 30 s,
+  // 20 for a minute, down to none in 20 s). A virtual user starts an iteration
+  // (one item) at once, and when that item ends it pauses (`think`) and starts the
+  // next; when the stages want fewer users than are running, the next one to end
+  // its iteration stops. Nothing new starts after the horizon.
+  const crowds = new Map();
+  const targetAt = (stages, t) => {
+    let at = 0;
+    let n = 0;
+    for (const [d, to] of stages) {
+      if (t <= at + d) return d > 0 ? n + ((to - n) * (t - at)) / d : to;
+      at += d;
+      n = to;
+    }
+    return n;
+  };
+  const wanted = (path, t) => Math.floor(targetAt(params.get(path).vus || [], t) + 1e-9);
+  function noteVus(path, t) {
+    record({ t, k: "vus", at: path, n: crowds.get(path).active });
+  }
+  function beginIteration(path, t) {
+    const { part, level } = parts.get(path);
+    const tok = makeToken(pickClass(part, path), t, t);
+    tok.vuOf = path;
+    touchWip(t);
+    st.inSystem += 1;
+    st.born += 1;
+    record({ t, k: "born", tok: tok.id, at: path, cls: tok.cls });
+    depart(tok, level, level.outs.get(part.id)[0], t);
+  }
+  // the moments the stages want one more user than now, from t on
+  function rampFrom(path, t) {
+    const C = crowds.get(path);
+    C.v += 1;
+    while (C.active < wanted(path, t) && t <= horizon) {
+      C.active += 1;
+      noteVus(path, t);
+      beginIteration(path, t);
+    }
+    let at = 0;
+    let n = 0;
+    for (const [d, to] of params.get(path).vus || []) {
+      if (to > n)
+        for (let k = Math.floor(n) + 1; k <= to; k++) {
+          const tk = at + (d * (k - n)) / (to - n);
+          if (tk > t && tk <= horizon) schedule(tk, "vu", { at: path, v: C.v });
+        }
+      at += d;
+      n = to;
+    }
+  }
+  function iterationDone(path, t) {
+    const C = crowds.get(path);
+    if (t > horizon || C.active > wanted(path, t)) {
+      C.active -= 1;
+      noteVus(path, t);
+      return;
+    }
+    schedule(t + params.get(path).think(stream(`think:${path}`)), "iterate", { at: path });
+  }
+
   // where the run starts from: the model's own switches and dials, then the changes at t <= 0
   for (const c of initialChanges(model)) applyChange(c, 0, true);
   for (const c of opts.changes || []) if (c.t <= 0) applyChange(c, 0, true);
+  for (const path of startPaths) {
+    if (!params.get(path).vus) continue;
+    crowds.set(path, { active: 0, v: 0 });
+    rampFrom(path, 0);
+  }
   const madeByStart = new Map();
   for (const c of opts.changes || []) if (c.t > 0) schedule(c.t, "change", { change: c });
 
@@ -658,6 +773,23 @@ export function createSim(def, opts = {}) {
         return applyChange(e.change, e.t);
       case "scale":
         return look(e.at, e.t);
+      case "vu": {
+        // the stages want one more virtual user now
+        const C = crowds.get(e.at);
+        if (e.v !== C.v || C.active >= wanted(e.at, e.t)) return;
+        C.active += 1;
+        noteVus(e.at, e.t);
+        return beginIteration(e.at, e.t);
+      }
+      case "iterate": {
+        // after its pause: the stages may have come down in the meantime
+        const C = crowds.get(e.at);
+        if (e.t > horizon || C.active > wanted(e.at, e.t)) {
+          C.active -= 1;
+          return noteVus(e.at, e.t);
+        }
+        return beginIteration(e.at, e.t);
+      }
       case "ready": {
         const S = scaling.get(e.at);
         // a policy changed since this server was asked for: it never comes
