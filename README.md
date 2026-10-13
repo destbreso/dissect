@@ -49,11 +49,13 @@ Describe a process to your agent (a CI/CD pipeline, a request through your archi
 npx skills add destbreso/dissect -g -a claude-code
 ```
 
-Then, in Claude Code:
+Then, in Claude Code, in your project's folder:
 
 ```text
-/dissect make an interactive figure of our CI pipeline: about 30 PRs a day, CI takes 8 minutes, two of us review
+/dissect map the main flow of this project as an interactive figure
 ```
+
+The agent reads the flow from the code (its steps, queues, workers, timeouts and retries), takes the numbers the code and its config state, and says which ones it assumes. Name the flow you want ("how an upload becomes a thumbnail"), or ask for the fundamental flows and get a figure for each.
 
 As a Claude Code plugin instead: `/plugin marketplace add destbreso/dissect`, then `/plugin install dissect@dissect`, and call it with `/dissect:dissect`. For OpenCode or Codex, swap the agent: `-a opencode` or `-a codex`. OpenCode takes the same `/dissect` command; in Codex, type `$dissect`. You can also just ask: the skill triggers on processes, pipelines, workflows, architectures and protocols.
 
@@ -119,6 +121,8 @@ There is nothing else to install: the kit uses only Node's built-in modules. The
 
 Ask for what you want to explain. The skill triggers on processes, pipelines, workflows, architectures, flows and protocols, whether or not you say "diagram" or "simulation":
 
+> Map the fundamental flows of this repository as interactive figures, with the numbers from its code and config.
+
 > Our PRs take forever to merge and everyone blames CI. Make an interactive figure of our pipeline for the wiki: about 30 PRs a day, CI takes 8 minutes, two of us review, and one PR in five gets changes requested.
 
 > Explain how TCP retransmission works with something visual and interactive.
@@ -127,7 +131,7 @@ Ask for what you want to explain. The skill triggers on processes, pipelines, wo
 
 > How does a site survive a DDoS attack? I want to turn the WAF, the rate limit and the cache off one at a time and see what breaks.
 
-The agent writes a model of the process with real or stated numbers, calibrates it on several runs, writes the caption from the run, builds a standalone HTML page (or a fragment for a page you have, or a React component), audits it, and checks it in a headless browser. With `/dissect` (or `/dissect:dissect` from the plugin) you can call it by name.
+The agent writes a model of the process with your numbers, the ones the code states, or assumptions it names, calibrates it on several runs, writes the caption from the run, builds a standalone HTML page (or a fragment for a page you have, or a React component), audits it, and checks it in a headless browser. With `/dissect` (or `/dissect:dissect` from the plugin) you can call it by name.
 
 ## Examples
 

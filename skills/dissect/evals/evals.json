@@ -60,6 +60,12 @@
       "prompt": "I run load tests with k6 against a small Node API, and the metrics go to InfluxDB and Grafana. Make an interactive figure of one run, request by request, for the project's README: the virtual users ramping up, the API's event loop, k6's checks and thresholds, and the samples on their way to the dashboards. Let me point it at my own API instead, and turn the metrics output off.",
       "expected_output": "A figure whose load is a closed start (vus stages and think, as the scenario sets them, with its routes as classes) rather than an arrival rate, the API's single event loop as one station with work by kind (a CPU-heavy route holding it while the others wait), a timer for any route that waits without holding the loop, k6's check as a choice (when ok, a late:<time> route for answers past its deadline, else to failed) with an emit route for the samples (dashed, of their own kind) to a metrics path with its own pacing (the output's flush, the dashboards' refresh), a target choice whose dial picks the toy API or the user's own (take, restart, a change of classes) with the user's API as a station whose dials set its answer time and how many it takes at once, a switch on the metrics output, figure.watch over the request kinds only with the p95, a caption generated from the run and variants (a slower route, the user's API under more users than it takes) stating the p95, the failed share and k6's exit code against the thresholds, every number taken from the repository or marked measured or assumed, --audit --check passing.",
       "files": []
+    },
+    {
+      "id": 11,
+      "prompt": "/dissect map the fundamental flows of this project as interactive figures",
+      "expected_output": "The agent reads the repository before anything else (entry points, the steps work goes through, queues and workers and their concurrency, timeouts, retries and backoff, the odds the code sets), then names the two or three flows a newcomer needs and says why, and builds one figure each, the most central first, sized as a Figure or a Hero. Every number in a model is taken from the code or its config with the file named in the model's comments, measured where the agent can run something, or an assumption it states in the comments and in the prose. Each figure has abouts on the steps a reader clicks, claims for what its caption says, a caption written from the run, and --audit --check passing.",
+      "files": []
     }
   ]
 }
