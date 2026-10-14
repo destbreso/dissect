@@ -3,7 +3,7 @@
 ## 0.2.2
 
 - The skill maps the flows of the project it runs in: it reads a flow from the code and its config (steps, queues, workers, timeouts, retries), names the file each number comes from, and says which ones it assumes; for "the fundamental flows" it picks the two or three a newcomer needs and builds one figure each.
-- The quick start asks for exactly that: `/dissect map the main flow of this project as an interactive figure`.
+- The quick start asks for exactly that: `/dissect the main flow of this project as an interactive figure`.
 - An eval for it: mapping the fundamental flows of a project.
 
 ## 0.2.1

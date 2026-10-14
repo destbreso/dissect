@@ -52,7 +52,7 @@ npx skills add destbreso/dissect -g -a claude-code
 Then, in Claude Code, in your project's folder:
 
 ```text
-/dissect map the main flow of this project as an interactive figure
+/dissect the main flow of this project as an interactive figure
 ```
 
 The agent reads the flow from the code (its steps, queues, workers, timeouts and retries), takes the numbers the code and its config state, and says which ones it assumes. Name the flow you want ("how an upload becomes a thumbnail"), or ask for the fundamental flows and get a figure for each.

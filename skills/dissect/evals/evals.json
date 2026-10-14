@@ -63,7 +63,7 @@
     },
     {
       "id": 11,
-      "prompt": "/dissect map the fundamental flows of this project as interactive figures",
+      "prompt": "/dissect the fundamental flows of this project as interactive figures",
       "expected_output": "The agent reads the repository before anything else (entry points, the steps work goes through, queues and workers and their concurrency, timeouts, retries and backoff, the odds the code sets), then names the two or three flows a newcomer needs and says why, and builds one figure each, the most central first, sized as a Figure or a Hero. Every number in a model is taken from the code or its config with the file named in the model's comments, measured where the agent can run something, or an assumption it states in the comments and in the prose. Each figure has abouts on the steps a reader clicks, claims for what its caption says, a caption written from the run, and --audit --check passing.",
       "files": []
     }
