@@ -208,6 +208,10 @@ node skills/dissect/scripts/drive.mjs page.html --actions steps.json   # clicks,
 | Chrome or Chromium | the browser checks | Found in the usual places on macOS, Linux and Windows and in Playwright's cache; set `CHROME_PATH` for any other. |
 | React 18+ | React output only | See `skills/dissect/references/kit.md`. |
 
+## What it runs, and what it sends
+
+Everything runs on your machine. The kit uses only Node's built-in modules: nothing is installed, and no account or API key is needed. A figure is one HTML file, which makes no network requests when it runs. The checks start your own Chrome or Chromium in headless mode and drive it through its local DevTools port on 127.0.0.1. Dissect sends nothing anywhere and collects nothing. The scripts in `tools/` are for maintainers, and the skill never runs them.
+
 ## Credits
 
 Dissect takes its idea from [Anatomy](https://github.com/wheresryan22/anatomy), which explains a technical idea as a crafted isometric machine whose working is the concept. Dissect applies that to processes: the machine is the process itself, and it runs.
