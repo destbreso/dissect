@@ -1,6 +1,6 @@
 {
   "name": "dissect",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "private": true,
   "description": "An Agent Skill that explains a process by running it: interactive, simulated figures you can open.",
   "type": "module",

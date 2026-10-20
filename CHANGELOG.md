@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.3
+
+- The plugin has an icon: a process run from its start through a station to its end, in the figures' own style.
+- The README says what Dissect runs on your machine and what it sends: nothing leaves it.
+- SKILL.md's description is quoted and within the Agent Skills limit of 1024 characters.
+
 ## 0.2.2
 
 - The skill maps the flows of the project it runs in: it reads a flow from the code and its config (steps, queues, workers, timeouts, retries), names the file each number comes from, and says which ones it assumes; for "the fundamental flows" it picks the two or three a newcomer needs and builds one figure each.
